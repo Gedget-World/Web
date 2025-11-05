@@ -1,32 +1,35 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useCart } from "@/hooks/use-cart"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import Image from "next/image"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import type { User } from "@supabase/supabase-js"
+import { useCart } from "@/hooks/use-cart";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import Image from "next/image";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 
 export function CheckoutForm({ user }: { user: User }) {
-  const { items, clearCart } = useCart()
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { items, clearCart } = useCart();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = 10
-  const total = subtotal + shipping
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const shipping = 10;
+  const total = subtotal + shipping;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
       const response = await fetch("/api/orders", {
@@ -38,24 +41,24 @@ export function CheckoutForm({ user }: { user: User }) {
           items,
           total,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to create order")
+        throw new Error("Failed to create order");
       }
 
-      clearCart()
-      router.push("/checkout/success")
+      clearCart();
+      router.push("/checkout/success");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (items.length === 0) {
-    router.push("/cart")
-    return null
+    router.push("/cart");
+    return null;
   }
 
   return (
@@ -69,7 +72,12 @@ export function CheckoutForm({ user }: { user: User }) {
             <CardContent className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={user.email} required />
+                <Input
+                  id="email"
+                  type="email"
+                  defaultValue={user.email}
+                  required
+                />
               </div>
             </CardContent>
           </Card>
@@ -107,7 +115,11 @@ export function CheckoutForm({ user }: { user: User }) {
             <CardContent className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="cardNumber">Card Number</Label>
-                <Input id="cardNumber" placeholder="1234 5678 9012 3456" required />
+                <Input
+                  id="cardNumber"
+                  placeholder="1234 5678 9012 3456"
+                  required
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -132,19 +144,28 @@ export function CheckoutForm({ user }: { user: User }) {
               <div className="space-y-3">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-3">
-                    <div className="relative w-16 h-16 flex-shrink-0 bg-slate-100 rounded overflow-hidden">
+                    <div className="relative w-16 h-16 bg-slate-100 rounded overflow-hidden">
                       <Image
-                        src={item.image_url || "/placeholder.svg?height=64&width=64"}
+                        src={
+                          item.image_url ||
+                          "/placeholder.svg?height=64&width=64"
+                        }
                         alt={item.name}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">{item.name}</p>
-                      <p className="text-sm text-slate-600">Qty: {item.quantity}</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {item.name}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Qty: {item.quantity}
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-slate-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="text-sm font-medium text-slate-900">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -166,7 +187,12 @@ export function CheckoutForm({ user }: { user: User }) {
 
               {error && <p className="text-sm text-red-500">{error}</p>}
 
-              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={isLoading}
+              >
                 {isLoading ? "Processing..." : "Place Order"}
               </Button>
             </CardContent>
@@ -174,5 +200,5 @@ export function CheckoutForm({ user }: { user: User }) {
         </div>
       </div>
     </form>
-  )
+  );
 }
