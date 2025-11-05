@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import "../../(site)/globals.css";
+import "../../../(site)/globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,9 +21,7 @@ export default function AdminLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} antialiased`}>
-      <body className="font-sans">
-        <div>Admin Dashboard {children}</div>
-      </body>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }
