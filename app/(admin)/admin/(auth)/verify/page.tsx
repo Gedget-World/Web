@@ -13,20 +13,20 @@ export default function VerifyPage() {
 
   useEffect(() => {
     const adminData = sessionStorage.getItem("admin");
-    async function checkVerificationStatus(adminData: string | null) {
+    async function checkVerificationStatus(adminDataVal: string | null) {
       let admin: any = null;
-      if (adminData) {
-        admin = JSON.parse(adminData);
+      if (adminDataVal) {
+        admin = JSON.parse(adminDataVal);
       }
       if (admin === null) {
-        router.push("/admin/login");
+        router.push("/admin");
         return;
       }
       const supabase = createClient();
       const { data } = await supabase
         .from("admins")
         .select("is_verified")
-        .eq("id", admin.id)
+        .eq("id", admin[0].id)
         .single();
       if (data && data.is_verified) {
         router.push("/admin/dashboard");

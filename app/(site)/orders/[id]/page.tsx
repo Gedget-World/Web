@@ -138,7 +138,7 @@ export default async function OrderDetailPage({
                     key={item.id}
                     className="flex gap-4 pb-4 border-b last:border-0 last:pb-0"
                   >
-                    <div className="relative h-20 w-20 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
+                    <div className="relative h-20 w-20 rounded-md overflow-hidden bg-slate-100">
                       {item.products?.image_url && (
                         <img
                           src={item.products.image_url || "/placeholder.svg"}
