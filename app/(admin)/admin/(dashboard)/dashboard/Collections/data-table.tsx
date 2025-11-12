@@ -22,7 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { MoreHorizontalIcon } from "lucide-react";
-import Link from "next/link";
 
 export default function DataTable() {
   const [data, setData] = useState<any[]>([]);
@@ -34,7 +33,7 @@ export default function DataTable() {
   useEffect(() => {
     const fetchData = async () => {
       let query = supabase
-        .from("products")
+        .from("collections")
         .select("*")
         .ilike("name", `%${search}%`)
         .range(page * limit, page * limit + limit - 1);
@@ -61,9 +60,8 @@ export default function DataTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead>Slug</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
             <TableHead>Active</TableHead>
             <TableHead>Action</TableHead>
           </TableRow>
@@ -80,18 +78,10 @@ export default function DataTable() {
                     height={20}
                   />
                 </div>
-                <div className="mt-1">
-                  <Link
-                    href={`/admin/dashboard/Products/view`}
-                    className="hover:text-blue-800 hover:underline"
-                  >
-                    {row.name}
-                  </Link>
-                </div>
+                <div className="mt-1">{row.name}</div>
               </TableCell>
+              <TableCell>{row.slug}</TableCell>
               <TableCell>{row.description}</TableCell>
-              <TableCell>&#8377;{row.price}</TableCell>
-              <TableCell>{row.stock}</TableCell>
               <TableCell>
                 {row.is_active ? (
                   <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
@@ -125,21 +115,19 @@ export default function DataTable() {
                   <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="cursor-pointer">
-                        <Link href={`/admin/dashboard/Products/view`}>
-                          View Product
-                        </Link>
+                        View Collection
                       </DropdownMenuItem>
                       <DropdownMenuItem className="cursor-pointer">
-                        Edit Product
+                        Edit Collection
                       </DropdownMenuItem>
                       <DropdownMenuItem className="cursor-pointer">
-                        {row.is_active ? "Deactivate" : "Activate"} Product
+                        {row.is_active ? "Deactivate" : "Activate"} Collection
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
                         variant="destructive"
                       >
-                        Delete Product
+                        Delete Collection
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                   </DropdownMenuContent>

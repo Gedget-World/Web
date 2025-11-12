@@ -22,11 +22,10 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { MoreHorizontalIcon } from "lucide-react";
-import Link from "next/link";
 
 export default function DataTable() {
   const [data, setData] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
+  // const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const limit = 10;
   const supabase = createClient();
@@ -34,20 +33,19 @@ export default function DataTable() {
   useEffect(() => {
     const fetchData = async () => {
       let query = supabase
-        .from("products")
+        .from("orders")
         .select("*")
-        .ilike("name", `%${search}%`)
         .range(page * limit, page * limit + limit - 1);
       const { data, error } = await query;
       console.log("Fetched data:", data);
       if (!error && data) setData(data);
     };
     fetchData();
-  }, [supabase, search, page]);
+  }, [supabase, page]);
 
   return (
     <div className="space-y-1 border border-gray-300 p-4 rounded-lg">
-      <Input
+      {/* <Input
         placeholder="Search by name..."
         value={search}
         onChange={(e) => {
@@ -55,16 +53,16 @@ export default function DataTable() {
           setSearch(e.target.value);
         }}
         className="max-w-sm"
-      />
+      /> */}
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
-            <TableHead>Active</TableHead>
+            <TableHead>Customer Name</TableHead>
+            <TableHead>Tracking Number</TableHead>
+            <TableHead>Invoice Number</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -72,45 +70,15 @@ export default function DataTable() {
           {data.map((row) => (
             <TableRow key={row.id}>
               <TableCell className="flex flex-row align-middle items-center">
-                <div className="mr-2 mt-1 rounded-sm overflow-hidden">
-                  <Image
-                    src={row.image_url}
-                    alt={row.name}
-                    width={20}
-                    height={20}
-                  />
-                </div>
-                <div className="mt-1">
-                  <Link
-                    href={`/admin/dashboard/Products/view`}
-                    className="hover:text-blue-800 hover:underline"
-                  >
-                    {row.name}
-                  </Link>
-                </div>
+                {/* <div className="mr-2 mt-1 rounded-sm overflow-hidden">
+                  <Image src={row.image_url} width={20} height={20} />
+                </div> */}
+                <div className="mt-1">{row.customer_name}</div>
               </TableCell>
-              <TableCell>{row.description}</TableCell>
-              <TableCell>&#8377;{row.price}</TableCell>
-              <TableCell>{row.stock}</TableCell>
-              <TableCell>
-                {row.is_active ? (
-                  <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
-                    <span
-                      className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
-                      aria-hidden="true"
-                    />
-                    Active
-                  </Badge>
-                ) : (
-                  <Badge className="bg-red-600/10 [a&]:hover:bg-red-600/5 focus-visible:ring-red-600/20 dark:focus-visible:ring-red-600/40 text-red-400 rounded-full border-none focus-visible:outline-none">
-                    <span
-                      className="bg-red-600 size-1.5 rounded-full"
-                      aria-hidden="true"
-                    />
-                    Inactive
-                  </Badge>
-                )}
-              </TableCell>
+              <TableCell>{row.tracking_number}</TableCell>
+              <TableCell>{row.invoice_number}</TableCell>
+              <TableCell>&#8377;{row.total}</TableCell>
+              <TableCell>{row.status}</TableCell>
               <TableCell>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
@@ -125,21 +93,7 @@ export default function DataTable() {
                   <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="cursor-pointer">
-                        <Link href={`/admin/dashboard/Products/view`}>
-                          View Product
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        Edit Product
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        {row.is_active ? "Deactivate" : "Activate"} Product
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        variant="destructive"
-                      >
-                        Delete Product
+                        View Order
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
