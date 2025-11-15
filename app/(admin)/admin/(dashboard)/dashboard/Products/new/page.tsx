@@ -6,14 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-  Image as LucideImage,
-  Plus,
-  Trash2,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-} from "lucide-react";
+import { Image as LucideImage, Plus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -47,6 +40,10 @@ export default function CreateProductPage() {
     is_featured: false,
     is_new_arrival: false,
   });
+
+  const [productImages, setProductImages] = useState<
+    { image_url: string; image_name: string }[]
+  >([]);
 
   const [slug, setSlug] = useState("");
   const [status, setStatus] = useState<"checking" | "available" | "taken" | "">(
@@ -277,28 +274,10 @@ export default function CreateProductPage() {
               <p className="text-left text-gray-500 text-sm mb-2">
                 Product Image
               </p>
-              {/* If no image is present, show placeholder */}
-              <div className="flex flex-col items-center justify-center w-full p-4 rounded border border-dashed border-gray-300">
-                <div className="w-10 h-10 bg-gray-300 rounded-3xl flex items-center justify-center">
-                  <LucideImage className="text-gray-600 w-5 h-5" />
-                </div>
-                <p className="text-sm mt-2 text-gray-500">
-                  Please add a product image
-                </p>
-                <p className="text-xs text-gray-400">
-                  (You can add multiple images)
-                </p>
-              </div>
-              {/* If image is present, show image preview */}
-              <MultipleImagesHandle />
-
-              <Button
-                className="mt-3 w-fit"
-                variant={"outline"}
-                // onClick={addNewImage}
-              >
-                <Plus className="w-4 h-4 mr-1" /> Add Product Image
-              </Button>
+              <MultipleImagesHandle
+                supabase={supabase}
+                setProductImages={setProductImages}
+              />
             </div>
           </div>
 
