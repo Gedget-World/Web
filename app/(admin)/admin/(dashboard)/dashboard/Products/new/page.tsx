@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Image as LucideImage, Plus } from "lucide-react";
+import { Image as LucideImage, Plus, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -231,22 +231,26 @@ export default function CreateProductPage() {
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   {product.image_urls == "" ? null : (
-                    <div className="relative">
+                    <div
+                      className="relative w-[150px] flex flex-col border border-gray-300 
+          items-center justify-center p-2 rounded"
+                    >
                       <Image
                         src={product.image_urls}
                         alt="Product image"
-                        width={200}
-                        height={200}
-                        className="rounded-md object-cover border"
+                        width={100}
+                        height={100}
                       />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 p-1 rounded-full"
-                        onClick={() => _handleThumbnailImageDelete()}
-                      >
-                        X
-                      </Button>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="cursor-pointer"
+                          onClick={() => _handleThumbnailImageDelete()}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
