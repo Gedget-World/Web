@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import debounce from "lodash.debounce";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -21,27 +22,170 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 
 export default function CreateProductPage() {
+  const supabase = createClient();
   const [product, setProduct] = useState({
     name: "",
     description: "",
     price: 0,
     discount_percentage: 0,
     stock: 0,
-    image_urls: [],
+    image_urls: "" as string,
+    image_name: "" as string,
     collection_id: "",
     is_active: true,
     is_featured: false,
     is_new_arrival: false,
-    slug: "",
   });
 
-  const [collections] = useState([
+  const [slug, setSlug] = useState("");
+  const [status, setStatus] = useState<"checking" | "available" | "taken" | "">(
+    ""
+  );
+
+  // --- Debounced function (runs only after user stops typing) ---
+  const checkSlug = useCallback(
+    debounce(async (value: string) => {
+      if (!value) return;
+
+      setStatus("checking");
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("id")
+        .eq("slug", value)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setStatus(data ? "taken" : "available");
+    }, 500), // delay: 500ms
+    []
+  );
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value === "") {
+      setSlug("");
+      setStatus("");
+      return;
+    }
+    const newSlug = e.target.value.toLowerCase().trim().replaceAll(" ", "-");
+    setSlug(newSlug);
+    checkSlug(newSlug);
+  };
+
+  const [collections, setCollections] = useState([
     { id: "a9e064bc-a81f-42f0-92ec-6247b0875e63", name: "Essentials" },
     { id: "b0b3456a-23ef-45aa-93d1-f021f9f4a1ef", name: "Premium" },
     { id: "c8d2348f-12df-49aa-87a2-8123ac0a12cd", name: "Summer" },
   ]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+
+  // Initial page load
+  useEffect(() => {
+    const fetchCollections = async () => {
+      setLoadingCollections(true);
+      const { data, error } = await supabase
+        .from("collections")
+        .select("id, name");
+      if (error) {
+        console.error("Error fetching collections:", error);
+        return;
+      }
+      if (data) {
+        console.log("Fetched collections:", data);
+        setCollections(data);
+      }
+      setLoadingCollections(false);
+    };
+    // console.log("ENV VAR:", process.env.NEXT_PUBLIC_SUPABASE_THUMBNAIL_BUCKET);
+    // console.log("ENV VAR:", process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET);
+    fetchCollections();
+  }, []);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFilesSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    console.log("Selected files:", files);
+    if (!files || files.length === 0) return;
+
+    if (files) {
+      const fileName = `${Date.now()}-${files[0].name}`;
+      console.log("Uploading file with name:", fileName);
+      const thumbnailBucket =
+        process.env.NEXT_PUBLIC_SUPABASE_THUMBNAIL_BUCKET ||
+        "product_thumbnail_images";
+      const { data, error } = await supabase.storage
+        .from(thumbnailBucket) // bucket name
+        .upload(fileName, files[0]);
+
+      if (error) {
+        console.error("Upload error:", error);
+        return;
+      }
+
+      console.log("Upload data:", data);
+      setProduct((prev) => ({
+        ...prev,
+        image_name: data?.path,
+      }));
+      const { data: publicData } = supabase.storage
+        .from("product_thumbnail_images")
+        .getPublicUrl(fileName);
+      console.log("File uploaded successfully:", publicData);
+      setProduct((prev) => ({
+        ...prev,
+        image_urls: publicData.publicUrl,
+      }));
+    }
+  };
+
+  useEffect(() => {
+    console.log("Product state updated:", product);
+  }, [product]);
+
+  const _handleThumbnailImageDelete = async () => {
+    if (!product.image_name) return;
+
+    console.log("Deleting image:", product.image_name);
+
+    const thumbnailBucket =
+      process.env.NEXT_PUBLIC_SUPABASE_THUMBNAIL_BUCKET ||
+      "product_thumbnail_images";
+    const { data, error } = await supabase.storage
+      .from(thumbnailBucket)
+      .remove([product.image_name]);
+
+    if (error) {
+      console.error("Error deleting image:", error);
+      return;
+    }
+
+    console.log("Image deleted successfully:", data);
+
+    console.log("Deleted image data:", data);
+    setProduct((prev) => ({
+      ...prev,
+      image_name: "",
+      image_urls: "",
+    }));
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleChange = (key: string, value: any) => {
     setProduct((prev) => ({ ...prev, [key]: value }));
@@ -81,22 +225,44 @@ export default function CreateProductPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  {product.image_urls.map((url, i) => (
-                    <div key={i} className="relative">
+                  {product.image_urls == "" ? null : (
+                    <div className="relative">
                       <Image
-                        src={url}
-                        alt={`Product image ${i + 1}`}
+                        src={product.image_urls}
+                        alt="Product image"
                         width={200}
                         height={200}
                         className="rounded-md object-cover border"
                       />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 p-1 rounded-full"
+                        onClick={() => _handleThumbnailImageDelete()}
+                      >
+                        X
+                      </Button>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
-              <Button className="mt-3 w-fit" variant="outline">
-                <Plus className="w-4 h-4 mr-1" /> Add Image
-              </Button>
+              {/* Hidden File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFilesSelected}
+              />
+              {product.image_urls.length === 0 && (
+                <Button
+                  className="mt-3 w-fit"
+                  variant="outline"
+                  onClick={handleClick}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Thumbnail Image
+                </Button>
+              )}
             </div>
           </div>
 
@@ -117,9 +283,25 @@ export default function CreateProductPage() {
               <label className="block text-sm text-gray-500 mb-1">Slug</label>
               <Input
                 placeholder="example-product"
-                value={product.slug}
-                onChange={(e) => handleChange("slug", e.target.value)}
+                value={slug}
+                onChange={handleSlugChange}
               />
+              {/* UI feedback */}
+              {status === "checking" && (
+                <p className="text-blue-500 text-xs mt-1 font-semibold">
+                  Checking...
+                </p>
+              )}
+              {status === "available" && (
+                <p className="text-green-600 text-xs mt-1 font-semibold">
+                  Slug is available
+                </p>
+              )}
+              {status === "taken" && (
+                <p className="text-red-500 text-xs mt-1 font-semibold">
+                  Slug already exists
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -182,6 +364,11 @@ export default function CreateProductPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {loadingCollections && (
+                <p className="text-gray-500 text-xs mt-1">
+                  Loading collections...
+                </p>
+              )}
             </div>
 
             <div>
