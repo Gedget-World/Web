@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,15 +24,16 @@ import {
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
+import { useRouter } from "next/navigation";
 
 export default function CreateProductPage() {
   const supabase = createClient();
   const [product, setProduct] = useState({
     name: "",
     description: "",
-    price: 0,
-    discount_percentage: 0,
-    stock: 0,
+    price: null as number | null,
+    discount_percentage: null as number | null,
+    stock: null as number | null,
     image_urls: "" as string,
     image_name: "" as string,
     collection_id: "",
@@ -40,6 +41,8 @@ export default function CreateProductPage() {
     is_featured: false,
     is_new_arrival: false,
   });
+
+  const router = useRouter();
 
   const [productImages, setProductImages] = useState<
     { image_url: string; image_name: string }[]
@@ -157,10 +160,6 @@ export default function CreateProductPage() {
     }
   };
 
-  useEffect(() => {
-    console.log("Product state updated:", product);
-  }, [product]);
-
   const _handleThumbnailImageDelete = async () => {
     if (!product.image_name) return;
 
@@ -196,9 +195,139 @@ export default function CreateProductPage() {
     setProduct((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = () => {
+  const [nameValidationError, setNameValidationError] =
+    useState<boolean>(false);
+  const [slugValidationError, setSlugValidationError] =
+    useState<boolean>(false);
+  const [priceValidationError, setPriceValidationError] =
+    useState<boolean>(false);
+  const [stockValidationError, setStockValidationError] =
+    useState<boolean>(false);
+  const [collectionValidationError, setCollectionValidationError] =
+    useState<boolean>(false);
+  const [descriptionValidationError, setDescriptionValidationError] =
+    useState<boolean>(false);
+
+  const [ThumbnailImageValidationError, setThumbnailImageValidationError] =
+    useState<boolean>(false);
+  const [ProductImagesValidationError, setProductImagesValidationError] =
+    useState<boolean>(false);
+
+  const productValidation = () => {
+    setNameValidationError(false);
+    let res = true;
+
+    if (product.name.trim() === "") {
+      setNameValidationError(true);
+      res = false;
+    } else {
+      setNameValidationError(false);
+    }
+
+    if (status === "taken" || slug.trim() === "") {
+      setSlugValidationError(true);
+      res = false;
+    } else {
+      setSlugValidationError(false);
+    }
+
+    if (!product.price || product.price <= 0) {
+      setPriceValidationError(true);
+      res = false;
+    } else {
+      setPriceValidationError(false);
+    }
+
+    if (!product.stock || product.stock <= 0) {
+      setStockValidationError(true);
+      res = false;
+    } else {
+      setStockValidationError(false);
+    }
+
+    if (product.collection_id.trim() === "") {
+      setCollectionValidationError(true);
+      res = false;
+    } else {
+      setCollectionValidationError(false);
+    }
+
+    if (product.description.trim() === "") {
+      setDescriptionValidationError(true);
+      res = false;
+    } else {
+      setDescriptionValidationError(false);
+    }
+
+    if (product.image_urls.trim() === "") {
+      setThumbnailImageValidationError(true);
+      alert("Please add a thumbnail image.");
+      res = false;
+    } else {
+      setThumbnailImageValidationError(false);
+    }
+
+    if (productImages.length === 0) {
+      setProductImagesValidationError(true);
+      alert("Please add at least one product image.");
+      res = false;
+    } else {
+      setProductImagesValidationError(false);
+    }
+
+    return res;
+  };
+
+  const handleSubmit = async () => {
     console.log("Creating product:", product);
-    // TODO: Replace with actual API call
+
+    if (productValidation()) {
+      const { data, error } = await supabase
+        .from("products")
+        .insert([
+          {
+            name: product.name,
+            slug: slug,
+            description: product.description,
+            price: product.price,
+            image_url: product.image_urls,
+            collection_id: product.collection_id,
+            is_featured: product.is_featured,
+            stock: product.stock,
+            discount_percentage: product.discount_percentage,
+            sales_count: 0,
+            is_new_arrival: product.is_new_arrival,
+            is_active: product.is_active,
+            image_name: product.image_name,
+          },
+        ])
+        .select();
+      if (error) {
+        console.error("Error creating product:", error);
+        alert("Error creating product. Please try again.");
+        return;
+      }
+      console.log("Product created successfully:", data);
+      if (data && data.length > 0) {
+        const productId = data[0].id;
+        const imagesToInsert = productImages.map((img, index) => ({
+          product_id: productId,
+          image_url: img.image_url,
+          image_name: img.image_name,
+          display_order: index + 1,
+        }));
+        const { data: imagesData, error: imagesError } = await supabase
+          .from("product_images")
+          .insert(imagesToInsert);
+        if (imagesError) {
+          console.error("Error adding product images:", imagesError);
+          alert("Error adding product images. Please try again.");
+          return;
+        }
+        console.log("Product images added successfully:", imagesData);
+        router.push("admin/dashboard/Products");
+      }
+    }
   };
 
   return (
@@ -272,6 +401,11 @@ export default function CreateProductPage() {
                   <Plus className="w-4 h-4 mr-1" /> Add Thumbnail Image
                 </Button>
               )}
+              {ThumbnailImageValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please add a thumbnail image.
+                </p>
+              )}
             </div>
             {/* Product Image Section */}
             <div className="mt-5">
@@ -282,6 +416,11 @@ export default function CreateProductPage() {
                 supabase={supabase}
                 setProductImages={setProductImages}
               />
+              {ProductImagesValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please add at least one product image.
+                </p>
+              )}
             </div>
           </div>
 
@@ -296,8 +435,12 @@ export default function CreateProductPage() {
                 value={product.name}
                 onChange={(e) => handleChange("name", e.target.value)}
               />
+              {nameValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  This email is invalid.
+                </p>
+              )}
             </div>
-
             <div>
               <label className="block text-sm text-gray-500 mb-1">Slug</label>
               <Input
@@ -321,6 +464,11 @@ export default function CreateProductPage() {
                   Slug already exists
                 </p>
               )}
+              {slugValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please provide a valid and unique slug.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -330,11 +478,17 @@ export default function CreateProductPage() {
                 </label>
                 <Input
                   type="number"
-                  value={product.price}
+                  value={product.price || ""}
+                  placeholder="Enter Price here"
                   onChange={(e) =>
                     handleChange("price", parseFloat(e.target.value) || 0)
                   }
                 />
+                {priceValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Please provide a valid price greater than 0.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">
@@ -342,7 +496,8 @@ export default function CreateProductPage() {
                 </label>
                 <Input
                   type="number"
-                  value={product.discount_percentage}
+                  placeholder="Enter discount if needed"
+                  value={product.discount_percentage || ""}
                   onChange={(e) =>
                     handleChange(
                       "discount_percentage",
@@ -357,11 +512,17 @@ export default function CreateProductPage() {
               <label className="block text-sm text-gray-500 mb-1">Stock</label>
               <Input
                 type="number"
-                value={product.stock}
+                value={product.stock || ""}
+                placeholder="Enter stock quantity (>0)"
                 onChange={(e) =>
                   handleChange("stock", parseInt(e.target.value) || 0)
                 }
               />
+              {stockValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please provide a valid stock quantity greater than 0.
+                </p>
+              )}
             </div>
 
             <div>
@@ -388,6 +549,11 @@ export default function CreateProductPage() {
                   Loading collections...
                 </p>
               )}
+              {collectionValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please select a collection.
+                </p>
+              )}
             </div>
 
             <div>
@@ -399,6 +565,11 @@ export default function CreateProductPage() {
                 value={product.description}
                 onChange={(e) => handleChange("description", e.target.value)}
               />
+              {descriptionValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please provide a product description.
+                </p>
+              )}
             </div>
 
             {/* Toggles */}
