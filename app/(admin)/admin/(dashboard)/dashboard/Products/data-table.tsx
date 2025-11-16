@@ -124,23 +124,11 @@ export default function DataTable() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Link href={`/admin/dashboard/Products/${row.id}`}>
+                      <Link href={`/admin/dashboard/Products/${row.id}`}>
+                        <DropdownMenuItem className="cursor-pointer">
                           View Product
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        Edit Product
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        {row.is_active ? "Deactivate" : "Activate"} Product
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        variant="destructive"
-                      >
-                        Delete Product
-                      </DropdownMenuItem>
+                        </DropdownMenuItem>
+                      </Link>
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>

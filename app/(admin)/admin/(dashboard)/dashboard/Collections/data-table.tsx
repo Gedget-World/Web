@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { MoreHorizontalIcon } from "lucide-react";
+import Link from "next/link";
 
 export default function DataTable() {
   const [data, setData] = useState<any[]>([]);
@@ -78,7 +79,14 @@ export default function DataTable() {
                     height={20}
                   />
                 </div>
-                <div className="mt-1">{row.name}</div>
+                <div className="mt-1">
+                  <Link
+                    href={`/admin/dashboard/Collections/${row.id}`}
+                    className="hover:text-blue-800 hover:underline"
+                  >
+                    {row.name}
+                  </Link>
+                </div>
               </TableCell>
               <TableCell>{row.slug}</TableCell>
               <TableCell>{row.description}</TableCell>
@@ -114,21 +122,11 @@ export default function DataTable() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
-                      <DropdownMenuItem className="cursor-pointer">
-                        View Collection
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        Edit Collection
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        {row.is_active ? "Deactivate" : "Activate"} Collection
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        variant="destructive"
-                      >
-                        Delete Collection
-                      </DropdownMenuItem>
+                      <Link href={`/admin/dashboard/Collections/${row.id}`}>
+                        <DropdownMenuItem className="cursor-pointer">
+                          View Collection
+                        </DropdownMenuItem>
+                      </Link>
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>

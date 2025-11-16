@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -215,6 +215,13 @@ export default function CreateProductPage() {
 
   const productValidation = () => {
     setNameValidationError(false);
+    setSlugValidationError(false);
+    setPriceValidationError(false);
+    setStockValidationError(false);
+    setCollectionValidationError(false);
+    setDescriptionValidationError(false);
+    setThumbnailImageValidationError(false);
+    setProductImagesValidationError(false);
     let res = true;
 
     if (product.name.trim() === "") {
@@ -392,7 +399,7 @@ export default function CreateProductPage() {
                 className="hidden"
                 onChange={handleFilesSelected}
               />
-              {product.image_urls.length === 0 && (
+              {product.image_urls === "" && (
                 <Button
                   className="mt-3 w-fit"
                   variant="outline"

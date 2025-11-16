@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Lock, Image as LucideImage } from "lucide-react";
+import { Lock, Image as LucideImage, TriangleAlertIcon } from "lucide-react";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
 import {
   Card,
@@ -14,6 +14,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Pencil, Check, X, Plus, Trash2 } from "lucide-react";
 import {
   Select,
@@ -384,6 +395,17 @@ export default function ProductDetailsPage({
     router.push("/admin/dashboard/Products");
   };
 
+  const _handleProductDelete = async () => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) {
+      console.error("Error deleting product:", error);
+      alert("There was an error deleting the product. Please try again.");
+      return;
+    }
+    alert("Product deleted successfully!");
+    router.push("/admin/dashboard/Products");
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {pageLoading ? (
@@ -397,6 +419,44 @@ export default function ProductDetailsPage({
             <CardHeader>
               <CardTitle className="text-2xl font-semibold flex items-center gap-4 justify-between">
                 <div>{product.name}</div>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant={"destructive"}
+                      className="cursor-pointer"
+                      size={"sm"}
+                    >
+                      <Trash2 size={16} />
+                      Delete Image
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader className="items-center">
+                      <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
+                        <TriangleAlertIcon className="text-destructive size-6" />
+                      </div>
+                      <AlertDialogTitle>
+                        Are you absolutely sure you want to delete{" "}
+                        {product.name}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-center">
+                        This action cannot be undone. This will permanently
+                        delete your product and remove your data from our
+                        servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={_handleProductDelete}
+                        className="bg-destructive dark:bg-destructive/60 hover:bg-destructive focus-visible:ring-destructive text-white"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </CardTitle>
               <CardDescription>
                 {`Manage and edit the details of "${product.slug}"`}
