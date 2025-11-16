@@ -13,10 +13,14 @@ import { Button } from "@/components/ui/button";
 
 import { ButtonGroup } from "@/components/ui/button-group";
 
-export default function ProductImages({ supabase, setProductImages }: any) {
+export default function ProductImages({
+  supabase,
+  setProductImages,
+  productImages,
+}: any) {
   const [images, setImages] = useState<
     { image_url: string; image_name: string }[]
-  >([]);
+  >(productImages || []);
 
   // Update parent component whenever images state changes
   useEffect(() => {

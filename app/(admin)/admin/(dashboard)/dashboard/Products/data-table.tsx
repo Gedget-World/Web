@@ -82,7 +82,7 @@ export default function DataTable() {
                 </div>
                 <div className="mt-1">
                   <Link
-                    href={`/admin/dashboard/Products/view`}
+                    href={`/admin/dashboard/Products/${row.id}`}
                     className="hover:text-blue-800 hover:underline"
                   >
                     {row.name}
@@ -125,7 +125,7 @@ export default function DataTable() {
                   <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="cursor-pointer">
-                        <Link href={`/admin/dashboard/Products/view`}>
+                        <Link href={`/admin/dashboard/Products/${row.id}`}>
                           View Product
                         </Link>
                       </DropdownMenuItem>

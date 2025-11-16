@@ -415,6 +415,7 @@ export default function CreateProductPage() {
               <MultipleImagesHandle
                 supabase={supabase}
                 setProductImages={setProductImages}
+                productImages={[]}
               />
               {ProductImagesValidationError && (
                 <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
