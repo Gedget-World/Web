@@ -1,136 +1,185 @@
-"use client"
+"use client";
 
-import { useState, useMemo, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { ProductCard } from "@/components/product-card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, SlidersHorizontal, X } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ProductCard } from "@/components/product-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Product {
-  id: string
-  name: string
-  slug: string
-  description: string
-  price: number
-  image_url: string
-  stock: number
-  average_rating: number
-  review_count: number
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  image_url: string;
+  stock: number;
+  average_rating: number;
+  review_count: number;
 }
 
 interface Collection {
-  id: string
-  name: string
-  slug: string
-  description: string
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
 }
 
 interface CollectionDetailClientProps {
-  collection: Collection
-  products: Product[]
+  collection: Collection;
+  products: Product[];
 }
 
-const ITEMS_PER_PAGE = 12
+const ITEMS_PER_PAGE = 12;
 
-export function CollectionDetailClient({ collection, products }: CollectionDetailClientProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+export function CollectionDetailClient({
+  collection,
+  products,
+}: CollectionDetailClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const maxPrice = Math.max(...products.map((p) => p.price), 1000)
+  const maxPrice = Math.max(...products.map((p) => p.price), 1000);
 
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || ""
+  );
   const [priceRange, setPriceRange] = useState([
     Number(searchParams.get("minPrice")) || 0,
     Number(searchParams.get("maxPrice")) || maxPrice,
-  ])
-  const [minRating, setMinRating] = useState(Number(searchParams.get("rating")) || 0)
-  const [inStockOnly, setInStockOnly] = useState(searchParams.get("inStock") === "true")
-  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "newest")
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1)
+  ]);
+  const [minRating, setMinRating] = useState(
+    Number(searchParams.get("rating")) || 0
+  );
+  const [inStockOnly, setInStockOnly] = useState(
+    searchParams.get("inStock") === "true"
+  );
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "newest");
+  const [currentPage, setCurrentPage] = useState(
+    Number(searchParams.get("page")) || 1
+  );
 
   useEffect(() => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set("search", searchQuery)
-    if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString())
-    if (priceRange[1] < maxPrice) params.set("maxPrice", priceRange[1].toString())
-    if (minRating > 0) params.set("rating", minRating.toString())
-    if (inStockOnly) params.set("inStock", "true")
-    if (sortBy !== "newest") params.set("sort", sortBy)
-    if (currentPage > 1) params.set("page", currentPage.toString())
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("search", searchQuery);
+    if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString());
+    if (priceRange[1] < maxPrice)
+      params.set("maxPrice", priceRange[1].toString());
+    if (minRating > 0) params.set("rating", minRating.toString());
+    if (inStockOnly) params.set("inStock", "true");
+    if (sortBy !== "newest") params.set("sort", sortBy);
+    if (currentPage > 1) params.set("page", currentPage.toString());
 
-    const queryString = params.toString()
-    const newUrl = queryString ? `/collections/${collection.slug}?${queryString}` : `/collections/${collection.slug}`
+    const queryString = params.toString();
+    const newUrl = queryString
+      ? `/collections/${collection.slug}?${queryString}`
+      : `/collections/${collection.slug}`;
 
-    router.push(newUrl, { scroll: false })
-  }, [searchQuery, priceRange, minRating, inStockOnly, sortBy, currentPage, router, collection.slug, maxPrice])
+    router.push(newUrl, { scroll: false });
+  }, [
+    searchQuery,
+    priceRange,
+    minRating,
+    inStockOnly,
+    sortBy,
+    currentPage,
+    router,
+    collection.slug,
+    maxPrice,
+  ]);
 
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...products]
+    let filtered = [...products];
 
     // Search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (product) => product.name.toLowerCase().includes(query) || product.description.toLowerCase().includes(query),
-      )
+        (product) =>
+          product.name.toLowerCase().includes(query) ||
+          product.description.toLowerCase().includes(query)
+      );
     }
 
     // Price filter
-    filtered = filtered.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1])
+    filtered = filtered.filter(
+      (product) =>
+        product.price >= priceRange[0] && product.price <= priceRange[1]
+    );
 
     // Rating filter
     if (minRating > 0) {
-      filtered = filtered.filter((product) => product.average_rating >= minRating)
+      filtered = filtered.filter(
+        (product) => product.average_rating >= minRating
+      );
     }
 
     // Stock filter
     if (inStockOnly) {
-      filtered = filtered.filter((product) => product.stock > 0)
+      filtered = filtered.filter((product) => product.stock > 0);
     }
 
     // Sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "price-asc":
-          return a.price - b.price
+          return a.price - b.price;
         case "price-desc":
-          return b.price - a.price
+          return b.price - a.price;
         case "rating":
-          return b.average_rating - a.average_rating
+          return b.average_rating - a.average_rating;
         case "name-asc":
-          return a.name.localeCompare(b.name)
+          return a.name.localeCompare(b.name);
         case "newest":
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
-    return filtered
-  }, [products, searchQuery, priceRange, minRating, inStockOnly, sortBy])
+    return filtered;
+  }, [products, searchQuery, priceRange, minRating, inStockOnly, sortBy]);
 
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(
+    filteredAndSortedProducts.length / ITEMS_PER_PAGE
+  );
 
   const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredAndSortedProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE)
-  }, [filteredAndSortedProducts, currentPage])
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedProducts.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE
+    );
+  }, [filteredAndSortedProducts, currentPage]);
 
   const handleFilterChange = () => {
-    setCurrentPage(1)
-  }
+    setCurrentPage(1);
+  };
 
   const activeFiltersCount =
     (searchQuery ? 1 : 0) +
     (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
-    (inStockOnly ? 1 : 0)
+    (inStockOnly ? 1 : 0);
 
   const FiltersContent = () => (
     <div className="space-y-6">
@@ -141,8 +190,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
           <Slider
             value={priceRange}
             onValueChange={(value) => {
-              setPriceRange(value)
-              handleFilterChange()
+              setPriceRange(value);
+              handleFilterChange();
             }}
             max={maxPrice}
             step={10}
@@ -161,8 +210,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
         <Select
           value={minRating.toString()}
           onValueChange={(value) => {
-            setMinRating(Number(value))
-            handleFilterChange()
+            setMinRating(Number(value));
+            handleFilterChange();
           }}
         >
           <SelectTrigger>
@@ -184,8 +233,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
           id="inStock"
           checked={inStockOnly}
           onCheckedChange={(checked) => {
-            setInStockOnly(checked as boolean)
-            handleFilterChange()
+            setInStockOnly(checked as boolean);
+            handleFilterChange();
           }}
         />
         <Label htmlFor="inStock" className="text-sm cursor-pointer">
@@ -193,12 +242,14 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
         </Label>
       </div>
     </div>
-  )
+  );
 
   return (
     <>
       <div className="mb-12">
-        <h1 className="text-4xl font-bold text-slate-900 mb-4">{collection.name}</h1>
+        <h1 className="text-4xl font-bold text-slate-900 mb-4">
+          {collection.name}
+        </h1>
         <p className="text-lg text-slate-600">{collection.description}</p>
       </div>
 
@@ -212,8 +263,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => {
-                setSearchQuery(e.target.value)
-                handleFilterChange()
+                setSearchQuery(e.target.value);
+                handleFilterChange();
               }}
               className="pl-10"
             />
@@ -222,7 +273,10 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
           {/* Mobile Filters */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" className="md:hidden relative bg-transparent">
+              <Button
+                variant="outline"
+                className="md:hidden relative bg-transparent"
+              >
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
                 Filters
                 {activeFiltersCount > 0 && (
@@ -244,7 +298,10 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
           </Sheet>
 
           {/* Desktop Filters Button */}
-          <Button variant="outline" className="hidden md:flex relative bg-transparent">
+          <Button
+            variant="outline"
+            className="hidden md:flex relative bg-transparent"
+          >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Filters
             {activeFiltersCount > 0 && (
@@ -277,14 +334,16 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
         {/* Active Filters */}
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Active Filters:</span>
+            <span className="text-sm font-medium text-slate-700">
+              Active Filters:
+            </span>
             {searchQuery && (
               <Badge variant="secondary" className="gap-1 pl-3 pr-1 py-1">
                 Search: {searchQuery}
                 <button
                   onClick={() => {
-                    setSearchQuery("")
-                    handleFilterChange()
+                    setSearchQuery("");
+                    handleFilterChange();
                   }}
                   className="ml-1 hover:bg-slate-300 rounded-full p-1 transition-colors"
                   aria-label="Remove search filter"
@@ -298,8 +357,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
                 Price: ${priceRange[0]} - ${priceRange[1]}
                 <button
                   onClick={() => {
-                    setPriceRange([0, maxPrice])
-                    handleFilterChange()
+                    setPriceRange([0, maxPrice]);
+                    handleFilterChange();
                   }}
                   className="ml-1 hover:bg-slate-300 rounded-full p-1 transition-colors"
                   aria-label="Remove price filter"
@@ -313,8 +372,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
                 Rating: {minRating}+ Stars
                 <button
                   onClick={() => {
-                    setMinRating(0)
-                    handleFilterChange()
+                    setMinRating(0);
+                    handleFilterChange();
                   }}
                   className="ml-1 hover:bg-slate-300 rounded-full p-1 transition-colors"
                   aria-label="Remove rating filter"
@@ -328,8 +387,8 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
                 In Stock Only
                 <button
                   onClick={() => {
-                    setInStockOnly(false)
-                    handleFilterChange()
+                    setInStockOnly(false);
+                    handleFilterChange();
                   }}
                   className="ml-1 hover:bg-slate-300 rounded-full p-1 transition-colors"
                   aria-label="Remove stock filter"
@@ -342,12 +401,12 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
               variant="ghost"
               size="sm"
               onClick={() => {
-                setSearchQuery("")
-                setPriceRange([0, maxPrice])
-                setMinRating(0)
-                setInStockOnly(false)
-                setSortBy("newest")
-                handleFilterChange()
+                setSearchQuery("");
+                setPriceRange([0, maxPrice]);
+                setMinRating(0);
+                setInStockOnly(false);
+                setSortBy("newest");
+                handleFilterChange();
               }}
               className="h-7 text-xs"
             >
@@ -358,12 +417,15 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
       </div>
 
       <div className="mb-4 text-sm text-slate-600">
-        Showing {paginatedProducts.length} of {filteredAndSortedProducts.length} products
+        Showing {paginatedProducts.length} of {filteredAndSortedProducts.length}{" "}
+        products
       </div>
 
       {paginatedProducts.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-slate-600">No products found matching your criteria.</p>
+          <p className="text-slate-600">
+            No products found matching your criteria.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -384,7 +446,11 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
           </Button>
           <div className="flex gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
                 return (
                   <Button
                     key={page}
@@ -394,15 +460,15 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
                   >
                     {page}
                   </Button>
-                )
+                );
               } else if (page === currentPage - 2 || page === currentPage + 2) {
                 return (
                   <span key={page} className="px-2">
                     ...
                   </span>
-                )
+                );
               }
-              return null
+              return null;
             })}
           </div>
           <Button
@@ -415,5 +481,5 @@ export function CollectionDetailClient({ collection, products }: CollectionDetai
         </div>
       )}
     </>
-  )
+  );
 }

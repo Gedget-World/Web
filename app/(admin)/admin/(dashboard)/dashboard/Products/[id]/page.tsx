@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/select";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 
@@ -47,7 +46,6 @@ export default function ProductDetailsPage({
   const supabase = createClient();
   const { id } = React.use(params);
   const router = useRouter();
-  8;
 
   const [editingField, setEditingField] = useState<string | null>(null);
 
