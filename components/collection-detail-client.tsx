@@ -34,6 +34,7 @@ interface Product {
   price: number;
   image_url: string;
   stock: number;
+  discount_percentage: number | null;
   average_rating: number;
   review_count: number;
 }
@@ -428,7 +429,7 @@ export function CollectionDetailClient({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {paginatedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

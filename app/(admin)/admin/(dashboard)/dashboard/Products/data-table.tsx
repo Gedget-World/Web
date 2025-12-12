@@ -72,7 +72,7 @@ export default function DataTable() {
           {data.map((row) => (
             <TableRow key={row.id}>
               <TableCell className="flex flex-row align-middle items-center">
-                <div className="mr-2 mt-1 rounded-sm overflow-hidden">
+                <div className="mr-2 mt-1 aspect-square rounded-sm overflow-hidden">
                   <Image
                     src={row.image_url}
                     alt={row.name}

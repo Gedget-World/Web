@@ -332,7 +332,7 @@ export default function CreateProductPage() {
           return;
         }
         console.log("Product images added successfully:", imagesData);
-        router.push("admin/dashboard/Products");
+        router.push("/admin/dashboard/Products");
       }
     }
   };
