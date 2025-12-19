@@ -4,8 +4,15 @@ import Image from "next/image";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { Bookmark, Star } from "lucide-react";
 import { ProductReviews } from "@/components/product-reviews";
+import ProductImagesSection from "@/components/product-images-section";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default async function ProductDetailPage({
   params,
@@ -42,58 +49,73 @@ export default async function ProductDetailPage({
 
   return (
     <main className="min-h-screen py-12 px-4 md:px-8 max-w-7xl mx-auto">
-      <Button variant="ghost" asChild className="mb-8">
-        <Link href="/products">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Products
-        </Link>
-      </Button>
-
       <div className="grid md:grid-cols-2 gap-12">
-        <div className="relative aspect-3/4 bg-slate-100 rounded-lg overflow-hidden">
-          <Image
-            src={product.image_url || "/placeholder.svg?height=800&width=600"}
-            alt={product.name}
-            fill
-            className="object-cover"
-            priority
-          />
+        {/* Images */}
+        <div className="relative">
+          <ProductImagesSection productId={product.id} />
         </div>
 
+        {/* Product Info */}
         <div className="flex flex-col">
-          <div className="mb-6">
+          <div className="mb-6 w-full">
             {product.collections && (
               <Link
                 href={`/collections/${product.collections.slug}`}
-                className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                className="text-sm text-slate-600 flex items-center w-fit rounded hover:underline hover:text-blue-600 transition-colors"
               >
+                <Bookmark className="mr-1" size={"16px"} />
                 {product.collections.name}
               </Link>
             )}
-            <h1 className="text-4xl font-bold text-slate-900 mt-2 mb-4">
+            <h1 className="text-xl font-bold text-slate-900 mt-2 mb-4">
               {product.name}
             </h1>
-            <p className="text-3xl font-bold text-slate-900">
-              ${product.price}
-            </p>
-          </div>
 
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-2">
-              Description
-            </h2>
-            <p className="text-slate-600 leading-relaxed">
-              {product.description}
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-slate-600">Availability:</span>
-              {product.stock > 0 ? (
-                <span className="text-green-600 font-medium">
-                  In Stock ({product.stock} available)
+            {/* Average Reviews - Only show if there are reviews */}
+            {reviewCount > 0 && (
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-4 w-4 ${
+                        star <= Math.round(averageRating)
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-slate-600">
+                  {averageRating.toFixed(1)} ({reviewCount})
                 </span>
+              </div>
+            )}
+
+            <div>
+              <span className="text-2xl font-bold text-slate-900">
+                &#8377;{product.price}{" "}
+                {product.discount_percentage && (
+                  <span className="line-through text-slate-500 font-medium text-sm">
+                    &#8377;
+                    {Math.round(
+                      product.price / (1 - product.discount_percentage / 100)
+                    )}
+                  </span>
+                )}
+              </span>
+              <div className="text-[12px] bg-green-600 text-white inline-block py-0 px-2 border border-green-600 rounded-md ml-1">
+                {product.discount_percentage
+                  ? `${product.discount_percentage}%`
+                  : ""}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-sm">
+              {product.stock > 0 ? (
+                <span className="text-green-600 font-medium">In Stock</span>
               ) : (
                 <span className="text-red-600 font-medium">Out of Stock</span>
               )}
@@ -109,6 +131,59 @@ export default async function ProductDetailPage({
             }}
             disabled={product.stock <= 0}
           />
+
+          {/* Details Accordion */}
+          <div className="mt-8">
+            <Accordion type="single" collapsible>
+              <AccordionItem value="description">
+                <AccordionTrigger>Description</AccordionTrigger>
+                <AccordionContent>
+                  {product.description || "No description available"}
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="shipping">
+                <AccordionTrigger>Shipping & Returns</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2 text-sm">
+                    <p>
+                      <span className="font-medium">Delivery:</span> Free
+                      shipping on orders over &#8377;500. Standard delivery
+                      takes 5-7 business days.
+                    </p>
+                    <p>
+                      <span className="font-medium">Returns:</span> 30-day
+                      return policy. Items must be in original condition.
+                    </p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="secure-checkout">
+                <AccordionTrigger>Secure Checkout</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2 text-sm">
+                    <p>
+                      <span className="font-medium">Payment Security:</span> All
+                      transactions are secured with SSL encryption. Your payment
+                      information is protected and never stored on our servers.
+                    </p>
+                    <p>
+                      <span className="font-medium">Payment Methods:</span> We
+                      accept all major credit cards, debit cards, UPI, and net
+                      banking options.
+                    </p>
+                    <p>
+                      <span className="font-medium">Buyer Protection:</span>{" "}
+                      Your purchase is protected by our buyer protection
+                      guarantee. If you don't receive your order, we'll issue a
+                      full refund.
+                    </p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
         </div>
       </div>
 

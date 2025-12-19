@@ -32,7 +32,7 @@ export default function CreateProductPage() {
     name: "",
     description: "",
     price: null as number | null,
-    discount_percentage: null as number | null,
+    discount_percentage: 0 as number,
     stock: null as number | null,
     image_urls: "" as string,
     image_name: "" as string,
@@ -515,6 +515,34 @@ export default function CreateProductPage() {
                 />
               </div>
             </div>
+
+            {product.price ? (
+              <div className="flex items-center align-middle">
+                <span className="text-sm font-regular text-slate-900">
+                  &#8377;{product.price}{" "}
+                  {product.discount_percentage &&
+                    product.discount_percentage > 0 && (
+                      <span className="line-through text-slate-500 text-xs">
+                        &#8377;
+                        {Math.round(
+                          product.price /
+                            (1 - product.discount_percentage / 100)
+                        )}
+                      </span>
+                    )}
+                </span>
+                {product.discount_percentage &&
+                  product.discount_percentage > 0 && (
+                    <div className="text-sm bg-green-600 text-white inline-block py-0 px-1 border border-green-600 rounded-md ml-1">
+                      {`${product.discount_percentage} %`}
+                    </div>
+                  )}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400 italic">
+                No price entered
+              </div>
+            )}
 
             <div>
               <label className="block text-sm text-gray-500 mb-1">Stock</label>

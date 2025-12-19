@@ -28,6 +28,7 @@ export default function DataTable() {
   const [data, setData] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const limit = 10;
   const supabase = createClient();
 
@@ -35,12 +36,15 @@ export default function DataTable() {
     const fetchData = async () => {
       let query = supabase
         .from("products")
-        .select("*")
+        .select("*", { count: "exact" })
         .ilike("name", `%${search}%`)
         .range(page * limit, page * limit + limit - 1);
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       console.log("Fetched data:", data);
-      if (!error && data) setData(data);
+      if (!error && data) {
+        setData(data);
+        setTotalCount(count || 0);
+      }
     };
     fetchData();
   }, [supabase, search, page]);
@@ -61,7 +65,7 @@ export default function DataTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
+            {/* <TableHead>Description</TableHead> */}
             <TableHead>Price</TableHead>
             <TableHead>Stock</TableHead>
             <TableHead>Active</TableHead>
@@ -71,7 +75,7 @@ export default function DataTable() {
         <TableBody>
           {data.map((row) => (
             <TableRow key={row.id}>
-              <TableCell className="flex flex-row align-middle items-center">
+              <TableCell className="flex flex-row align-middle items-center min-w-0">
                 <div className="mr-2 mt-1 aspect-square rounded-sm overflow-hidden">
                   <Image
                     src={row.image_url}
@@ -80,18 +84,22 @@ export default function DataTable() {
                     height={20}
                   />
                 </div>
-                <div className="mt-1">
+                <div className="mt-1 min-w-0 max-w-xs">
                   <Link
                     href={`/admin/dashboard/Products/${row.id}`}
-                    className="hover:text-blue-800 hover:underline"
+                    className="hover:text-blue-800 hover:underline truncate block"
                   >
                     {row.name}
                   </Link>
                 </div>
               </TableCell>
-              <TableCell>{row.description}</TableCell>
+              {/* <TableCell>{row.description}</TableCell> */}
               <TableCell>&#8377;{row.price}</TableCell>
-              <TableCell>{row.stock}</TableCell>
+              <TableCell
+                className={row.stock < 5 ? "text-red-600 font-semibold" : ""}
+              >
+                {row.stock}
+              </TableCell>
               <TableCell>
                 {row.is_active ? (
                   <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
@@ -155,7 +163,11 @@ export default function DataTable() {
         >
           Previous
         </Button>
-        <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
+        <Button
+          variant="outline"
+          disabled={data.length < limit}
+          onClick={() => setPage((p) => p + 1)}
+        >
           Next
         </Button>
       </div>
