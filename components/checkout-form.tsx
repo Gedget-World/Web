@@ -87,7 +87,7 @@ export function CheckoutForm({ user }: { user: User }) {
           1
         </div>
         <div
-          className={`h-1 w-[50px] rounded-2xl ${
+          className={`h-0.5 w-[50px] rounded-2xl ${
             tab === "contact" ? "bg-gray-100" : "bg-black"
           }`}
         ></div>
@@ -103,7 +103,7 @@ export function CheckoutForm({ user }: { user: User }) {
           2
         </div>
         <div
-          className={`h-1 w-[50px] rounded-2xl ${
+          className={`h-0.5 w-[50px] rounded-2xl ${
             tab === "payment" ? "bg-black" : "bg-gray-100"
           }`}
         ></div>
@@ -120,7 +120,7 @@ export function CheckoutForm({ user }: { user: User }) {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           {tab === "contact" && (
-            <Card>
+            <Card className="shadow-none">
               <CardHeader>
                 <CardTitle>
                   <div className="flex items-center">
@@ -155,7 +155,7 @@ export function CheckoutForm({ user }: { user: User }) {
           )}
 
           {tab === "shipping" && (
-            <Card>
+            <Card className="shadow-none">
               <CardHeader>
                 <CardTitle>
                   <div className="flex items-center">
@@ -254,7 +254,22 @@ export function CheckoutForm({ user }: { user: User }) {
                   >
                     <ArrowLeft /> Back
                   </Button>
-                  <Button onClick={() => setTab("payment")} className="mt-4">
+                  <Button
+                    onClick={() => {
+                      if (
+                        !shippingInfo.fullName ||
+                        !shippingInfo.address ||
+                        !shippingInfo.city ||
+                        !shippingInfo.state ||
+                        !shippingInfo.zipCode
+                      ) {
+                        alert("Please fill in all required shipping fields.");
+                        return;
+                      }
+                      setTab("payment");
+                    }}
+                    className="mt-4"
+                  >
                     Continue
                   </Button>
                 </div>
@@ -263,7 +278,7 @@ export function CheckoutForm({ user }: { user: User }) {
           )}
 
           {tab === "payment" && (
-            <Card>
+            <Card className="shadow-none">
               <CardHeader>
                 <CardTitle>
                   <div className="flex items-center">
@@ -306,7 +321,7 @@ export function CheckoutForm({ user }: { user: User }) {
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="sticky top-20 py-2 px-0">
+          <Card className="sticky top-20 py-2 px-0 shadow-none">
             <CardHeader className="px-4 mt-3 py-0">
               <CardTitle className="text-sm">Order Summary</CardTitle>
             </CardHeader>
