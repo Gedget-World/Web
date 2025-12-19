@@ -6,7 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CouponInput } from "@/components/coupon-input";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  ShoppingCart,
+} from "lucide-react";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, appliedCoupon } = useCart();
@@ -49,16 +56,16 @@ export default function CartPage() {
   }
 
   return (
-    <main className="min-h-screen py-12 px-4 md:px-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-bold text-slate-900 mb-8">Shopping Cart</h1>
+    <main className="min-h-screen py-5 px-4 md:px-8 max-w-7xl mx-auto">
+      <h1 className="text-xl font-bold text-slate-900 mb-5">Shopping Cart</h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="p-4">
+            <Card key={item.id} className="border shadow-none p-3">
+              <CardContent className="p-2">
                 <div className="flex gap-4">
-                  <div className="relative w-24 h-24 shrink-0 bg-slate-100 rounded-md overflow-hidden">
+                  <div className="relative w-22 h-22 shrink-0 bg-slate-100 rounded-md overflow-hidden">
                     <Image
                       src={
                         item.image_url ||
@@ -72,13 +79,15 @@ export default function CartPage() {
 
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-semibold text-lg text-slate-900">
+                      <h3 className="font-semibold text-md w-[90%] text-black line-clamp-1">
                         {item.name}
                       </h3>
-                      <p className="text-slate-600">${item.price.toFixed(2)}</p>
+                      <p className="text-slate-700 font-semibold text-sm mt-2">
+                        &#8377;{item.price.toFixed(2)}
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 mt-2">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -104,22 +113,18 @@ export default function CartPage() {
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeItem(item.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-slate-900">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </p>
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeItem(item.id)}
+                      className="text-red-600 cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -129,41 +134,43 @@ export default function CartPage() {
 
         <div className="lg:col-span-1">
           <Card className="sticky top-20">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">
+            <CardContent>
+              <h2 className="text-md font-semibold text-black mb-4">
                 Order Summary
               </h2>
 
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-700 text-sm">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>&#8377;{subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-700 text-sm">
                   <span>Shipping</span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>&#8377;{shipping.toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
+                    <span>-&#8377;{discount.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="border-t pt-3 flex justify-between text-lg font-bold text-slate-900">
+                <div className="border-t pt-3 flex justify-between text-md font-bold text-black">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>&#8377;{total.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-slate-900 mb-2">
+                <h3 className="text-sm font-medium text-black mb-2">
                   Have a coupon?
                 </h3>
                 <CouponInput subtotal={subtotal} />
               </div>
 
               <Button asChild size="lg" className="w-full mb-3">
-                <Link href="/checkout">Proceed to Checkout</Link>
+                <Link href="/checkout">
+                  <ShoppingBag /> Proceed to Checkout <ArrowRight />
+                </Link>
               </Button>
 
               <Button
@@ -172,7 +179,11 @@ export default function CartPage() {
                 size="lg"
                 className="w-full bg-transparent"
               >
-                <Link href="/products">Continue Shopping</Link>
+                <Link href="/products">
+                  {" "}
+                  <ShoppingCart />
+                  Continue Shopping
+                </Link>
               </Button>
             </CardContent>
           </Card>

@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { ArrowLeft, CreditCard, Package, Truck } from "lucide-react";
 
 export function CheckoutForm({ user }: { user: User }) {
   const { items, clearCart } = useCart();
@@ -25,6 +26,20 @@ export function CheckoutForm({ user }: { user: User }) {
   );
   const shipping = 10;
   const total = subtotal + shipping;
+
+  const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
+  const [shippingInfo, setShippingInfo] = useState({
+    fullName: "",
+    address: "",
+    address1: "",
+    city: "",
+    state: "",
+    zipCode: "",
+  });
+
+  useEffect(() => {
+    console.log("Shipping Info:", shippingInfo);
+  }, [shippingInfo]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,89 +77,244 @@ export function CheckoutForm({ user }: { user: User }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div className="flex flex-col space-y-4">
+      <div className="flex justify-center items-center gap-3 mb-6">
+        <div
+          className={`rounded-full font-semibold text-xs w-8 h-8 flex items-center justify-center ${
+            tab === "contact" ? "bg-black text-white" : "bg-black text-white"
+          }`}
+        >
+          1
+        </div>
+        <div
+          className={`h-1 w-[50px] rounded-2xl ${
+            tab === "contact" ? "bg-gray-100" : "bg-black"
+          }`}
+        ></div>
+        <div
+          className={`rounded-full font-semibold text-xs w-8 h-8 flex items-center justify-center ${
+            tab === "shipping"
+              ? "bg-black text-white"
+              : tab === "payment"
+              ? "bg-black text-white"
+              : "bg-gray-100 text-black-700"
+          }`}
+        >
+          2
+        </div>
+        <div
+          className={`h-1 w-[50px] rounded-2xl ${
+            tab === "payment" ? "bg-black" : "bg-gray-100"
+          }`}
+        ></div>
+        <div
+          className={`rounded-full font-semibold text-xs w-8 h-8 flex items-center justify-center ${
+            tab === "payment"
+              ? "bg-black text-white"
+              : "bg-gray-100 text-black-700"
+          }`}
+        >
+          3
+        </div>
+      </div>
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue={user.email}
-                  required
-                />
-              </div>
-            </CardContent>
-          </Card>
+          {tab === "contact" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex items-center">
+                    <Package />{" "}
+                    <span className="ml-2">Contact Information</span>
+                  </div>
+                </CardTitle>
+                <p className="text-slate-600 text-sm">
+                  We'll use this to send you order updates and receipts.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    defaultValue={user.email}
+                    required
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <Button disabled variant={"outline"} className="mt-4">
+                    <ArrowLeft /> Back
+                  </Button>
+                  <Button onClick={() => setTab("shipping")} className="mt-4">
+                    Continue
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Shipping Address</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input id="fullName" required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="address">Address</Label>
-                <Textarea id="address" required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          {tab === "shipping" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex items-center">
+                    <Truck /> <span className="ml-2">Shipping Information</span>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" required />
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    required
+                    onChange={(e) =>
+                      setShippingInfo({
+                        ...shippingInfo,
+                        fullName: e.target.value,
+                      })
+                    }
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="zipCode">ZIP Code</Label>
-                  <Input id="zipCode" required />
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea
+                    id="address"
+                    required
+                    onChange={(e) =>
+                      setShippingInfo({
+                        ...shippingInfo,
+                        address: e.target.value,
+                      })
+                    }
+                  />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="address1">Apartment, suite, etc.</Label>
+                    <Input
+                      id="address1"
+                      required
+                      onChange={(e) =>
+                        setShippingInfo({
+                          ...shippingInfo,
+                          address1: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      required
+                      onChange={(e) =>
+                        setShippingInfo({
+                          ...shippingInfo,
+                          city: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      required
+                      onChange={(e) =>
+                        setShippingInfo({
+                          ...shippingInfo,
+                          state: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="zipCode">ZIP Code</Label>
+                    <Input
+                      id="zipCode"
+                      required
+                      onChange={(e) =>
+                        setShippingInfo({
+                          ...shippingInfo,
+                          zipCode: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <Button
+                    variant={"outline"}
+                    onClick={() => setTab("contact")}
+                    className="mt-4"
+                  >
+                    <ArrowLeft /> Back
+                  </Button>
+                  <Button onClick={() => setTab("payment")} className="mt-4">
+                    Continue
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="cardNumber">Card Number</Label>
-                <Input
-                  id="cardNumber"
-                  placeholder="1234 5678 9012 3456"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          {tab === "payment" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex items-center">
+                    <CreditCard />{" "}
+                    <span className="ml-2">Payment Information</span>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="expiry">Expiry Date</Label>
-                  <Input id="expiry" placeholder="MM/YY" required />
+                  <Label htmlFor="cardNumber">Card Number</Label>
+                  <Input
+                    id="cardNumber"
+                    placeholder="1234 5678 9012 3456"
+                    required
+                  />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input id="cvv" placeholder="123" required />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="expiry">Expiry Date</Label>
+                    <Input id="expiry" placeholder="MM/YY" required />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="cvv">CVV</Label>
+                    <Input id="cvv" placeholder="123" required />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex justify-between">
+                  <Button
+                    variant={"outline"}
+                    onClick={() => setTab("shipping")}
+                    className="mt-4"
+                  >
+                    <ArrowLeft /> Back
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="sticky top-20">
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+          <Card className="sticky top-20 py-2 px-0">
+            <CardHeader className="px-4 mt-3 py-0">
+              <CardTitle className="text-sm">Order Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 py-0 pb-4">
               <div className="space-y-3">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-3">
-                    <div className="relative w-16 h-16 bg-slate-100 rounded overflow-hidden">
+                    <div className="relative w-10 h-10 bg-slate-100 rounded overflow-hidden">
                       <Image
                         src={
                           item.image_url ||
@@ -156,15 +326,15 @@ export function CheckoutForm({ user }: { user: User }) {
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-xs font-medium text-slate-900 line-clamp-1">
                         {item.name}
                       </p>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-xs mt-1 text-slate-700">
                         Qty: {item.quantity}
                       </p>
                     </div>
                     <p className="text-sm font-medium text-slate-900">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      &#8377;{(item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 ))}
@@ -173,32 +343,32 @@ export function CheckoutForm({ user }: { user: User }) {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>&#8377;{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Shipping</span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>&#8377;{shipping.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold text-slate-900 pt-2 border-t">
+                <div className="flex justify-between text-md font-bold text-slate-900 pt-2 border-t">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>&#8377;{total.toFixed(2)}</span>
                 </div>
               </div>
 
               {error && <p className="text-sm text-red-500">{error}</p>}
 
-              <Button
+              {/* <Button
                 type="submit"
                 size="lg"
                 className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? "Processing..." : "Place Order"}
-              </Button>
+              </Button> */}
             </CardContent>
           </Card>
         </div>
       </div>
-    </form>
+    </div>
   );
 }
