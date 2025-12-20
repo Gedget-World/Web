@@ -138,7 +138,11 @@ export default async function ProductDetailPage({
               <AccordionItem value="description">
                 <AccordionTrigger>Description</AccordionTrigger>
                 <AccordionContent>
-                  {product.description || "No description available"}
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: product.description || "No description available",
+                    }}
+                  />
                 </AccordionContent>
               </AccordionItem>
 

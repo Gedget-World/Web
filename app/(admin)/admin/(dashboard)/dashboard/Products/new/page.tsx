@@ -25,6 +25,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
 import { useRouter } from "next/navigation";
+import RichTextInput from "@/components/rich-text-input";
 
 export default function CreateProductPage() {
   const supabase = createClient();
@@ -596,10 +597,9 @@ export default function CreateProductPage() {
               <label className="block text-sm text-gray-500 mb-1">
                 Description
               </label>
-              <Textarea
-                placeholder="Describe your product..."
+              <RichTextInput
                 value={product.description}
-                onChange={(e) => handleChange("description", e.target.value)}
+                onChange={(content) => handleChange("description", content)}
               />
               {descriptionValidationError && (
                 <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">

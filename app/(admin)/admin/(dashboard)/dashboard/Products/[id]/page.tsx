@@ -37,6 +37,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
+import RichTextInput from "@/components/rich-text-input";
 
 export default function ProductDetailsPage({
   params,
@@ -327,11 +328,11 @@ export default function ProductDetailsPage({
     console.log("Submitting product data:", product);
     setHandleSubmitLoading(true);
 
-    if (!productValidation()) {
-      console.log("Product data is valid. Proceeding to save...");
-      setHandleSubmitLoading(false);
-      return;
-    }
+    // if (!productValidation()) {
+    //   console.log("Product data is valid. Proceeding to save...");
+    //   setHandleSubmitLoading(false);
+    //   return;
+    // }
 
     if (!deepEqual(InitialProductImages, productImages)) {
       console.log("Product images have changed.");
@@ -377,6 +378,7 @@ export default function ProductDetailsPage({
       image_url: product.image_urls,
     };
 
+    console.log("Updating product with payload:", product_payload);
     const { error } = await supabase
       .from("products")
       .update(product_payload)
@@ -739,10 +741,10 @@ export default function ProductDetailsPage({
                   {editingField === "description" ? (
                     <>
                       <div className="space-y-2">
-                        <Textarea
+                        <RichTextInput
                           value={product.description}
-                          onChange={(e) =>
-                            handleChange("description", e.target.value)
+                          onChange={(content) =>
+                            handleChange("description", content)
                           }
                         />
                         <div className="flex gap-2">
