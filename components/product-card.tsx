@@ -36,7 +36,7 @@ export function ProductCard({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 1000);
   };
   return (
-    <Card className="group overflow-hidden p-0 border-none">
+    <Card className="group overflow-hidden p-0 border-none shadow-none">
       <Link href={`/products/${product.slug}`}>
         <div className="relative aspect-square overflow-hidden bg-slate-100 rounded-xl">
           <Image
@@ -46,21 +46,19 @@ export function ProductCard({ product }: { product: Product }) {
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
           {product.stock <= 0 && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white font-semibold text-lg">
-                Out of Stock
-              </span>
+            <div className="absolute top-4 left-2 bg-black opacity-70 text-white font-semibold text-xs px-3 py-2 rounded-full">
+              Out of Stock
             </div>
           )}
         </div>
         <CardContent className="p-0">
-          <h3 className="font-medium px-3 mt-2 mb-2 text-md text-slate-900 line-clamp-2">
+          <h3 className="font-medium px-1 mt-2 mb-1 text-sm text-slate-900 line-clamp-2">
             {product.name}
           </h3>
           {product.average_rating !== undefined &&
             product.review_count !== undefined &&
             product.review_count > 0 && (
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 px-1">
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
@@ -78,28 +76,28 @@ export function ProductCard({ product }: { product: Product }) {
                 </span>
               </div>
             )}
-          {/* <p className="text-slate-600 text-sm line-clamp-2">
-            {product.description}
-          </p> */}
         </CardContent>
-        <CardFooter className="p-3 pt-0 flex items-center justify-between">
+        <CardFooter className="p-1 pt-0 flex items-center justify-between">
           <div className="flex items-center align-middle">
             <span className="text-sm font-regular text-slate-900">
-              &#8377;{product.price}{" "}
-              {product.discount_percentage && (
-                <span className="line-through text-slate-500 text-xs">
-                  &#8377;
-                  {Math.round(
-                    product.price / (1 - product.discount_percentage / 100)
-                  )}
-                </span>
-              )}
+              &#8377;{Math.floor(product.price)}{" "}
+              {product.discount_percentage &&
+                product.discount_percentage > 0 && (
+                  <span className="line-through text-slate-500 text-xs">
+                    &#8377;
+                    {Math.round(
+                      product.price / (1 - product.discount_percentage / 100)
+                    )}
+                  </span>
+                )}
             </span>
-            <div className="text-[10px] bg-green-600 text-white inline-block py-0 px-1 border border-green-600 rounded-md ml-1">
-              {product.discount_percentage
-                ? `${product.discount_percentage} %`
-                : ""}
-            </div>
+            {product.discount_percentage && product.discount_percentage > 0 && (
+              <div className="text-[10px] bg-green-600 text-white inline-block py-0 px-1 border border-green-600 rounded-md ml-1">
+                {product.discount_percentage
+                  ? `${product.discount_percentage} %`
+                  : ""}
+              </div>
+            )}
           </div>
           <div>
             <Button
