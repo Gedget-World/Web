@@ -1,22 +1,49 @@
-import { createClient } from "@/lib/supabase/server"
-import { HeroSection } from "@/components/hero-section"
-import { FeaturedProducts } from "@/components/featured-products"
-import { CollectionsGrid } from "@/components/collections-grid"
+import { createClient } from "@/lib/supabase/server";
+import { HeroSection } from "@/components/hero-section";
+import { CollectionsGrid } from "@/components/collections-grid";
+import ProductsList from "@/components/Products-list";
 
 export default async function HomePage() {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   // Fetch featured products
-  const { data: featuredProducts } = await supabase.from("products").select("*").eq("is_featured", true).limit(6)
+  const { data: featuredProducts } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_featured", true)
+    .limit(5);
+
+  // Fetch arrival products
+  const { data: arrivalProducts } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(5);
 
   // Fetch collections
-  const { data: collections } = await supabase.from("collections").select("*").limit(4)
+  const { data: collections } = await supabase
+    .from("collections")
+    .select("*")
+    .limit(3);
 
   return (
     <main className="min-h-screen">
       <HeroSection />
-      <FeaturedProducts products={featuredProducts || []} />
-      <CollectionsGrid collections={collections || []} />
+      <ProductsList
+        products={featuredProducts || []}
+        heading={"Featured Products"}
+        exploreLink={"#"}
+      />
+      <CollectionsGrid
+        collections={collections || []}
+        heading={"Explore Collections"}
+        exploreLink={"#"}
+      />
+      <ProductsList
+        products={arrivalProducts || []}
+        heading={"New Arrivals"}
+        exploreLink={"#"}
+      />
     </main>
-  )
+  );
 }

@@ -13,22 +13,30 @@ type Collection = {
   products_count?: { count: number }[];
 };
 
+type CollectionsListProps = {
+  collections: Collection[];
+  heading: string;
+  exploreLink: string;
+};
+
 export function CollectionsGrid({
   collections,
-}: {
-  collections: Collection[];
-}) {
+  heading,
+  exploreLink,
+}: CollectionsListProps) {
   return (
-    <section className="py-16 px-4 md:px-8 max-w-7xl mx-auto bg-slate-50">
-      <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold text-slate-900 mb-4">
-          Shop by Collection
-        </h2>
-        <p className="text-lg text-slate-600">
-          Curated styles for every occasion
-        </p>
+    <section className="py-5 px-4 md:px-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center">
+        <h6 className="font-semibold text-2xl text-slate-900 mb-2">
+          {heading}
+        </h6>
+        <Button variant="outline" className="cursor-pointer" size="sm" asChild>
+          <a href={exploreLink}>
+            Explore <ArrowRight />
+          </a>
+        </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
         {collections.map((collection) => (
           <Link key={collection.id} href={`/collections/${collection.slug}`}>
             <Card className="group overflow-hidden hover:shadow-xl transition-shadow p-0">

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./../globals.css";
 import { SiteHeader } from "@/components/site-header";
+import Footer from "@/components/site-footer";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className="font-sans">
         <SiteHeader />
         {children}
+        <Footer />
       </body>
     </html>
   );
