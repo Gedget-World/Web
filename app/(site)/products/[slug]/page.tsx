@@ -94,20 +94,36 @@ export default async function ProductDetailPage({
 
             <div>
               <span className="text-2xl font-bold text-slate-900">
-                &#8377;{product.price}{" "}
-                {product.discount_percentage && (
+                &#8377;
+                {Number(product.price) % 1 === 0
+                  ? Math.round(product.price)
+                  : product.price}
+                <span
+                  className={`${
+                    !product.discount_percentage ||
+                    product.discount_percentage < 1
+                      ? "hidden"
+                      : ""
+                  }`}
+                >
+                  {" "}
                   <span className="line-through text-slate-500 font-medium text-sm">
                     &#8377;
                     {Math.round(
                       product.price / (1 - product.discount_percentage / 100)
                     )}
                   </span>
-                )}
+                </span>
               </span>
-              <div className="text-[12px] bg-green-600 text-white inline-block py-0 px-2 border border-green-600 rounded-md ml-1">
-                {product.discount_percentage
-                  ? `${product.discount_percentage}%`
-                  : ""}
+              <div
+                className={`text-[12px] bg-green-600 text-white inline-block py-0 px-2 border border-green-600 rounded-md ml-1 ${
+                  !product.discount_percentage ||
+                  product.discount_percentage < 1
+                    ? "hidden"
+                    : ""
+                }`}
+              >
+                {product.discount_percentage}%
               </div>
             </div>
           </div>
