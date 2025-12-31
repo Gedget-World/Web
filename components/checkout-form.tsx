@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { ArrowLeft, CreditCard, Package, Truck } from "lucide-react";
+import ContactForm from "./contact-form";
 
 export function CheckoutForm({ user }: { user: User }) {
   const { items, clearCart, appliedCoupon } = useCart();
@@ -44,16 +45,60 @@ export function CheckoutForm({ user }: { user: User }) {
   const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
   const [shippingInfo, setShippingInfo] = useState({
     fullName: "",
-    address: "",
-    address1: "",
+    address_line1: "",
+    address_line2: "",
     city: "",
     state: "",
-    zipCode: "",
+    postal_code: "",
+    country: "US",
   });
+  const [customerInfo, setCustomerInfo] = useState<{
+    first_name: string;
+    last_name: string;
+    phone: string;
+  } | null>(null);
 
   useEffect(() => {
     console.log("Shipping Info:", shippingInfo);
   }, [shippingInfo]);
+
+  useEffect(() => {
+    // Fetch customer info and existing address
+    const fetchCustomerData = async () => {
+      try {
+        const response = await fetch(`/api/customers/${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCustomerInfo(data.customer);
+
+          // Set full name from customer data
+          if (data.customer) {
+            const fullName = `${data.customer.first_name || ""} ${
+              data.customer.last_name || ""
+            }`.trim();
+            setShippingInfo((prev) => ({ ...prev, fullName }));
+          }
+
+          // Set existing address if available
+          if (data.address) {
+            setShippingInfo((prev) => ({
+              ...prev,
+              address_line1: data.address.address_line1 || "",
+              address_line2: data.address.address_line2 || "",
+              city: data.address.city || "",
+              state: data.address.state || "",
+              postal_code: data.address.postal_code || "",
+              country: data.address.country || "US",
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch customer data:", error);
+      }
+    };
+
+    fetchCustomerData();
+  }, [user.id]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,6 +116,15 @@ export function CheckoutForm({ user }: { user: User }) {
           total,
           appliedCoupon,
           discount,
+          shippingAddress: {
+            full_name: shippingInfo.fullName,
+            address_line1: shippingInfo.address_line1,
+            address_line2: shippingInfo.address_line2,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            postal_code: shippingInfo.postal_code,
+            country: shippingInfo.country,
+          },
         }),
       });
 
@@ -149,15 +203,8 @@ export function CheckoutForm({ user }: { user: User }) {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    defaultValue={user.email}
-                    required
-                  />
-                </div>
+                <ContactForm user={{ id: user.id, email: user.email || "" }} />
+
                 <div className="flex justify-between">
                   <Button disabled variant={"outline"} className="mt-4">
                     <ArrowLeft /> Back
@@ -185,6 +232,7 @@ export function CheckoutForm({ user }: { user: User }) {
                   <Input
                     id="fullName"
                     required
+                    value={shippingInfo.fullName}
                     onChange={(e) =>
                       setShippingInfo({
                         ...shippingInfo,
@@ -194,41 +242,57 @@ export function CheckoutForm({ user }: { user: User }) {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address_line1">Address 1</Label>
                   <Textarea
-                    id="address"
+                    id="address_line1"
                     required
+                    value={shippingInfo.address_line1}
                     onChange={(e) =>
                       setShippingInfo({
                         ...shippingInfo,
-                        address: e.target.value,
+                        address_line1: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="address_line2">Address 2</Label>
+                  <Textarea
+                    id="address_line2"
+                    value={shippingInfo.address_line2}
+                    onChange={(e) =>
+                      setShippingInfo({
+                        ...shippingInfo,
+                        address_line2: e.target.value,
                       })
                     }
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="address1">Apartment, suite, etc.</Label>
+                    <Label htmlFor="city">City</Label>
                     <Input
-                      id="address1"
+                      id="city"
                       required
+                      value={shippingInfo.city}
                       onChange={(e) =>
                         setShippingInfo({
                           ...shippingInfo,
-                          address1: e.target.value,
+                          city: e.target.value,
                         })
                       }
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="city">City</Label>
+                    <Label htmlFor="postal_code">ZIP Code</Label>
                     <Input
-                      id="city"
+                      id="postal_code"
                       required
+                      value={shippingInfo.postal_code}
                       onChange={(e) =>
                         setShippingInfo({
                           ...shippingInfo,
-                          city: e.target.value,
+                          postal_code: e.target.value,
                         })
                       }
                     />
@@ -240,6 +304,7 @@ export function CheckoutForm({ user }: { user: User }) {
                     <Input
                       id="state"
                       required
+                      value={shippingInfo.state}
                       onChange={(e) =>
                         setShippingInfo({
                           ...shippingInfo,
@@ -249,19 +314,21 @@ export function CheckoutForm({ user }: { user: User }) {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="zipCode">ZIP Code</Label>
+                    <Label htmlFor="country">Country</Label>
                     <Input
-                      id="zipCode"
+                      id="country"
                       required
+                      value={shippingInfo.country}
                       onChange={(e) =>
                         setShippingInfo({
                           ...shippingInfo,
-                          zipCode: e.target.value,
+                          country: e.target.value,
                         })
                       }
                     />
                   </div>
                 </div>
+
                 <div className="flex justify-between">
                   <Button
                     variant={"outline"}
@@ -271,22 +338,59 @@ export function CheckoutForm({ user }: { user: User }) {
                     <ArrowLeft /> Back
                   </Button>
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
                       if (
                         !shippingInfo.fullName ||
-                        !shippingInfo.address ||
+                        !shippingInfo.address_line1 ||
                         !shippingInfo.city ||
                         !shippingInfo.state ||
-                        !shippingInfo.zipCode
+                        !shippingInfo.postal_code ||
+                        !shippingInfo.country
                       ) {
                         alert("Please fill in all required shipping fields.");
                         return;
                       }
-                      setTab("payment");
+
+                      // Save/update address before proceeding to payment
+                      try {
+                        setIsLoading(true);
+                        const response = await fetch("/api/addresses", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            user_id: user.id,
+                            address: {
+                              full_name: shippingInfo.fullName,
+                              address_line1: shippingInfo.address_line1,
+                              address_line2: shippingInfo.address_line2,
+                              city: shippingInfo.city,
+                              state: shippingInfo.state,
+                              postal_code: shippingInfo.postal_code,
+                              country: shippingInfo.country,
+                              type: "shipping",
+                              is_default: true,
+                            },
+                          }),
+                        });
+
+                        if (!response.ok) {
+                          throw new Error("Failed to save address");
+                        }
+
+                        setTab("payment");
+                      } catch (error) {
+                        console.error("Error saving address:", error);
+                        alert("Failed to save address. Please try again.");
+                      } finally {
+                        setIsLoading(false);
+                      }
                     }}
                     className="mt-4"
+                    disabled={isLoading}
                   >
-                    Continue
+                    {isLoading ? "Saving..." : "Continue"}
                   </Button>
                 </div>
               </CardContent>
