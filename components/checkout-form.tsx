@@ -15,7 +15,7 @@ import type { User } from "@supabase/supabase-js";
 import { ArrowLeft, CreditCard, Package, Truck } from "lucide-react";
 
 export function CheckoutForm({ user }: { user: User }) {
-  const { items, clearCart } = useCart();
+  const { items, clearCart, appliedCoupon } = useCart();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,21 @@ export function CheckoutForm({ user }: { user: User }) {
     0
   );
   const shipping = 10;
-  const total = subtotal + shipping;
+
+  // Calculate discount based on applied coupon
+  let discount = 0;
+  if (appliedCoupon && subtotal >= appliedCoupon.min_purchase_amount) {
+    if (appliedCoupon.discount_type === "percentage") {
+      discount = (subtotal * appliedCoupon.discount_value) / 100;
+      if (appliedCoupon.max_discount_amount) {
+        discount = Math.min(discount, appliedCoupon.max_discount_amount);
+      }
+    } else {
+      discount = appliedCoupon.discount_value;
+    }
+  }
+
+  const total = subtotal + shipping - discount;
 
   const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
   const [shippingInfo, setShippingInfo] = useState({
@@ -55,6 +69,8 @@ export function CheckoutForm({ user }: { user: User }) {
         body: JSON.stringify({
           items,
           total,
+          appliedCoupon,
+          discount,
         }),
       });
 
@@ -314,6 +330,16 @@ export function CheckoutForm({ user }: { user: User }) {
                   >
                     <ArrowLeft /> Back
                   </Button>
+                  <form onSubmit={handleSubmit} className="inline">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="mt-4"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Processing..." : "Place Order"}
+                    </Button>
+                  </form>
                 </div>
               </CardContent>
             </Card>
@@ -364,6 +390,12 @@ export function CheckoutForm({ user }: { user: User }) {
                   <span>Shipping</span>
                   <span>&#8377;{shipping.toFixed(2)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span>Discount ({appliedCoupon?.code})</span>
+                    <span>-&#8377;{discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-md font-bold text-slate-900 pt-2 border-t">
                   <span>Total</span>
                   <span>&#8377;{total.toFixed(2)}</span>
@@ -371,15 +403,6 @@ export function CheckoutForm({ user }: { user: User }) {
               </div>
 
               {error && <p className="text-sm text-red-500">{error}</p>}
-
-              {/* <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? "Processing..." : "Place Order"}
-              </Button> */}
             </CardContent>
           </Card>
         </div>
