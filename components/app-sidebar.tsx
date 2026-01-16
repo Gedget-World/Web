@@ -1,6 +1,12 @@
 "use client";
 
-import { ClockArrowUp, ShoppingBasket, Boxes, Home } from "lucide-react";
+import {
+  ClockArrowUp,
+  ShoppingBasket,
+  Boxes,
+  Home,
+  Newspaper,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -39,6 +45,11 @@ const items = [
     title: "Orders",
     url: `${baseURI}/Orders`,
     icon: ClockArrowUp,
+  },
+  {
+    title: "Polices",
+    url: `${baseURI}/Policies`,
+    icon: Newspaper,
   },
 ];
 
