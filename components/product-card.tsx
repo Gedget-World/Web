@@ -26,7 +26,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
-  console.log("Product in ProductCard:", product);
+  // console.log("Product in ProductCard:", product);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();

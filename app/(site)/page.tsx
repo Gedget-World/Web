@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { HeroSection } from "@/components/hero-section";
 import { CollectionsGrid } from "@/components/collections-grid";
 import ProductsList from "@/components/Products-list";
+import FeaturedSection from "@/components/featured-section";
+import FAQSections from "@/components/faq-sections";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -44,6 +46,8 @@ export default async function HomePage() {
         heading={"New Arrivals"}
         exploreLink={"#"}
       />
+      <FeaturedSection />
+      <FAQSections />
     </main>
   );
 }
