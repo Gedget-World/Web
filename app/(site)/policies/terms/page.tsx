@@ -1,11 +1,28 @@
 import Markdown from "react-markdown";
 import termsMarkdown from "@/content/policies/terms-and-conditions.md";
+import Link from "next/link";
+import { ArrowLeftIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export default function TermsPage() {
+export default function TermsAndConditionsPage() {
   return (
     <>
       <section className="max-w-4xl mt-10 mb-10 mx-auto px-4">
         <div className="prose prose-lg max-w-none">
+          <div className="flex flex-row justify-between items-center">
+            <Link
+              href="/policies"
+              className="text-black hover:text-blue-800 decoration-2 underline-offset-2 transition-colors duration-200"
+            >
+              <Button variant={"outline"} className="cursor-pointer">
+                <ArrowLeftIcon className="inline-block mr-2" />
+                Back to Policies
+              </Button>
+            </Link>
+            <div className="text-sm text-gray-600">
+              Last updated: <i>January 1, 2024</i>
+            </div>
+          </div>
           <div className="space-y-4">
             <Markdown
               components={{
