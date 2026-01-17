@@ -136,7 +136,7 @@ export function CouponInput({ subtotal }: CouponInputProps) {
           variant="outline"
           className="cursor-pointer"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tag />}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
         </Button>
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}

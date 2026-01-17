@@ -43,6 +43,7 @@ export function CheckoutForm({ user }: { user: User }) {
   const total = subtotal + shipping - discount;
 
   const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
   const [shippingInfo, setShippingInfo] = useState({
     fullName: "",
     address_line1: "",
@@ -112,24 +113,45 @@ export function CheckoutForm({ user }: { user: User }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          items,
+          // Order details
+          user_id: user.id,
           total,
-          appliedCoupon,
-          discount,
-          shippingAddress: {
-            full_name: shippingInfo.fullName,
-            address_line1: shippingInfo.address_line1,
-            address_line2: shippingInfo.address_line2,
-            city: shippingInfo.city,
-            state: shippingInfo.state,
-            postal_code: shippingInfo.postal_code,
-            country: shippingInfo.country,
+          status: "pending",
+
+          // Customer information
+          customer_name: shippingInfo.fullName,
+          customer_email: user.email,
+
+          // Shipping address details (flattened to match schema)
+          shipping_address: `${shippingInfo.address_line1}${
+            shippingInfo.address_line2 ? ", " + shippingInfo.address_line2 : ""
+          }, ${shippingInfo.state}`, // Added state to address
+          shipping_city: shippingInfo.city,
+          shipping_postal_code: shippingInfo.postal_code,
+          shipping_country: shippingInfo.country,
+
+          // Coupon and discount information
+          coupon_code: appliedCoupon?.code || null,
+          discount_amount: discount || 0,
+
+          // Order items for order_items table
+          order_items: items.map((item) => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+
+          // Additional metadata (you can remove payment_method if not adding to schema)
+          metadata: {
+            payment_method: paymentMethod,
+            shipping_state: shippingInfo.state,
           },
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create order");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create order");
       }
 
       clearCart();
@@ -408,24 +430,68 @@ export function CheckoutForm({ user }: { user: User }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="expiry">Expiry Date</Label>
-                    <Input id="expiry" placeholder="MM/YY" required />
+                <div className="grid gap-4">
+                  <Label className="text-sm font-medium">Payment Method</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="cod"
+                        name="paymentMethod"
+                        value="cod"
+                        checked={paymentMethod === "cod"}
+                        onChange={(e) => setPaymentMethod("cod")}
+                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label
+                        htmlFor="cod"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Cash on Delivery
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="online"
+                        name="paymentMethod"
+                        value="online"
+                        checked={paymentMethod === "online"}
+                        onChange={(e) => setPaymentMethod("online")}
+                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label
+                        htmlFor="online"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Online Payment
+                      </Label>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input id="cvv" placeholder="123" required />
-                  </div>
                 </div>
+
+                {paymentMethod === "online" && (
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="cardNumber">Card Number</Label>
+                      <Input
+                        id="cardNumber"
+                        placeholder="1234 5678 9012 3456"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="expiry">Expiry Date</Label>
+                        <Input id="expiry" placeholder="MM/YY" required />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="cvv">CVV</Label>
+                        <Input id="cvv" placeholder="123" required />
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <Button
                     variant={"outline"}
