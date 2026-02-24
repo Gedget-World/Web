@@ -12,8 +12,9 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "StyleHub - Modern Fashion Store",
-  description: "Discover timeless pieces that define modern elegance",
+  title: "Gadgets Kabila - Your Ultimate Tech Destination",
+  description:
+    "Discover the latest in tech at Gadgets Kabila. From smartphones to smart home devices, we offer a wide range of gadgets to enhance your lifestyle. Shop now for the best deals and cutting-edge technology.",
 };
 
 export default function RootLayout({

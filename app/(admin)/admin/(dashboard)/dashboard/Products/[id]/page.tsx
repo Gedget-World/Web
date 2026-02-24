@@ -159,7 +159,7 @@ export default function ProductDetailsPage({
   };
 
   const handleFilesSelected = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     console.log("Selected files:", files);
@@ -336,30 +336,50 @@ export default function ProductDetailsPage({
 
     if (!deepEqual(InitialProductImages, productImages)) {
       console.log("Product images have changed.");
-      const { error } = await supabase
+
+      // First, delete ALL existing product images for this product
+      const { data: deleteData, error: deleteError } = await supabase
         .from("product_images")
         .delete()
-        .eq("product_id", id);
-      if (error) {
-        console.error("Error deleting old product images:", error);
+        .eq("product_id", id)
+        .select(); // Add .select() to see what was deleted
+
+      console.log("Delete operation result:", { deleteData, deleteError });
+
+      if (deleteError) {
+        console.error("Error deleting old product images:", deleteError);
         alert("There was an error updating product images. Please try again.");
+        setHandleSubmitLoading(false);
         return;
       }
+
+      console.log("Deleted images count:", deleteData?.length || 0);
+
+      // Now insert the new images
       const imagesToInsert = productImages.map((img, index) => ({
         product_id: id,
         image_url: img.image_url,
         image_name: img.image_name,
         display_order: index + 1,
       }));
+
+      console.log("Inserting images:", imagesToInsert);
+
       const { data: imagesData, error: imagesError } = await supabase
         .from("product_images")
-        .insert(imagesToInsert);
+        .insert(imagesToInsert)
+        .select(); // Add .select() to see what was inserted
+
       if (imagesError) {
         console.error("Error adding product images:", imagesError);
         alert("Error adding product images. Please try again.");
+        setHandleSubmitLoading(false);
         return;
       }
       console.log("Product images updated successfully:", imagesData);
+
+      // Update InitialProductImages to reflect current state
+      setInitialProductImages([...productImages]);
     } else {
       console.log("Product images have not changed.");
     }
@@ -596,7 +616,7 @@ export default function ProductDetailsPage({
                                       key,
                                       type === "number"
                                         ? parseFloat(e.target.value) || 0
-                                        : e.target.value
+                                        : e.target.value,
                                     )
                                   }
                                 />
@@ -708,7 +728,7 @@ export default function ProductDetailsPage({
                       <p className="text-base">
                         {
                           collections.find(
-                            (c) => c.id === product.collection_id
+                            (c) => c.id === product.collection_id,
                           )?.name
                         }
                       </p>

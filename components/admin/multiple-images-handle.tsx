@@ -78,7 +78,7 @@ export default function ProductImages({
       alert(
         `Delete failed: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setIsDeleting(null);
@@ -94,7 +94,7 @@ export default function ProductImages({
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFilesSelected = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     console.log("Selected files:", files);
@@ -111,7 +111,7 @@ export default function ProductImages({
         const randomString = Math.random().toString(36).substring(2, 8);
         const fileName = `${timestamp}-${randomString}-${file.name.replace(
           /\s+/g,
-          "_"
+          "_",
         )}`;
 
         console.log(`Uploading file ${index + 1}/${files.length}:`, fileName);
@@ -150,7 +150,7 @@ export default function ProductImages({
       alert(
         `Upload failed: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setIsUploading(false);
