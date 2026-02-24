@@ -1,0 +1,230 @@
+[33mcommit 5f49c9310fc26971c3601af0e6a92db52d2d5a7e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelopment[m[33m, [m[1;31morigin/development[m[33m)[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Tue Feb 24 21:49:03 2026 +0530
+
+    some fixes
+
+[33mcommit 1a1d18902657e5355ac4fe8fab9d14d5ad21532f[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Feb 21 11:24:03 2026 +0530
+
+    add header label
+
+[33mcommit 876230459e8ebfcdc2606d261502a6e15c0dfe0b[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Jan 17 16:41:48 2026 +0530
+
+    cust order functionality
+
+[33mcommit 4aef12cf2f1220d87f9efc807a0d6620cb3ca53b[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Jan 17 16:14:19 2026 +0530
+
+    style policies
+
+[33mcommit 91249380d134007f2e3d3991df1581859844bc5d[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Jan 17 15:49:23 2026 +0530
+
+    add policies functionality
+
+[33mcommit 10390d70976818395aa04a88546be1b11095b456[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Jan 16 12:19:17 2026 +0530
+
+    Add features and faq section
+
+[33mcommit 12ed4b076eca04b331619ee5bd2286a44818a9d4[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Jan 16 10:13:15 2026 +0530
+
+    Changes
+
+[33mcommit 8ca0e05e8e07ccde53789398e59c7f3d65f6b529[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Wed Dec 31 17:06:31 2025 +0530
+
+    customer address CRUD
+
+[33mcommit b08da353f452f83ac0e2d6aa7b157628908977fb[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Wed Dec 31 11:43:41 2025 +0530
+
+    Bug: Order calculation
+
+[33mcommit 5ce5f563b8d0a9f3ee814ed2af885bd607746e57[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Mon Dec 22 15:33:02 2025 +0530
+
+    Fix UI:Product detail page
+
+[33mcommit 045dc0bee389489a3ad88987d9163e1999f08063[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Mon Dec 22 13:25:36 2025 +0530
+
+    Home page UI basics
+
+[33mcommit 1959af0cc2f55d379ec5e6d91ae19fbcb5bf62e4[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Dec 20 14:14:25 2025 +0530
+
+    Out of stoch button
+
+[33mcommit 0e6286f4468059b37fec2796152340988ff5e8fd[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Dec 20 14:02:49 2025 +0530
+
+    Add: Rich text editor
+
+[33mcommit ccedf0aa19e8e2b4067b6bfe93ea159f32353fb4[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Dec 19 18:40:49 2025 +0530
+
+    checkout UI fix
+
+[33mcommit cee45b418751d064e547d3984eedba06ef2b222c[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Dec 19 18:30:23 2025 +0530
+
+    checkout page
+
+[33mcommit 933ce2699c2ad99f628ada6721d53a396a35c097[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Dec 19 16:55:34 2025 +0530
+
+    product details page
+
+[33mcommit d101f05537ea7469be58ed344f483138319ff53b[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Dec 12 23:08:32 2025 +0530
+
+    fixes: next version and some errors
+
+[33mcommit 2dad962542a6a23a84b4c99e4f07f5ff5582fb57[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Thu Dec 11 20:05:46 2025 +0530
+
+    UI: Collection cards
+
+[33mcommit 79b3ab04ed95e8bbe9f2565bf8f4e9270484c586[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Thu Dec 11 19:02:18 2025 +0530
+
+    UI: Product card
+
+[33mcommit 605d614c20fcae0f10cb28c401f9d7f4e57ee5ad[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Thu Dec 11 18:05:39 2025 +0530
+
+    Next version updated
+
+[33mcommit 6a7dd6ccecacbf88749796478668878ed915b27f[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Thu Dec 11 18:00:06 2025 +0530
+
+    Update readme
+
+[33mcommit ab47480625985911c9b8be300140ae29af85ed43[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Nov 21 20:02:51 2025 +0530
+
+    Fix search bar v2
+
+[33mcommit d8a87bf1a89e799928db1fb461516e9068b53dc3[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Fri Nov 21 20:01:47 2025 +0530
+
+    Fix search bar
+
+[33mcommit a6633a66fb9ddc87eeab2fa19f10864c50ada580[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Wed Nov 19 14:21:36 2025 +0530
+
+    Add 'Add to cart' button in product carts
+
+[33mcommit a3c6518fa58e18483453c5d4223a2b26e4fb2547[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sun Nov 16 13:15:14 2025 +0530
+
+    Admin: Add new collection
+
+[33mcommit 4814c50031a26df378ae9c861d38114927b5e54c[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sun Nov 16 11:26:06 2025 +0530
+
+    admin: product update
+
+[33mcommit 48125854fc58c9adb862d477b5a52c8d711e0076[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Nov 15 19:10:52 2025 +0530
+
+    product add to db functionality
+
+[33mcommit 1a419b93768dd43f611eb44d7bf9e127eb2b7585[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Nov 15 17:18:13 2025 +0530
+
+    fix add product thumbnail image preview
+
+[33mcommit 8bcebae788ef37318ed64ef5c7404f59e5a8e219[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Nov 15 16:34:54 2025 +0530
+
+    multiple images handle order functinality
+
+[33mcommit 4d4ba41a72bc6dd7ab59d2dc1b528bc399e3fec3[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Nov 15 14:03:38 2025 +0530
+
+    add product image component
+
+[33mcommit 07f332201aac3034a6a7e48926cd60dd608ccda3[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Nov 15 12:57:51 2025 +0530
+
+    Admin: Add all the functionality for create product page
+
+[33mcommit e5effd7d74e3334c483bf5a6f84758a2a44c4fe5[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Wed Nov 12 22:20:45 2025 +0530
+
+    Admin: Product/collection View/Edit/New
+
+[33mcommit 25699bcfeaa0cb9fd370d67f26989e0fe3cba3e4[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Sat Nov 8 16:55:17 2025 +0530
+
+    admin dashboard layout
+
+[33mcommit 4b8c6841cab3d42127a6f76410998e62d7556751[m
+Merge: 3ae256b a6a3fc8
+Author: Gedget-World <gadget.ecomm@gmail.com>
+Date:   Wed Nov 5 20:06:02 2025 +0530
+
+    Merge pull request #7 from Gedget-World/feat/admin-login
+    
+    Feat/admin login
+
+[33mcommit a6a3fc8f3f75a65a7fa36bd9238106273f0da0f1[m[33m ([m[1;31morigin/feat/admin-login[m[33m)[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Wed Nov 5 19:55:47 2025 +0530
+
+    add login and register
+
+[33mcommit 11eb496680fdeb33715e32bea65535ba65231993[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Tue Nov 4 19:36:06 2025 +0530
+
+    folder resturcting is completed
+
+[33mcommit 3ae256b85310856265b75835e8c7bbf1b85ea6a5[m
+Author: Gedget-World <gadget.ecomm@gmail.com>
+Date:   Thu Oct 30 22:34:17 2025 +0530
+
+    Create README.md
+
+[33mcommit edeaac2af4f6cce9aeae5847cf45a1f928f57a4a[m
+Author: krishnaKantVishWakarma-titan <krishnakantvish.24@gmail.com>
+Date:   Thu Oct 30 22:31:05 2025 +0530
+
+    Base
