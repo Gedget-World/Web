@@ -3,7 +3,7 @@ export default function Footer() {
     <>
       {/* asd */}
       {/* ========== FOOTER ========== */}
-      <footer className="mt-auto w-full max-w-7xl py-10 px-4 sm:px-6 lg:px-8 mx-auto">
+      <footer className="mt-auto w-full max-w-8xl py-10 bg-gray-100 px-4 sm:px-6 lg:px-8 mx-auto">
         {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
           <div className="col-span-full hidden lg:col-span-1 lg:block">
@@ -12,10 +12,10 @@ export default function Footer() {
               href="#"
               aria-label="Brand"
             >
-              Brand
+              Gadgets Kabila
             </a>
             <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-neutral-400">
-              © 2025 Preline Labs.
+              © 2026 Gadgets Kabila.
             </p>
           </div>
           {/* End Col */}
