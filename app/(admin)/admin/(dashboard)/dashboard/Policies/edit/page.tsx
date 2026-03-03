@@ -1,4 +1,4 @@
-import MarkdownEditor from "@/components/markdown-editor";
+// import MarkdownEditor from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
 
 export default async function PoliciesEdit() {
@@ -12,7 +12,7 @@ export default async function PoliciesEdit() {
       </header>
       <main className="mt-2">
         {/* Policies list will go here */}
-        <MarkdownEditor />
+        {/* <MarkdownEditor /> */}
       </main>
     </div>
   );
