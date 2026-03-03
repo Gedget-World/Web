@@ -282,7 +282,6 @@ export default function Footer() {
                 >
                   <svg
                     className="shrink-0 size-4"
-                    xmlns="http://www.w3.org/2000/svg"
                     width="16"
                     height="16"
                     fill="currentColor"
@@ -297,7 +296,6 @@ export default function Footer() {
                 >
                   <svg
                     className="shrink-0 size-4"
-                    xmlns="http://www.w3.org/2000/svg"
                     width="16"
                     height="16"
                     fill="currentColor"
@@ -312,7 +310,6 @@ export default function Footer() {
                 >
                   <svg
                     className="shrink-0 size-4"
-                    xmlns="http://www.w3.org/2000/svg"
                     width="16"
                     height="16"
                     fill="currentColor"
