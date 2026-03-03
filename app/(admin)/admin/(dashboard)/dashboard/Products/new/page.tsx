@@ -51,7 +51,7 @@ export default function CreateProductPage() {
 
   const [slug, setSlug] = useState("");
   const [status, setStatus] = useState<"checking" | "available" | "taken" | "">(
-    ""
+    "",
   );
 
   // --- Debounced function (runs only after user stops typing) ---
@@ -74,7 +74,7 @@ export default function CreateProductPage() {
 
       setStatus(data ? "taken" : "available");
     }, 500), // delay: 500ms
-    []
+    [],
   );
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,7 +124,7 @@ export default function CreateProductPage() {
   };
 
   const handleFilesSelected = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     console.log("Selected files:", files);
@@ -510,7 +510,7 @@ export default function CreateProductPage() {
                   onChange={(e) =>
                     handleChange(
                       "discount_percentage",
-                      parseFloat(e.target.value) || 0
+                      parseFloat(e.target.value) || 0,
                     )
                   }
                 />
@@ -527,7 +527,7 @@ export default function CreateProductPage() {
                         &#8377;
                         {Math.round(
                           product.price /
-                            (1 - product.discount_percentage / 100)
+                            (1 - product.discount_percentage / 100),
                         )}
                       </span>
                     )}

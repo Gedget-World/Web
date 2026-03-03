@@ -60,26 +60,26 @@ export function ProductsClient({
   const searchParams = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || ""
+    searchParams.get("search") || "",
   );
   const [selectedCollection, setSelectedCollection] = useState<string>(
-    searchParams.get("collection") || "all"
+    searchParams.get("collection") || "all",
   );
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(searchParams.get("minPrice")) || 0,
     Number(searchParams.get("maxPrice")) || 1000,
   ]);
   const [minRating, setMinRating] = useState<number>(
-    Number(searchParams.get("rating")) || 0
+    Number(searchParams.get("rating")) || 0,
   );
   const [inStockOnly, setInStockOnly] = useState(
-    searchParams.get("inStock") === "true"
+    searchParams.get("inStock") === "true",
   );
   const [sortBy, setSortBy] = useState<string>(
-    searchParams.get("sort") || "newest"
+    searchParams.get("sort") || "newest",
   );
   const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get("page")) || 1
+    Number(searchParams.get("page")) || 1,
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -550,7 +550,7 @@ export function ProductsClient({
                           );
                         }
                         return null;
-                      }
+                      },
                     )}
                   </div>
                   <Button

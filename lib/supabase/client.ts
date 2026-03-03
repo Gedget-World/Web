@@ -1,4 +1,4 @@
-import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr"
+import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr";
 
 export function createClient() {
   return createSupabaseBrowserClient(
@@ -7,35 +7,44 @@ export function createClient() {
     {
       cookies: {
         getAll() {
+          if (typeof document === "undefined") {
+            return [];
+          }
           return document.cookie.split("; ").map((cookie) => {
-            const [name, ...rest] = cookie.split("=")
-            return { name, value: rest.join("=") }
-          })
+            const [name, ...rest] = cookie.split("=");
+            return { name, value: rest.join("=") };
+          });
         },
         setAll(cookiesToSet) {
+          if (typeof document === "undefined") {
+            return;
+          }
           cookiesToSet.forEach(({ name, value, options }) => {
             const cookieOptions = {
               ...options,
               path: options?.path || "/",
               sameSite: options?.sameSite || "lax",
               secure: options?.secure !== false,
-            }
+            };
 
-            let cookie = `${name}=${value}`
-            if (cookieOptions.maxAge) cookie += `; Max-Age=${cookieOptions.maxAge}`
-            if (cookieOptions.path) cookie += `; Path=${cookieOptions.path}`
-            if (cookieOptions.domain) cookie += `; Domain=${cookieOptions.domain}`
-            if (cookieOptions.sameSite) cookie += `; SameSite=${cookieOptions.sameSite}`
-            if (cookieOptions.secure) cookie += "; Secure"
+            let cookie = `${name}=${value}`;
+            if (cookieOptions.maxAge)
+              cookie += `; Max-Age=${cookieOptions.maxAge}`;
+            if (cookieOptions.path) cookie += `; Path=${cookieOptions.path}`;
+            if (cookieOptions.domain)
+              cookie += `; Domain=${cookieOptions.domain}`;
+            if (cookieOptions.sameSite)
+              cookie += `; SameSite=${cookieOptions.sameSite}`;
+            if (cookieOptions.secure) cookie += "; Secure";
 
-            document.cookie = cookie
-          })
+            document.cookie = cookie;
+          });
         },
       },
     },
-  )
+  );
 }
 
 export function createBrowserClient() {
-  return createClient()
+  return createClient();
 }
