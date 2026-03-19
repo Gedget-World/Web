@@ -11,22 +11,22 @@ import {
 export default function FAQSections() {
   return (
     <section className="max-w-7xl mt-10 mb-10 mx-auto flex flex-col md:flex-row gap-8">
-      <div className="flex-1">
-        <div>
+      <div className="flex-1 text-left">
+        <div className="text-left">
           <Badge variant="outline">
             <MessageCircleQuestion /> Help Center
           </Badge>
         </div>
-        <h2 className="text-4xl font-bold mb-4 mt-2">
+        <h2 className="text-4xl font-bold mb-4 mt-2 text-left">
           Frequently Asked Questions
-          <br /> We're Here to Help
+          <br /> We&apos;re Here to Help
         </h2>
-        <p className="mb-3">
+        <p className="mb-3 text-left">
           Find quick answers to the most common questions about orders,
           <br />
           payments, delivery, returns, and account management.
         </p>
-        <div>
+        <div className="text-left">
           <Button className="mt-6 rounded-sm cursor-pointer">
             Contact Support
           </Button>
