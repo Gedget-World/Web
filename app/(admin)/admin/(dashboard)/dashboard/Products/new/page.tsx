@@ -25,7 +25,6 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
 import { useRouter } from "next/navigation";
-import RichTextInput from "@/components/rich-text-input";
 
 export default function CreateProductPage() {
   const supabase = createClient();
@@ -41,7 +40,18 @@ export default function CreateProductPage() {
     is_active: true,
     is_featured: false,
     is_new_arrival: false,
+    instagramURL: "" as string | null,
+    youtubeURL: "" as string | null,
   });
+
+  const [productSpecifications, setProductSpecifications] = useState<
+    { title: string; description: string }[]
+  >([]);
+
+  useEffect(() => {
+    console.log("Current product state:", product);
+    console.log("Current product specifications state:", productSpecifications);
+  }, [product, productSpecifications]);
 
   const router = useRouter();
 
@@ -209,6 +219,11 @@ export default function CreateProductPage() {
   const [descriptionValidationError, setDescriptionValidationError] =
     useState<boolean>(false);
 
+  const [
+    productSpecificationsValidationError,
+    setProductSpecificationsValidationError,
+  ] = useState<boolean>(false);
+
   const [ThumbnailImageValidationError, setThumbnailImageValidationError] =
     useState<boolean>(false);
   const [ProductImagesValidationError, setProductImagesValidationError] =
@@ -223,6 +238,7 @@ export default function CreateProductPage() {
     setDescriptionValidationError(false);
     setThumbnailImageValidationError(false);
     setProductImagesValidationError(false);
+    setProductSpecificationsValidationError(false);
     let res = true;
 
     if (product.name.trim() === "") {
@@ -283,6 +299,27 @@ export default function CreateProductPage() {
       setProductImagesValidationError(false);
     }
 
+    if (productSpecifications.length === 0) {
+      setProductSpecificationsValidationError(true);
+      alert("Please add at least one product specification.");
+      res = false;
+    } else {
+      // Check if any specification has empty title or description
+      const hasEmptySpec = productSpecifications.some(
+        (spec) => spec.title.trim() === "" || spec.description.trim() === "",
+      );
+
+      if (hasEmptySpec) {
+        setProductSpecificationsValidationError(true);
+        alert(
+          "Please fill in all product specification fields (title and description).",
+        );
+        res = false;
+      } else {
+        setProductSpecificationsValidationError(false);
+      }
+    }
+
     return res;
   };
 
@@ -307,6 +344,9 @@ export default function CreateProductPage() {
             is_new_arrival: product.is_new_arrival,
             is_active: product.is_active,
             image_name: product.image_name,
+            instagram_url: product.instagramURL,
+            youtube_url: product.youtubeURL,
+            specifications: productSpecifications,
           },
         ])
         .select();
@@ -595,17 +635,105 @@ export default function CreateProductPage() {
 
             <div>
               <label className="block text-sm text-gray-500 mb-1">
+                Product Specifications
+              </label>
+              <div className="flex flex-col gap-2 mb-2">
+                {productSpecifications.map((spec, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Title"
+                      value={spec.title}
+                      onChange={(e) => {
+                        const newSpecs = [...productSpecifications];
+                        newSpecs[index].title = e.target.value;
+                        setProductSpecifications(newSpecs);
+                      }}
+                    />
+                    <Input
+                      placeholder="Description"
+                      value={spec.description}
+                      onChange={(e) => {
+                        const newSpecs = [...productSpecifications];
+                        newSpecs[index].description = e.target.value;
+                        setProductSpecifications(newSpecs);
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const newSpecs = [...productSpecifications];
+                        newSpecs.splice(index, 1);
+                        setProductSpecifications(newSpecs);
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                ))}
+                <div>
+                  <Button
+                    type="button"
+                    className="cursor-pointer mt-3"
+                    size={"sm"}
+                    onClick={() =>
+                      setProductSpecifications([
+                        ...productSpecifications,
+                        { title: "", description: "" },
+                      ])
+                    }
+                  >
+                    Add Specification
+                  </Button>
+                </div>
+              </div>
+              {productSpecificationsValidationError && (
+                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                  Please provide a product Specifications.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">
                 Description
               </label>
-              <RichTextInput
+              <Textarea
+                placeholder="Enter product description"
                 value={product.description}
-                onChange={(content) => handleChange("description", content)}
+                onChange={(e) => handleChange("description", e.target.value)}
+                rows={4}
               />
               {descriptionValidationError && (
                 <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
                   Please provide a product description.
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">
+                Instagram Short URL
+              </label>
+              <Input
+                placeholder="URL"
+                onChange={(e) =>
+                  setProduct({ ...product, instagramURL: e.target.value })
+                }
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">
+                Youtube Video URL
+              </label>
+              <Input
+                placeholder="URL"
+                onChange={(e) =>
+                  setProduct({ ...product, youtubeURL: e.target.value })
+                }
+              />
             </div>
 
             {/* Toggles */}

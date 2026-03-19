@@ -11,7 +11,7 @@ export default async function ProductsPage() {
       *,
       reviews(rating),
       collections(name, slug)
-    `
+    `,
     )
     .order("created_at", { ascending: false });
 

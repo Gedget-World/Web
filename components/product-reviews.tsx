@@ -50,7 +50,7 @@ export function ProductReviews({
   const [isWritingReview, setIsWritingReview] = useState(false);
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState("Title");
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -165,19 +165,19 @@ export function ProductReviews({
   };
 
   return (
-    <div className="mt-1 w-5xl mx-auto">
-      <div className="pt-5">
-        <div className="flex items-center justify-between mb-8">
+    <div className="mt-1 w-full mx-auto px-4 sm:px-6 py-6 lg:px-8 bg-slate-50 border border-slate-200 rounded-lg">
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-1">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">
               Customer Reviews
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    className={`h-3 w-3 ${
+                    className={`h-3 w-3 sm:h-4 sm:w-4 ${
                       star <= Math.round(averageRating)
                         ? "fill-amber-400 text-amber-400"
                         : "text-slate-300"
@@ -185,130 +185,123 @@ export function ProductReviews({
                   />
                 ))}
               </div>
-              <span className="text-sm font-semibold text-slate-900">
+              <span className="text-sm font-bold text-blue-700">
                 {averageRating > 0
                   ? averageRating.toFixed(1)
                   : "No ratings yet"}
               </span>
-              <span className="text-slate-600 text-sm">
-                ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
+              <span className="text-blue-600 text-sm">
+                {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
               </span>
             </div>
           </div>
           {!isWritingReview && (
-            <Button onClick={() => setIsWritingReview(true)} size={"sm"}>
-              Write a Review
+            <Button
+              onClick={() => setIsWritingReview(true)}
+              size={"sm"}
+              className="w-full sm:w-auto bg-orange-400 hover:bg-orange-500 text-white cursor-pointer"
+            >
+              <Pencil className="mr-1" size={12} /> Write a Review
             </Button>
           )}
         </div>
 
         {isWritingReview && (
-          <Card className="mb-8">
-            <CardHeader>
-              <h3 className="text-xl font-semibold text-slate-900">
-                Write Your Review
-              </h3>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmitReview} className="space-y-6">
-                <div>
-                  <Label className="text-base font-medium text-slate-900 mb-2 block">
-                    Rating
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHoveredRating(star)}
-                        onMouseLeave={() => setHoveredRating(0)}
-                        className="transition-transform hover:scale-110"
-                      >
-                        <Star
-                          className={`h-8 w-8 ${
-                            star <= (hoveredRating || rating)
-                              ? "fill-amber-400 text-amber-400"
-                              : "text-slate-300"
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    <span className="ml-2 text-slate-600">
-                      {rating} out of 5 stars
-                    </span>
-                  </div>
+          <div className="bg-white px-6 py-5 border mb-5 border-slate-200 rounded-lg">
+            <h3 className="text-md sm:text-lg font-semibold text-slate-900">
+              Share Your Experience
+            </h3>
+            <form
+              onSubmit={handleSubmitReview}
+              className="space-y-1 sm:space-y-2"
+            >
+              <div className="mt-4">
+                <Label className="text-[10px] sm:text-sm text-slate-900 mb-2 block">
+                  Rating
+                </Label>
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`h-5 w-5 sm:h-5 sm:w-5 cursor-pointer ${
+                          star <= (hoveredRating || rating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-[10px] sm:text-sm text-slate-600">
+                    {rating} out of 5 stars
+                  </span>
                 </div>
+              </div>
 
-                <div>
-                  <Label
-                    htmlFor="title"
-                    className="text-base font-medium text-slate-900"
-                  >
-                    Review Title
-                  </Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Sum up your experience"
-                    required
-                    className="mt-2"
-                  />
-                </div>
+              <div className="mt-4">
+                <Label
+                  htmlFor="comment"
+                  className="text-[10px] sm:text-sm text-slate-900"
+                >
+                  Your Review
+                </Label>
+                <Textarea
+                  id="comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your thoughts about this product"
+                  required
+                  rows={4}
+                  className="mt-2"
+                />
+              </div>
 
-                <div>
-                  <Label
-                    htmlFor="comment"
-                    className="text-base font-medium text-slate-900"
-                  >
-                    Your Review
-                  </Label>
-                  <Textarea
-                    id="comment"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Share your thoughts about this product"
-                    required
-                    rows={5}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting..." : "Submit Review"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsWritingReview(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+              <div className="flex flex-col sm:flex-row gap-3 mt-3">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto cursor-pointer bg-orange-400 hover:bg-orange-500 text-white"
+                  size={"sm"}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Review"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsWritingReview(false)}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto cursor-pointer"
+                  size={"sm"}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {reviews.length === 0 ? (
-            <p className="text-slate-600 text-center py-8">
+            <p className="text-slate-600 text-center py-6 sm:py-8 text-sm sm:text-base">
               No reviews yet. Be the first to review this product!
             </p>
           ) : (
             reviews.map((review) => (
-              <Card key={review.id} className="py-3">
-                <CardContent className="px-4">
+              <Card key={review.id} className="py-2 sm:py-3 shadow-none">
+                <CardContent className="px-3 sm:px-4">
                   {editingReviewId === review.id ? (
-                    <div className="space-y-1">
+                    <div className="space-y-3 sm:space-y-4">
                       <div>
-                        <Label className="text-base font-medium text-slate-900 mb-1 block">
+                        <Label className="text-[10px] sm:text-sm font-medium text-slate-900 mb-1 block">
                           Rating
                         </Label>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <button
                               key={star}
@@ -319,7 +312,7 @@ export function ProductReviews({
                               className="transition-transform hover:scale-110"
                             >
                               <Star
-                                className={`h-5 w-5 ${
+                                className={`h-5 w-5 sm:h-6 sm:w-6 ${
                                   star <= (editHoveredRating || editRating)
                                     ? "fill-amber-400 text-amber-400"
                                     : "text-slate-300"
@@ -327,7 +320,7 @@ export function ProductReviews({
                               />
                             </button>
                           ))}
-                          <span className="ml-2 text-slate-600">
+                          <span className="ml-2 text-sm sm:text-base text-slate-600">
                             {editRating} out of 5 stars
                           </span>
                         </div>
@@ -335,25 +328,8 @@ export function ProductReviews({
 
                       <div>
                         <Label
-                          htmlFor="edit-title"
-                          className="text-base font-medium text-slate-900"
-                        >
-                          Review Title
-                        </Label>
-                        <Input
-                          id="edit-title"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder="Sum up your experience"
-                          required
-                          className="mt-2"
-                        />
-                      </div>
-
-                      <div>
-                        <Label
                           htmlFor="edit-comment"
-                          className="text-base font-medium text-slate-900"
+                          className="text-[10px] sm:text-sm font-medium text-slate-900"
                         >
                           Your Review
                         </Label>
@@ -363,15 +339,17 @@ export function ProductReviews({
                           onChange={(e) => setEditComment(e.target.value)}
                           placeholder="Share your thoughts about this product"
                           required
-                          rows={5}
+                          rows={4}
                           className="mt-2"
                         />
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <Button
                           onClick={() => handleSubmitEdit(review.id)}
                           disabled={isSubmitting}
+                          className="w-full sm:w-auto cursor-pointer bg-orange-400 hover:bg-orange-500 text-white"
+                          size={"sm"}
                         >
                           {isSubmitting ? "Saving..." : "Save Changes"}
                         </Button>
@@ -379,26 +357,28 @@ export function ProductReviews({
                           variant="outline"
                           onClick={() => setEditingReviewId(null)}
                           disabled={isSubmitting}
+                          className="w-full sm:w-auto cursor-pointer"
+                          size={"sm"}
                         >
                           Cancel
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-slate-200 text-slate-700">
-                          {review.user_id.substring(0, 2).toUpperCase()}
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                        <AvatarFallback className="bg-slate-200 text-slate-700 text-xs sm:text-sm">
+                          <b>{review.user_id.substring(0, 2).toUpperCase()}</b>
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-0.5 sm:gap-1">
                               {[1, 2, 3, 4, 5].map((star) => (
                                 <Star
                                   key={star}
-                                  className={`h-4 w-4 ${
+                                  className={`h-3 w-3 sm:h-4 sm:w-4 ${
                                     star <= review.rating
                                       ? "fill-amber-400 text-amber-400"
                                       : "text-slate-300"
@@ -406,14 +386,14 @@ export function ProductReviews({
                                 />
                               ))}
                             </div>
-                            <span className="text-sm text-slate-600">
+                            <span className="text-xs sm:text-sm text-slate-500">
                               {new Date(review.created_at).toLocaleDateString(
                                 "en-US",
                                 {
                                   year: "numeric",
-                                  month: "long",
+                                  month: "short",
                                   day: "numeric",
-                                }
+                                },
                               )}
                             </span>
                           </div>
@@ -423,18 +403,18 @@ export function ProductReviews({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleEditReview(review)}
-                                className="h-8 w-8 p-0 cursor-pointer"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 cursor-pointer"
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
                                 <span className="sr-only">Edit review</span>
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setDeleteReviewId(review.id)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
-                                <Trash2 className="h-4 w-4 cursor-pointer" />
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 cursor-pointer" />
                                 <span className="sr-only">Delete review</span>
                               </Button>
                             </div>
@@ -443,7 +423,7 @@ export function ProductReviews({
                         {/* <h4 className="font-semibold text-slate-900">
                           {review.title}
                         </h4> */}
-                        <p className="text-black text-md leading-relaxed">
+                        <p className="text-slate-800 text-sm sm:text-base leading-relaxed mt-1">
                           {review.comment}
                         </p>
                       </div>

@@ -37,7 +37,6 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
-import RichTextInput from "@/components/rich-text-input";
 
 export default function ProductDetailsPage({
   params,
@@ -57,6 +56,11 @@ export default function ProductDetailsPage({
     { image_url: string; image_name: string }[]
   >([]);
 
+  // Product specifications state
+  const [productSpecifications, setProductSpecifications] = useState<
+    { title: string; description: string }[]
+  >([]);
+
   const [product, setProduct] = useState({
     id: "" as string,
     name: "",
@@ -72,6 +76,8 @@ export default function ProductDetailsPage({
     created_at: "",
     image_name: "",
     image_urls: "" as string,
+    instagram_url: "" as string,
+    youtube_url: "" as string,
   });
 
   const [collections, setCollections] = useState([
@@ -82,6 +88,28 @@ export default function ProductDetailsPage({
 
   const handleChange = (key: string, value: any) => {
     setProduct((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Product specifications handlers
+  const handleAddSpecification = () => {
+    setProductSpecifications((prev) => [
+      ...prev,
+      { title: "", description: "" },
+    ]);
+  };
+
+  const handleRemoveSpecification = (index: number) => {
+    setProductSpecifications((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSpecificationChange = (
+    index: number,
+    field: "title" | "description",
+    value: string,
+  ) => {
+    setProductSpecifications((prev) =>
+      prev.map((spec, i) => (i === index ? { ...spec, [field]: value } : spec)),
+    );
   };
 
   // Initial data fetching
@@ -112,7 +140,14 @@ export default function ProductDetailsPage({
           created_at: data.created_at,
           image_name: data.image_name,
           image_urls: data.image_url,
+          instagram_url: data.instagram_url || "",
+          youtube_url: data.youtube_url || "",
         });
+
+        // Load specifications from database
+        if (data.specifications && Array.isArray(data.specifications)) {
+          setProductSpecifications(data.specifications);
+        }
 
         const { data: imagesData, error: imagesError } = await supabase
           .from("product_images")
@@ -262,9 +297,14 @@ export default function ProductDetailsPage({
     useState<boolean>(false);
   const [ProductImagesValidationError, setProductImagesValidationError] =
     useState<boolean>(false);
+  const [
+    productSpecificationsValidationError,
+    setProductSpecificationsValidationError,
+  ] = useState<boolean>(false);
 
   const productValidation = () => {
     setNameValidationError(false);
+    setProductSpecificationsValidationError(false);
     let res = true;
 
     if (product.name.trim() === "") {
@@ -318,6 +358,27 @@ export default function ProductDetailsPage({
       setProductImagesValidationError(false);
     }
 
+    // Validate product specifications
+    if (productSpecifications.length === 0) {
+      setProductSpecificationsValidationError(true);
+      alert("Please add at least one product specification.");
+      res = false;
+    } else {
+      const hasEmptySpec = productSpecifications.some(
+        (spec) => spec.title.trim() === "" || spec.description.trim() === "",
+      );
+
+      if (hasEmptySpec) {
+        setProductSpecificationsValidationError(true);
+        alert(
+          "Please fill in all product specification fields (title and description).",
+        );
+        res = false;
+      } else {
+        setProductSpecificationsValidationError(false);
+      }
+    }
+
     return res;
   };
 
@@ -342,7 +403,7 @@ export default function ProductDetailsPage({
         .from("product_images")
         .delete()
         .eq("product_id", id)
-        .select(); // Add .select() to see what was deleted
+        .select();
 
       console.log("Delete operation result:", { deleteData, deleteError });
 
@@ -368,7 +429,7 @@ export default function ProductDetailsPage({
       const { data: imagesData, error: imagesError } = await supabase
         .from("product_images")
         .insert(imagesToInsert)
-        .select(); // Add .select() to see what was inserted
+        .select();
 
       if (imagesError) {
         console.error("Error adding product images:", imagesError);
@@ -378,7 +439,6 @@ export default function ProductDetailsPage({
       }
       console.log("Product images updated successfully:", imagesData);
 
-      // Update InitialProductImages to reflect current state
       setInitialProductImages([...productImages]);
     } else {
       console.log("Product images have not changed.");
@@ -396,6 +456,9 @@ export default function ProductDetailsPage({
       is_new_arrival: product.is_new_arrival,
       image_name: product.image_name,
       image_url: product.image_urls,
+      specifications: productSpecifications,
+      instagram_url: product.instagram_url,
+      youtube_url: product.youtube_url,
     };
 
     console.log("Updating product with payload:", product_payload);
@@ -416,6 +479,46 @@ export default function ProductDetailsPage({
   };
 
   const _handleProductDelete = async () => {
+    // Get the thumbnail image name before deleting the product
+    const thumbnailImageName = product.image_name;
+    // Get all product images for this product before deleting the product
+    const { data: productImagesData, error: productImagesError } =
+      await supabase.from("product_images").select("*").eq("product_id", id);
+
+    if (productImagesError) {
+      console.error(
+        "Error fetching product images for deletion:",
+        productImagesError,
+      );
+      alert("There was an error deleting the product. Please try again.");
+      return;
+    }
+
+    // Delete the product imags and thumbnail image from Supabase Storage
+    const thumbnailBucket =
+      process.env.NEXT_PUBLIC_SUPABASE_THUMBNAIL_BUCKET ||
+      "product_thumbnail_images";
+    const storageDeletionPromises = [];
+
+    if (thumbnailImageName) {
+      storageDeletionPromises.push(
+        supabase.storage.from(thumbnailBucket).remove([thumbnailImageName]),
+      );
+    }
+
+    if (productImagesData && productImagesData.length > 0) {
+      const productImagesBucket =
+        process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_IMAGES_BUCKET ||
+        "product_images";
+      const productImageNames = productImagesData.map((img) => img.image_name);
+      storageDeletionPromises.push(
+        supabase.storage.from(productImagesBucket).remove(productImageNames),
+      );
+    }
+
+    await Promise.all(storageDeletionPromises);
+
+    // Now delete the product record from the database
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       console.error("Error deleting product:", error);
@@ -448,7 +551,7 @@ export default function ProductDetailsPage({
                       size={"sm"}
                     >
                       <Trash2 size={16} />
-                      Delete Image
+                      Delete Product
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -753,6 +856,70 @@ export default function ProductDetailsPage({
                   ) : null}
                 </div>
 
+                {/* Product specifications */}
+                <div>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Product Specifications
+                  </label>
+                  <div className="flex flex-col gap-2 mb-2">
+                    {productSpecifications.map((spec, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row gap-2 p-3 border border-gray-200 rounded-md"
+                      >
+                        <Input
+                          placeholder="Title (e.g., Material)"
+                          value={spec.title}
+                          onChange={(e) =>
+                            handleSpecificationChange(
+                              index,
+                              "title",
+                              e.target.value,
+                            )
+                          }
+                          className="flex-1"
+                        />
+                        <Input
+                          placeholder="Description (e.g., Cotton)"
+                          value={spec.description}
+                          onChange={(e) =>
+                            handleSpecificationChange(
+                              index,
+                              "description",
+                              e.target.value,
+                            )
+                          }
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleRemoveSpecification(index)}
+                          className="cursor-pointer shrink-0"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddSpecification}
+                    className="cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add Specification
+                  </Button>
+                  {productSpecificationsValidationError && (
+                    <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                      Please add at least one specification with both title and
+                      description.
+                    </p>
+                  )}
+                </div>
+
                 {/* Description */}
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">
@@ -761,11 +928,13 @@ export default function ProductDetailsPage({
                   {editingField === "description" ? (
                     <>
                       <div className="space-y-2">
-                        <RichTextInput
+                        <Textarea
                           value={product.description}
-                          onChange={(content) =>
-                            handleChange("description", content)
+                          onChange={(e) =>
+                            handleChange("description", e.target.value)
                           }
+                          placeholder="Enter product description"
+                          rows={4}
                         />
                         <div className="flex gap-2">
                           <Button
@@ -805,6 +974,97 @@ export default function ProductDetailsPage({
                         </p>
                       ) : null}
                     </>
+                  )}
+                </div>
+
+                {/* Instagram and YouTube links */}
+                <div>
+                  <label className="block text-sm text-gray-500">
+                    Instagram URL
+                  </label>
+                  {editingField === "instagram_url" ? (
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="url"
+                        value={product.instagram_url}
+                        placeholder="https://www.instagram.com/..."
+                        onChange={(e) =>
+                          handleChange("instagram_url", e.target.value)
+                        }
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setEditingField(null)}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setEditingField(null)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-base truncate max-w-xs">
+                        {product.instagram_url || "Not set"}
+                      </p>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setEditingField("instagram_url")}
+                      >
+                        <Pencil className="w-4 h-4 text-gray-500" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-500">
+                    YouTube URL
+                  </label>
+                  {editingField === "youtube_url" ? (
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="url"
+                        value={product.youtube_url}
+                        placeholder="https://www.youtube.com/..."
+                        onChange={(e) =>
+                          handleChange("youtube_url", e.target.value)
+                        }
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setEditingField(null)}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setEditingField(null)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-base truncate max-w-xs">
+                        {product.youtube_url || "Not set"}
+                      </p>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setEditingField("youtube_url")}
+                      >
+                        <Pencil className="w-4 h-4 text-gray-500" />
+                      </Button>
+                    </div>
                   )}
                 </div>
 
