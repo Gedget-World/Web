@@ -1,10 +1,14 @@
 import Markdown from "react-markdown";
-import termsMarkdown from "@/content/policies/terms-and-conditions.md";
+import { getMarkdownContent } from "@/lib/markdown";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function TermsAndConditionsPage() {
+  const termsMarkdown = getMarkdownContent(
+    "content/policies/terms-and-conditions.md",
+  );
+
   return (
     <>
       <section className="max-w-4xl mt-10 mb-10 mx-auto px-4">
@@ -19,9 +23,9 @@ export default function TermsAndConditionsPage() {
                 Back to Policies
               </Button>
             </Link>
-            <div className="text-sm text-gray-600">
+            {/* <div className="text-sm text-gray-600">
               Last updated: <i>January 1, 2024</i>
-            </div>
+            </div> */}
           </div>
           <div className="space-y-4">
             <Markdown
