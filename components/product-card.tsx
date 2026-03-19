@@ -20,21 +20,25 @@ type Product = {
   discount_percentage: number | null;
   average_rating?: number;
   review_count?: number;
+  is_out_of_stock: boolean;
 };
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
-  // console.log("Product in ProductCard:", product);
+  // Check both is_out_of_stock flag and stock quantity
+  const isOutOfStock = product.is_out_of_stock || product.stock <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isOutOfStock) return;
     addItem(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1000);
   };
+
   return (
     <Card className="group overflow-hidden p-0 border-none shadow-none">
       <Link href={`/products/${product.slug}`}>
@@ -45,7 +49,7 @@ export function ProductCard({ product }: { product: Product }) {
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          {product.stock <= 0 && (
+          {isOutOfStock && (
             <div className="absolute top-4 left-2 bg-black opacity-70 text-white font-semibold text-xs px-3 py-2 rounded-full">
               Out of Stock
             </div>
@@ -86,7 +90,7 @@ export function ProductCard({ product }: { product: Product }) {
                   <span className="line-through text-slate-500 text-xs">
                     &#8377;
                     {Math.round(
-                      product.price / (1 - product.discount_percentage / 100)
+                      product.price / (1 - product.discount_percentage / 100),
                     )}
                   </span>
                 )}
@@ -104,7 +108,7 @@ export function ProductCard({ product }: { product: Product }) {
               variant="outline"
               size="sm"
               onClick={handleAddToCart}
-              disabled={product.stock <= 0}
+              disabled={isOutOfStock || added}
             >
               {added ? (
                 <Spinner className="h-5 w-5" />

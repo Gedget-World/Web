@@ -162,10 +162,10 @@ export default async function ProductDetailPage({
           {/* Stock details */}
           <div className="mb-4">
             <div className="flex items-center gap-2 text-sm">
-              {product.stock > 0 ? (
-                <span className="text-green-600 font-medium">In Stock</span>
-              ) : (
+              {product.is_out_of_stock || product.stock <= 0 ? (
                 <span className="text-red-600 font-medium">Out of Stock</span>
+              ) : (
+                <span className="text-green-600 font-medium">In Stock</span>
               )}
             </div>
           </div>
@@ -177,7 +177,7 @@ export default async function ProductDetailPage({
               price: product.price,
               image_url: product.image_url,
             }}
-            disabled={product.stock <= 0}
+            disabled={product.is_out_of_stock || product.stock <= 0}
           />
 
           {/* Details Accordion */}

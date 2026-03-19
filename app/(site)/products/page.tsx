@@ -6,13 +6,8 @@ export default async function ProductsPage() {
 
   const { data: products } = await supabase
     .from("products")
-    .select(
-      `
-      *,
-      reviews(rating),
-      collections(name, slug)
-    `,
-    )
+    .select("*, collections(name, slug)")
+    .eq("is_active", true)
     .order("created_at", { ascending: false });
 
   const { data: collections } = await supabase

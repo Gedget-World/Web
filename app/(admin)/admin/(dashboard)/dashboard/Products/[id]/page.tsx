@@ -37,6 +37,12 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ProductDetailsPage({
   params,
@@ -72,6 +78,7 @@ export default function ProductDetailsPage({
     is_active: null as boolean | null,
     is_featured: null as boolean | null,
     is_new_arrival: null as boolean | null,
+    is_out_of_stock: false as boolean,
     slug: "",
     created_at: "",
     image_name: "",
@@ -136,6 +143,7 @@ export default function ProductDetailsPage({
           is_active: data.is_active,
           is_featured: data.is_featured,
           is_new_arrival: data.is_new_arrival,
+          is_out_of_stock: data.is_out_of_stock || false,
           slug: data.slug,
           created_at: data.created_at,
           image_name: data.image_name,
@@ -454,6 +462,7 @@ export default function ProductDetailsPage({
       is_active: product.is_active,
       is_featured: product.is_featured,
       is_new_arrival: product.is_new_arrival,
+      is_out_of_stock: product.is_out_of_stock,
       image_name: product.image_name,
       image_url: product.image_urls,
       specifications: productSpecifications,
@@ -543,43 +552,80 @@ export default function ProductDetailsPage({
               <CardTitle className="text-2xl font-semibold flex items-center gap-4 justify-between">
                 <div>{product.name}</div>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant={"destructive"}
-                      className="cursor-pointer"
-                      size={"sm"}
-                    >
-                      <Trash2 size={16} />
-                      Delete Product
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader className="items-center">
-                      <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
-                        <TriangleAlertIcon className="text-destructive size-6" />
-                      </div>
-                      <AlertDialogTitle>
-                        Are you absolutely sure you want to delete{" "}
-                        {product.name}?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="text-center">
-                        This action cannot be undone. This will permanently
-                        delete your product and remove your data from our
-                        servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={_handleProductDelete}
-                        className="bg-destructive dark:bg-destructive/60 hover:bg-destructive focus-visible:ring-destructive text-white"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <div className="flex items-center gap-3">
+                  {/* Out of Stock Toggle */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-md">
+                          <label className="text-sm text-gray-600 whitespace-nowrap">
+                            Out of Stock
+                          </label>
+                          <Switch
+                            checked={product.is_out_of_stock}
+                            onCheckedChange={(val) =>
+                              handleChange("is_out_of_stock", val)
+                            }
+                            className="cursor-pointer"
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          {product.is_out_of_stock
+                            ? "Product is currently out of stock"
+                            : "Toggle to mark product as out of stock"}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  <AlertDialog>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant={"destructive"}
+                              className="cursor-pointer"
+                              size={"sm"}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </AlertDialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete entire product</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <AlertDialogContent>
+                      <AlertDialogHeader className="items-center">
+                        <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
+                          <TriangleAlertIcon className="text-destructive size-6" />
+                        </div>
+                        <AlertDialogTitle>
+                          Are you absolutely sure you want to delete{" "}
+                          {product.name}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                          This action cannot be undone. This will permanently
+                          delete your product and remove your data from our
+                          servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={_handleProductDelete}
+                          className="bg-destructive dark:bg-destructive/60 hover:bg-destructive focus-visible:ring-destructive text-white"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardTitle>
               <CardDescription>
                 {`Manage and edit the details of "${product.slug}"`}

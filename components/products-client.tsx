@@ -33,6 +33,7 @@ interface Product {
   price: number;
   image_url: string;
   stock: number;
+  is_out_of_stock: boolean;
   discount_percentage: number | null;
   average_rating: number;
   review_count: number;
@@ -132,7 +133,8 @@ export function ProductsClient({
 
       const matchesRating = product.average_rating >= minRating;
 
-      const matchesStock = !inStockOnly || product.stock > 0;
+      const matchesStock =
+        !inStockOnly || (!product.is_out_of_stock && product.stock > 0);
 
       return (
         matchesSearch &&
