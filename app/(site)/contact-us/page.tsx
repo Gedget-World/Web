@@ -6,13 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   MessageSquare,
   Mail,
   Phone,
@@ -26,6 +19,7 @@ import {
   Send,
   CheckCircle,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import FAQSections from "@/components/faq-sections";
@@ -33,42 +27,59 @@ import FAQSections from "@/components/faq-sections";
 export default function ContactUsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    company: "",
-    inquiryType: "",
     message: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    // Simulate API call - Replace with actual API integration
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // TODO: Integrate with your backend/email service
-    console.log("Form submitted:", formData);
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        company: "",
-        inquiryType: "",
-        message: "",
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
-    }, 3000);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to send message. Please try again.",
+        );
+      }
+
+      setIsSubmitted(true);
+
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          message: "",
+        });
+      }, 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -241,6 +252,19 @@ export default function ContactUsPage() {
               </p>
             </div>
 
+            {/* Error Alert */}
+            {error && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="font-medium text-red-800">
+                    Failed to send message
+                  </h4>
+                  <p className="text-sm text-red-600 mt-1">{error}</p>
+                </div>
+              </div>
+            )}
+
             {isSubmitted ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="p-4 bg-green-100 rounded-full mb-4">
@@ -312,50 +336,6 @@ export default function ContactUsPage() {
                     value={formData.phone}
                     onChange={handleChange}
                   />
-                </div>
-
-                {/* Company */}
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    name="company"
-                    placeholder="Your company name"
-                    value={formData.company}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                {/* Inquiry Type */}
-                <div className="space-y-2">
-                  <Label htmlFor="inquiryType">Inquiry Type</Label>
-                  <Select
-                    value={formData.inquiryType}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, inquiryType: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select inquiry type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General Inquiry</SelectItem>
-                      <SelectItem value="product">
-                        Product Information
-                      </SelectItem>
-                      <SelectItem value="order">Order Support</SelectItem>
-                      <SelectItem value="return">Returns & Refunds</SelectItem>
-                      <SelectItem value="bulk">Bulk / B2B Orders</SelectItem>
-                      <SelectItem value="partnership">
-                        Partnership Inquiry
-                      </SelectItem>
-                      <SelectItem value="feedback">
-                        Feedback / Suggestion
-                      </SelectItem>
-                      <SelectItem value="complaint">Complaint</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 {/* Message */}
