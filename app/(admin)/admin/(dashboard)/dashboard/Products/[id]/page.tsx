@@ -489,7 +489,21 @@ export default function ProductDetailsPage({
 
   const _handleProductDelete = async () => {
     // Get the thumbnail image name before deleting the product
-    const thumbnailImageName = product.image_name;
+    let thumbnailImageName = product.image_name;
+
+    // If image_name is empty, extract filename from image_url
+    if (!thumbnailImageName && product.image_urls) {
+      try {
+        const url = new URL(product.image_urls);
+        // Extract the filename from the URL path (last segment after bucket name)
+        const pathParts = url.pathname.split("/");
+        thumbnailImageName = pathParts[pathParts.length - 1];
+        console.log("Extracted thumbnail name from URL:", thumbnailImageName);
+      } catch (e) {
+        console.error("Error parsing image URL:", e);
+      }
+    }
+
     // Get all product images for this product before deleting the product
     const { data: productImagesData, error: productImagesError } =
       await supabase.from("product_images").select("*").eq("product_id", id);
@@ -503,29 +517,45 @@ export default function ProductDetailsPage({
       return;
     }
 
-    // Delete the product imags and thumbnail image from Supabase Storage
+    // Delete the product images and thumbnail image from Supabase Storage
     const thumbnailBucket =
       process.env.NEXT_PUBLIC_SUPABASE_THUMBNAIL_BUCKET ||
       "product_thumbnail_images";
-    const storageDeletionPromises = [];
 
+    // Delete thumbnail image
     if (thumbnailImageName) {
-      storageDeletionPromises.push(
-        supabase.storage.from(thumbnailBucket).remove([thumbnailImageName]),
-      );
+      console.log("Deleting thumbnail:", thumbnailImageName);
+      const { error: thumbnailDeleteError } = await supabase.storage
+        .from(thumbnailBucket)
+        .remove([thumbnailImageName]);
+
+      if (thumbnailDeleteError) {
+        console.error("Error deleting thumbnail image:", thumbnailDeleteError);
+      } else {
+        console.log("Thumbnail image deleted successfully");
+      }
     }
 
+    // Delete product images
     if (productImagesData && productImagesData.length > 0) {
       const productImagesBucket =
         process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_IMAGES_BUCKET ||
         "product_images";
       const productImageNames = productImagesData.map((img) => img.image_name);
-      storageDeletionPromises.push(
-        supabase.storage.from(productImagesBucket).remove(productImageNames),
-      );
-    }
 
-    await Promise.all(storageDeletionPromises);
+      const { error: productImagesDeleteError } = await supabase.storage
+        .from(productImagesBucket)
+        .remove(productImageNames);
+
+      if (productImagesDeleteError) {
+        console.error(
+          "Error deleting product images:",
+          productImagesDeleteError,
+        );
+      } else {
+        console.log("Product images deleted successfully");
+      }
+    }
 
     // Now delete the product record from the database
     const { error } = await supabase.from("products").delete().eq("id", id);
