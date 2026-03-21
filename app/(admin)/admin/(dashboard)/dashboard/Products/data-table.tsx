@@ -134,6 +134,15 @@ export default function DataTable() {
                     <DropdownMenuGroup>
                       <Link href={`/admin/dashboard/Products/${row.id}`}>
                         <DropdownMenuItem className="cursor-pointer">
+                          Edit Product
+                        </DropdownMenuItem>
+                      </Link>
+                      <Link
+                        href={`/products/${row.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <DropdownMenuItem className="cursor-pointer">
                           View Product
                         </DropdownMenuItem>
                       </Link>

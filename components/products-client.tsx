@@ -68,7 +68,7 @@ export function ProductsClient({
   );
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(searchParams.get("minPrice")) || 0,
-    Number(searchParams.get("maxPrice")) || 1000,
+    Number(searchParams.get("maxPrice")) || getMaxPrice(initialProducts),
   ]);
   const [minRating, setMinRating] = useState<number>(
     Number(searchParams.get("rating")) || 0,
@@ -84,9 +84,7 @@ export function ProductsClient({
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const maxPrice = useMemo(() => {
-    return Math.max(...initialProducts.map((p) => p.price), 1000);
-  }, [initialProducts]);
+  const maxPrice = getMaxPrice(initialProducts);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -247,11 +245,10 @@ export function ProductsClient({
             handleFilterChange();
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="All Collections" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Collections</SelectItem>
             {collections.map((collection) => (
               <SelectItem key={collection.id} value={collection.slug}>
                 {collection.name}
@@ -263,12 +260,12 @@ export function ProductsClient({
 
       <div className="space-y-3">
         <Label>
-          Price Range: ${priceRange[0]} - ${priceRange[1]}
+          Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
         </Label>
         <Slider
           min={0}
           max={maxPrice}
-          step={10}
+          step={1}
           value={priceRange}
           onValueChange={(value) => {
             setPriceRange(value as [number, number]);
@@ -433,7 +430,7 @@ export function ProductsClient({
                 className="gap-1.5 pr-1 hover:bg-slate-200 transition-colors"
               >
                 <span>
-                  Price: ${priceRange[0]} - ${priceRange[1]}
+                  Price: ₹{priceRange[0]} - ₹{priceRange[1]}
                 </span>
                 <button
                   onClick={removePriceFilter}
@@ -573,3 +570,6 @@ export function ProductsClient({
     </main>
   );
 }
+
+const getMaxPrice = (products: Product[]) =>
+  Math.max(...products.map((p) => p.price), 100) + 100;

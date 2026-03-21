@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { HeroSection } from "@/components/hero-section";
-import { CollectionsGrid } from "@/components/collections-grid";
+// import { CollectionsGrid } from "@/components/collections-grid";
 import ProductsList from "@/components/Products-list";
 import FeaturedSection from "@/components/featured-section";
 import FAQSections from "@/components/faq-sections";
@@ -22,11 +22,11 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(5);
 
-  // Fetch collections
-  const { data: collections } = await supabase
-    .from("collections")
-    .select("*")
-    .limit(3);
+  // // Fetch collections
+  // const { data: collections } = await supabase
+  //   .from("collections")
+  //   .select("*")
+  //   .limit(3);
 
   return (
     <main className="min-h-screen">
@@ -36,11 +36,11 @@ export default async function HomePage() {
         heading={"Featured Products"}
         exploreLink={"#"}
       />
-      <CollectionsGrid
+      {/* <CollectionsGrid
         collections={collections || []}
         heading={"Explore Collections"}
         exploreLink={"#"}
-      />
+      /> */}
       <ProductsList
         products={arrivalProducts || []}
         heading={"New Arrivals"}

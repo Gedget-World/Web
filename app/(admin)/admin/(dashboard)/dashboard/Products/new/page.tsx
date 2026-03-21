@@ -25,6 +25,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function CreateProductPage() {
   const supabase = createClient();
@@ -110,6 +111,7 @@ export default function CreateProductPage() {
     { id: "c8d2348f-12df-49aa-87a2-8123ac0a12cd", name: "Summer" },
   ]);
   const [loadingCollections, setLoadingCollections] = useState(false);
+  const [handleSubmitLoading, setHandleSubmitLoading] = useState(false);
 
   // Initial page load
   useEffect(() => {
@@ -331,6 +333,7 @@ export default function CreateProductPage() {
 
   const handleSubmit = async () => {
     console.log("Creating product:", product);
+    setHandleSubmitLoading(true);
 
     if (productValidation()) {
       const { data, error } = await supabase
@@ -359,6 +362,7 @@ export default function CreateProductPage() {
       if (error) {
         console.error("Error creating product:", error);
         alert("Error creating product. Please try again.");
+        setHandleSubmitLoading(false);
         return;
       }
       console.log("Product created successfully:", data);
@@ -376,11 +380,14 @@ export default function CreateProductPage() {
         if (imagesError) {
           console.error("Error adding product images:", imagesError);
           alert("Error adding product images. Please try again.");
+          setHandleSubmitLoading(false);
           return;
         }
         console.log("Product images added successfully:", imagesData);
         router.push("/admin/dashboard/Products");
       }
+    } else {
+      setHandleSubmitLoading(false);
     }
   };
 
@@ -763,8 +770,19 @@ export default function CreateProductPage() {
             </div>
 
             <div className="pt-6 flex justify-end">
-              <Button className="px-6" onClick={handleSubmit}>
-                Create Product
+              <Button
+                className="px-6"
+                onClick={handleSubmit}
+                disabled={handleSubmitLoading}
+              >
+                {handleSubmitLoading ? (
+                  <>
+                    <Spinner className="size-4 mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Product"
+                )}
               </Button>
             </div>
           </div>

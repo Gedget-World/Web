@@ -14,6 +14,7 @@ type Product = {
   stock: number;
   average_rating?: number;
   review_count?: number;
+  is_out_of_stock: boolean;
 };
 
 type ProductsListProps = {

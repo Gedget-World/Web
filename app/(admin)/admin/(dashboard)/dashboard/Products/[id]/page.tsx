@@ -1168,8 +1168,19 @@ export default function ProductDetailsPage({
                 </div>
 
                 <div className="pt-6 flex justify-end">
-                  <Button className="px-6" onClick={handleSubmit}>
-                    Save All Changes
+                  <Button
+                    className="px-6"
+                    onClick={handleSubmit}
+                    disabled={handleSubmitLoading}
+                  >
+                    {handleSubmitLoading ? (
+                      <>
+                        <Spinner className="size-4 mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save All Changes"
+                    )}
                   </Button>
                 </div>
               </div>

@@ -42,12 +42,12 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Card className="group overflow-hidden p-0 border-none shadow-none">
       <Link href={`/products/${product.slug}`}>
-        <div className="relative aspect-square overflow-hidden bg-slate-100 rounded-xl">
+        <div className="relative aspect-square overflow-hidden rounded-xl">
           <Image
             src={product.image_url || "/placeholder.svg?height=400&width=400"}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-contain group-hover:scale-105 transition-transform duration-300"
           />
           {isOutOfStock && (
             <div className="absolute top-4 left-2 bg-black opacity-70 text-white font-semibold text-xs px-3 py-2 rounded-full">

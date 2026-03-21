@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import {
@@ -29,6 +29,8 @@ export default function ProductImagesSection({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -68,6 +70,25 @@ export default function ProductImagesSection({
     carouselApi?.scrollTo(index);
   };
 
+  const startScrolling = (direction: "up" | "down") => {
+    if (scrollIntervalRef.current) return;
+    scrollIntervalRef.current = setInterval(() => {
+      if (thumbnailContainerRef.current) {
+        thumbnailContainerRef.current.scrollBy({
+          top: direction === "up" ? -30 : 30,
+          behavior: "smooth",
+        });
+      }
+    }, 100);
+  };
+
+  const stopScrolling = () => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+
   if (loading) {
     return <div className="flex gap-4">Loading images...</div>;
   }
@@ -79,25 +100,74 @@ export default function ProductImagesSection({
   return (
     <div className="flex gap-4">
       {/* Thumbnail Gallery - Hidden on Mobile */}
-      <div className="hidden md:flex w-[70px] flex-col gap-2">
-        {images.map((image, index) => (
-          <button
-            key={image.id}
-            onMouseEnter={() => handleThumbnailHover(index)}
-            className={`relative w-full aspect-square cursor-pointer rounded-md overflow-hidden border-2 transition-all ${
-              selectedIndex === index
-                ? "border-blue-500 scale-105"
-                : "border-gray-200 hover:border-gray-400 hover:scale-100"
-            }`}
+      <div className="hidden md:flex flex-col items-center gap-1">
+        {/* Scroll Up Zone */}
+        <div
+          className="w-[70px] h-6 flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded transition-colors"
+          onMouseEnter={() => startScrolling("up")}
+          onMouseLeave={stopScrolling}
+        >
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <Image
-              src={image.image_url}
-              alt={image.image_name}
-              fill
-              className="object-cover"
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 15l7-7 7 7"
             />
-          </button>
-        ))}
+          </svg>
+        </div>
+
+        {/* Thumbnails Container */}
+        <div
+          ref={thumbnailContainerRef}
+          className="w-[70px] flex flex-col gap-2 max-h-[400px] overflow-y-auto scrollbar-hide"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {images.map((image, index) => (
+            <button
+              key={image.id}
+              onMouseEnter={() => handleThumbnailHover(index)}
+              className={`relative w-full aspect-square cursor-pointer rounded-md overflow-hidden border-2 transition-all shrink-0 ${
+                selectedIndex === index
+                  ? "border-blue-500 scale-105"
+                  : "border-gray-200 hover:border-gray-400 hover:scale-100"
+              }`}
+            >
+              <Image
+                src={image.image_url}
+                alt={image.image_name}
+                fill
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
+
+        {/* Scroll Down Zone */}
+        <div
+          className="w-[70px] h-6 flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded transition-colors"
+          onMouseEnter={() => startScrolling("down")}
+          onMouseLeave={stopScrolling}
+        >
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
       </div>
 
       {/* Main Image Display - Carousel */}
@@ -107,12 +177,13 @@ export default function ProductImagesSection({
             <CarouselContent>
               {images.map((image) => (
                 <CarouselItem key={image.id}>
-                  <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden">
                     <Image
                       src={image.image_url}
                       alt={image.image_name}
-                      fill
-                      className="object-cover"
+                      width={800}
+                      height={800}
+                      className="w-full h-auto object-contain"
                       priority
                     />
                   </div>
