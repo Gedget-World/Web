@@ -93,7 +93,13 @@ export default function CreateProductPage() {
       setStatus("");
       return;
     }
-    const newSlug = e.target.value.toLowerCase().trim().replaceAll(" ", "-");
+    const newSlug = e.target.value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-") // Replace spaces (including multiple) with single dash
+      .replace(/[^a-z0-9-]/g, "") // Remove all characters except lowercase letters, numbers, and dashes
+      .replace(/-+/g, "-") // Replace multiple consecutive dashes with single dash
+      .replace(/^-|-$/g, "");
     setSlug(newSlug);
     checkSlug(newSlug);
   };
