@@ -25,12 +25,6 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(5);
 
-  // // Fetch collections
-  // const { data: collections } = await supabase
-  //   .from("collections")
-  //   .select("*")
-  //   .limit(3);
-
   return (
     <main className="min-h-screen">
       <HeroSection />
@@ -39,11 +33,6 @@ export default async function HomePage() {
         heading={"Featured Products"}
         exploreLink={"#"}
       />
-      {/* <CollectionsGrid
-        collections={collections || []}
-        heading={"Explore Collections"}
-        exploreLink={"#"}
-      /> */}
       <ProductsList
         products={arrivalProducts || []}
         heading={"New Arrivals"}

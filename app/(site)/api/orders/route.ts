@@ -81,52 +81,6 @@ export async function POST(request: Request) {
 
     if (orderError) throw orderError;
 
-    // Save address to addresses table if metadata contains shipping details
-    if (metadata?.shipping_state && customer) {
-      try {
-        // Check if address already exists
-        const { data: existingAddress } = await supabase
-          .from("addresses")
-          .select("id")
-          .eq("customer_id", customer.id)
-          .eq("type", "shipping")
-          .single();
-
-        // Parse address safely
-        const addressParts = shipping_address
-          ? shipping_address.split(",")
-          : [""];
-        const addressData = {
-          full_name: customer_name || "",
-          address_line1: addressParts[0]?.trim() || "",
-          address_line2: addressParts[1]?.trim() || "",
-          city: shipping_city || "",
-          state: metadata.shipping_state || "",
-          postal_code: shipping_postal_code || "",
-          country: shipping_country || "US",
-        };
-
-        if (existingAddress) {
-          // Update existing address
-          await supabase
-            .from("addresses")
-            .update(addressData)
-            .eq("id", existingAddress.id);
-        } else {
-          // Create new address
-          await supabase.from("addresses").insert({
-            customer_id: customer.id,
-            type: "shipping",
-            is_default: true,
-            ...addressData,
-          });
-        }
-      } catch (addressError) {
-        console.error("[DEBUG] Address creation/update error:", addressError);
-        // Don't fail the order if address fails
-      }
-    }
-
     // Validate order items
     if (
       !order_items ||
@@ -135,7 +89,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Order items are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,7 +100,7 @@ export async function POST(request: Request) {
         product_id: item.product_id,
         quantity: item.quantity,
         price: item.price,
-      })
+      }),
     );
 
     console.log("[DEBUG] Creating order items:", orderItems);
@@ -178,7 +132,7 @@ export async function POST(request: Request) {
         message: error instanceof Error ? error.message : "Unknown error",
         details: process.env.NODE_ENV === "development" ? error : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

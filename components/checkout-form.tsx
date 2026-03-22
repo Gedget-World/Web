@@ -20,10 +20,11 @@ export function CheckoutForm({ user }: { user: User }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
   const shipping = 10;
 
@@ -154,6 +155,7 @@ export function CheckoutForm({ user }: { user: User }) {
         throw new Error(errorData.message || "Failed to create order");
       }
 
+      setOrderPlaced(true);
       clearCart();
       router.push("/checkout/success");
     } catch (error) {
@@ -163,7 +165,7 @@ export function CheckoutForm({ user }: { user: User }) {
     }
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && !orderPlaced) {
     router.push("/cart");
     return null;
   }
@@ -188,8 +190,8 @@ export function CheckoutForm({ user }: { user: User }) {
             tab === "shipping"
               ? "bg-black text-white"
               : tab === "payment"
-              ? "bg-black text-white"
-              : "bg-gray-100 text-black-700"
+                ? "bg-black text-white"
+                : "bg-gray-100 text-black-700"
           }`}
         >
           2
