@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/hero-section";
 import ProductsList from "@/components/Products-list";
 import FeaturedSection from "@/components/featured-section";
 import FAQSections from "@/components/faq-sections";
+import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -13,12 +14,14 @@ export default async function HomePage() {
     .from("products")
     .select("*")
     .eq("is_featured", true)
+    .eq("is_active", true)
     .limit(5);
 
   // Fetch arrival products
   const { data: arrivalProducts } = await supabase
     .from("products")
     .select("*")
+    .eq("is_active", true)
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -46,6 +49,7 @@ export default async function HomePage() {
         heading={"New Arrivals"}
         exploreLink={"#"}
       />
+      <RecentlyViewedProducts />
       <FeaturedSection />
       <FAQSections />
     </main>

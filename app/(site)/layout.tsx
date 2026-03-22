@@ -4,6 +4,7 @@ import { Roboto } from "next/font/google";
 import "./../globals.css";
 import { SiteHeader } from "@/components/site-header";
 import Footer from "@/components/site-footer";
+import { FirstLoadHandler } from "@/components/first-load-handler";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${roboto.variable} antialiased`}>
       <body className="font-sans">
+        <FirstLoadHandler />
         <SiteHeader />
         {children}
         <Footer />

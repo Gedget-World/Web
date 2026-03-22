@@ -11,6 +11,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { ProductViewTracker } from "@/components/product-view-tracker";
 
 export default async function ProductDetailPage({
   params,
@@ -24,6 +25,7 @@ export default async function ProductDetailPage({
     .from("products")
     .select("*, collections(name, slug)")
     .eq("slug", slug)
+    .eq("is_active", true)
     .single();
 
   if (!product) {
@@ -69,6 +71,18 @@ export default async function ProductDetailPage({
 
   return (
     <main className="min-h-screen py-12 px-4 md:px-8 max-w-7xl mx-auto">
+      {/* Track product view for recently viewed */}
+      <ProductViewTracker
+        product={{
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: product.price,
+          image_url: product.image_url,
+          discount_percentage: product.discount_percentage,
+          is_out_of_stock: product.is_out_of_stock || product.stock <= 0,
+        }}
+      />
       <div className="grid md:grid-cols-2 gap-12">
         {/* Images */}
         <div className="relative">
