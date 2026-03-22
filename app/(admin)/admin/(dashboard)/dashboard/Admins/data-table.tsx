@@ -26,6 +26,8 @@ import {
   ShieldCheck,
   Pencil,
   Eye,
+  ShieldOff,
+  Loader2,
 } from "lucide-react";
 
 interface Admin {
@@ -47,6 +49,7 @@ export default function DataTable() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const limit = 10;
   const supabase = createClient();
 
@@ -98,6 +101,27 @@ export default function DataTable() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const toggleVerification = async (admin: Admin) => {
+    setTogglingId(admin.id);
+    const newStatus = !admin.is_verified;
+
+    const { error } = await supabase
+      .from("admins")
+      .update({ is_verified: newStatus, updated_at: new Date().toISOString() })
+      .eq("id", admin.id);
+
+    if (!error) {
+      setData((prev) =>
+        prev.map((a) =>
+          a.id === admin.id ? { ...a, is_verified: newStatus } : a,
+        ),
+      );
+    } else {
+      alert("Failed to update verification status");
+    }
+    setTogglingId(null);
   };
 
   const totalPages = Math.ceil(totalCount / limit);
@@ -196,6 +220,20 @@ export default function DataTable() {
                           >
                             <Pencil className="w-4 h-4 mr-2" />
                             Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={() => toggleVerification(admin)}
+                            disabled={togglingId === admin.id}
+                          >
+                            {togglingId === admin.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : admin.is_verified ? (
+                              <ShieldOff className="w-4 h-4 mr-2" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                            )}
+                            {admin.is_verified ? "Unverify" : "Verify"}
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
                       </DropdownMenuContent>

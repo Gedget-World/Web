@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { email, password } = await request.json();
+    const { name, email, password } = await request.json();
     let error = null;
 
     // Check if admin with the same email already exists
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
           {
             email: email,
             password_hash: password,
-            name: "Admin",
+            name: name || null,
           },
         ])
         .select();
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     console.error("[v0] Order creation error:", error);
     return NextResponse.json(
       { error: "Failed to create order" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
