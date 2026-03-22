@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { debounce } from "lodash";
@@ -38,7 +38,7 @@ interface Permission {
   description: string | null;
 }
 
-export default function NewAdminPage() {
+function NewAdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -533,5 +533,19 @@ export default function NewAdminPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function NewAdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      }
+    >
+      <NewAdminContent />
+    </Suspense>
   );
 }

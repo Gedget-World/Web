@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { debounce } from "lodash";
@@ -26,7 +26,7 @@ import {
 import { ArrowLeft, Check, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-export default function NewCouponPage() {
+function NewCouponContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -561,5 +561,19 @@ export default function NewCouponPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function NewCouponPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      }
+    >
+      <NewCouponContent />
+    </Suspense>
   );
 }
