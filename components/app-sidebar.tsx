@@ -6,6 +6,7 @@ import {
   Boxes,
   Home,
   Newspaper,
+  Gift,
 } from "lucide-react";
 
 import {
@@ -47,18 +48,23 @@ const items = [
     icon: ClockArrowUp,
   },
   {
-    title: "Polices",
+    title: "Coupons",
+    url: `${baseURI}/Coupons`,
+    icon: Gift,
+  },
+  {
+    title: "Policies",
     url: `${baseURI}/Policies`,
     icon: Newspaper,
   },
 ];
 
 export function AppSidebar() {
-  // const pathName = usePathname();
-  // const [path, setPath] = useState(pathName);
-  // useEffect(() => {
-  //   setPath(pathName);
-  // }, [pathName]);
+  const pathName = usePathname();
+  const [path, setPath] = useState(pathName);
+  useEffect(() => {
+    setPath(pathName);
+  }, [pathName]);
 
   return (
     <Sidebar>
@@ -70,7 +76,7 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem
                   key={item.title}
-                  // className={path === item.url ? "bg-gray-200" : ""}
+                  className={path === item.url ? "bg-gray-200" : ""}
                 >
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
