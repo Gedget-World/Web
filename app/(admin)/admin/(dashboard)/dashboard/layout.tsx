@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 
 import "../../../../globals.css";
+import { AdminHeader } from "@/components/admin/admin-header";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +28,7 @@ export default function AdminLayout({
     <SidebarProvider>
       <AppSidebar />
       <main className="w-full">
-        <SidebarTrigger className="ml-3 mt-2" />
+        <AdminHeader />
         {children}
       </main>
     </SidebarProvider>

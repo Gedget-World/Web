@@ -8,6 +8,9 @@ import {
   Newspaper,
   Gift,
   Users,
+  ShieldCheck,
+  Crown,
+  KeyRound,
 } from "lucide-react";
 
 import {
@@ -49,9 +52,19 @@ const items = [
     icon: ClockArrowUp,
   },
   {
-    title: "Coupons",
-    url: `${baseURI}/Coupons`,
-    icon: Gift,
+    title: "Admins",
+    url: `${baseURI}/Admins`,
+    icon: ShieldCheck,
+  },
+  {
+    title: "Roles",
+    url: `${baseURI}/Roles`,
+    icon: Crown,
+  },
+  {
+    title: "Permissions",
+    url: `${baseURI}/Permissions`,
+    icon: KeyRound,
   },
   {
     title: "Customers",
@@ -59,10 +72,16 @@ const items = [
     icon: Users,
   },
   {
+    title: "Coupons",
+    url: `${baseURI}/Coupons`,
+    icon: Gift,
+  },
+  {
     title: "Reviews",
     url: `${baseURI}/Reviews`,
     icon: Newspaper,
   },
+
   // {
   //   title: "Policies",
   //   url: `${baseURI}/Policies`,
