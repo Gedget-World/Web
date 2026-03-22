@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Package, MapPin, Truck, CheckCircle2, Clock } from "lucide-react";
 import { InvoiceDownloadButton } from "@/components/invoice-download-button";
+import { CancelOrderButton } from "@/components/cancel-order-button";
 
 export default async function OrderDetailPage({
   params,
@@ -90,8 +91,11 @@ export default async function OrderDetailPage({
               })}
             </p>
           </div>
-          <div>
+          <div className="flex gap-2">
             <InvoiceDownloadButton order={order} />
+            {order.status === "pending" && (
+              <CancelOrderButton orderId={order.id} />
+            )}
           </div>
         </div>
 
