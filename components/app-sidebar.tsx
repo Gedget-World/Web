@@ -7,6 +7,7 @@ import {
   Home,
   Newspaper,
   Gift,
+  Users,
 } from "lucide-react";
 
 import {
@@ -51,6 +52,11 @@ const items = [
     title: "Coupons",
     url: `${baseURI}/Coupons`,
     icon: Gift,
+  },
+  {
+    title: "Customers",
+    url: `${baseURI}/Customers`,
+    icon: Users,
   },
   {
     title: "Policies",

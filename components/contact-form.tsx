@@ -70,6 +70,7 @@ export default function ContactForm({ user }: ContactFormProps) {
         },
         body: JSON.stringify({
           user_id: user.id,
+          email: user.email,
           ...tempData,
         }),
       });

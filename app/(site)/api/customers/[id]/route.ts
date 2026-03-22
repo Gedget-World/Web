@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const supabase = await createClient();
@@ -19,7 +19,7 @@ export async function GET(
       console.error("Error fetching customer:", customerError);
       return NextResponse.json(
         { error: customerError.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,14 +45,14 @@ export async function GET(
     console.error("Error fetching customer data:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const body = await request.json();
@@ -63,6 +63,7 @@ export async function PUT(
       .update({
         first_name: body.first_name,
         last_name: body.last_name,
+        email: body.email,
         phone: body.phone,
         date_of_birth: body.date_of_birth,
         preferences: body.preferences,
@@ -83,14 +84,14 @@ export async function PUT(
     console.error("Error updating customer:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const supabase = await createClient();
@@ -110,7 +111,7 @@ export async function DELETE(
     console.error("Error deleting customer:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

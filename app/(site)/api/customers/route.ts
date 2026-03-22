@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
           user_id: body.user_id,
           first_name: body.first_name,
           last_name: body.last_name,
+          email: body.email,
           phone: body.phone,
           date_of_birth: body.date_of_birth,
           preferences: body.preferences || {},
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating customer:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching customer:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
