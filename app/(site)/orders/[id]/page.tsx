@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Package, MapPin, Truck, CheckCircle2, Clock } from "lucide-react";
 import { InvoiceDownloadButton } from "@/components/invoice-download-button";
 import { CancelOrderButton } from "@/components/cancel-order-button";
+import { OrderItemReview } from "@/components/order-item-review";
 
 export default async function OrderDetailPage({
   params,
@@ -31,6 +32,7 @@ export default async function OrderDetailPage({
       order_items (
         *,
         products (
+          id,
           name,
           image_url,
           slug
@@ -180,32 +182,41 @@ export default async function OrderDetailPage({
               {order.order_items.map((item: any) => (
                 <div
                   key={item.id}
-                  className="flex gap-4 pb-1 border-b last:border-0 last:pb-0"
+                  className="flex flex-col gap-2 pb-4 border-b last:border-0 last:pb-0"
                 >
-                  <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-slate-100 shrink-0">
-                    <img
-                      src={item.products?.image_url || "/placeholder.svg"}
-                      alt={item.products?.name || "Product"}
-                      className="h-full w-full object-cover"
+                  <div className="flex gap-4">
+                    <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                      <img
+                        src={item.products?.image_url || "/placeholder.svg"}
+                        alt={item.products?.name || "Product"}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/products/${item.products?.slug}`}
+                        className="font-medium text-slate-900 hover:text-blue-600 text-sm truncate block max-w-[50%]"
+                      >
+                        {item.products?.name}
+                      </Link>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Qty: {item.quantity} × &#8377;
+                        {Number(item.price).toFixed(0)}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-semibold text-slate-900">
+                        &#8377;{(Number(item.price) * item.quantity).toFixed(0)}
+                      </p>
+                    </div>
+                  </div>
+                  {order.status === "delivered" && item.products && (
+                    <OrderItemReview
+                      productId={item.products.id}
+                      productName={item.products.name}
+                      userId={user.id}
                     />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      href={`/products/${item.products?.slug}`}
-                      className="font-medium text-slate-900 hover:text-blue-600 text-sm truncate block max-w-[50%]"
-                    >
-                      {item.products?.name}
-                    </Link>
-                    <p className="text-sm text-slate-500 mt-1">
-                      Qty: {item.quantity} × &#8377;
-                      {Number(item.price).toFixed(0)}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-semibold text-slate-900">
-                      &#8377;{(Number(item.price) * item.quantity).toFixed(0)}
-                    </p>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

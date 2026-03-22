@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { Star, Pencil, Trash2 } from "lucide-react";
+import { Star, Pencil, Trash2, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ type Review = {
   comment: string;
   created_at: string;
   user_id: string;
+  is_active: boolean;
+  is_approved: boolean;
 };
 
 type ProductReviewsProps = {
@@ -47,11 +49,6 @@ export function ProductReviews({
   reviewCount,
   userEmail,
 }: ProductReviewsProps) {
-  const [isWritingReview, setIsWritingReview] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [title, setTitle] = useState("Title");
-  const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
@@ -76,47 +73,6 @@ export function ProductReviews({
     };
     getCurrentUser();
   }, [supabase]);
-
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!userEmail) {
-      router.push("/auth/login");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-
-    const { error } = await supabase.from("reviews").insert({
-      product_id: productId,
-      user_id: user.id,
-      rating,
-      title,
-      comment,
-    });
-
-    if (error) {
-      console.error("Error submitting review:", error);
-      alert("Failed to submit review. Please try again.");
-    } else {
-      setTitle("");
-      setComment("");
-      setRating(5);
-      setIsWritingReview(false);
-      router.refresh();
-    }
-
-    setIsSubmitting(false);
-  };
 
   const handleEditReview = (review: Review) => {
     setEditingReviewId(review.id);
@@ -164,6 +120,8 @@ export function ProductReviews({
     }
   };
 
+  const activeReviews = reviews.filter((review) => review.is_active);
+
   return (
     <div className="mt-1 w-full mx-auto px-4 sm:px-6 py-6 lg:px-8 bg-slate-50 border border-slate-200 rounded-lg">
       <div>
@@ -195,104 +153,15 @@ export function ProductReviews({
               </span>
             </div>
           </div>
-          {!isWritingReview && (
-            <Button
-              onClick={() => setIsWritingReview(true)}
-              size={"sm"}
-              className="w-full sm:w-auto bg-orange-400 hover:bg-orange-500 text-white cursor-pointer"
-            >
-              <Pencil className="mr-1" size={12} /> Write a Review
-            </Button>
-          )}
         </div>
 
-        {isWritingReview && (
-          <div className="bg-white px-6 py-5 border mb-5 border-slate-200 rounded-lg">
-            <h3 className="text-md sm:text-lg font-semibold text-slate-900">
-              Share Your Experience
-            </h3>
-            <form
-              onSubmit={handleSubmitReview}
-              className="space-y-1 sm:space-y-2"
-            >
-              <div className="mt-4">
-                <Label className="text-[10px] sm:text-sm text-slate-900 mb-2 block">
-                  Rating
-                </Label>
-                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoveredRating(star)}
-                      onMouseLeave={() => setHoveredRating(0)}
-                      className="transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={`h-5 w-5 sm:h-5 sm:w-5 cursor-pointer ${
-                          star <= (hoveredRating || rating)
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-slate-300"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  <span className="ml-2 text-[10px] sm:text-sm text-slate-600">
-                    {rating} out of 5 stars
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <Label
-                  htmlFor="comment"
-                  className="text-[10px] sm:text-sm text-slate-900"
-                >
-                  Your Review
-                </Label>
-                <Textarea
-                  id="comment"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Share your thoughts about this product"
-                  required
-                  rows={4}
-                  className="mt-2"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 mt-3">
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto cursor-pointer bg-orange-400 hover:bg-orange-500 text-white"
-                  size={"sm"}
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Review"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsWritingReview(false)}
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto cursor-pointer"
-                  size={"sm"}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
-
         <div className="space-y-4 sm:space-y-6">
-          {reviews.length === 0 ? (
+          {activeReviews.length === 0 ? (
             <p className="text-slate-600 text-center py-6 sm:py-8 text-sm sm:text-base">
               No reviews yet. Be the first to review this product!
             </p>
           ) : (
-            reviews.map((review) => (
+            activeReviews.map((review) => (
               <Card key={review.id} className="py-2 sm:py-3 shadow-none">
                 <CardContent className="px-3 sm:px-4">
                   {editingReviewId === review.id ? (
@@ -396,6 +265,12 @@ export function ProductReviews({
                                 },
                               )}
                             </span>
+                            {review.is_approved && (
+                              <span className="inline-flex items-center gap-0.5 text-xs text-blue-600 font-medium">
+                                <BadgeCheck className="h-3.5 w-3.5" />
+                                Verified
+                              </span>
+                            )}
                           </div>
                           {currentUserId === review.user_id && (
                             <div className="flex gap-2">

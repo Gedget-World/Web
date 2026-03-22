@@ -59,10 +59,15 @@ const items = [
     icon: Users,
   },
   {
-    title: "Policies",
-    url: `${baseURI}/Policies`,
+    title: "Reviews",
+    url: `${baseURI}/Reviews`,
     icon: Newspaper,
   },
+  // {
+  //   title: "Policies",
+  //   url: `${baseURI}/Policies`,
+  //   icon: Newspaper,
+  // },
 ];
 
 export function AppSidebar() {

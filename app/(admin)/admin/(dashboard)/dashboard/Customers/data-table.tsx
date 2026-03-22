@@ -102,16 +102,13 @@ export default function DataTable() {
             <TableHead>Name</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Phone Verified</TableHead>
-            <TableHead>Date of Birth</TableHead>
-            <TableHead>Marketing Consent</TableHead>
-            <TableHead>Joined</TableHead>
             <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6">
+              <TableCell colSpan={4} className="text-center py-6">
                 Loading...
               </TableCell>
             </TableRow>
@@ -136,15 +133,6 @@ export default function DataTable() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell>{formatDate(customer.date_of_birth)}</TableCell>
-                  <TableCell>
-                    {customer.marketing_consent ? (
-                      <Badge className="bg-blue-100 text-blue-800">Yes</Badge>
-                    ) : (
-                      <Badge className="bg-gray-100 text-gray-600">No</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(customer.created_at)}</TableCell>
                   <TableCell>
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
@@ -178,7 +166,7 @@ export default function DataTable() {
 
               {data.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6">
+                  <TableCell colSpan={4} className="text-center py-6">
                     No customers found.
                   </TableCell>
                 </TableRow>
