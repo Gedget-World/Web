@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
 import {
   MoreHorizontalIcon,
   CheckCircle,
@@ -35,9 +34,11 @@ interface Admin {
   email: string;
   name: string | null;
   is_verified: boolean | null;
+  is_locked: boolean | null;
   role_id: string | null;
   created_at: string | null;
   updated_at: string | null;
+  last_login_at: string | null;
   roles: {
     id: string;
     name: string;
@@ -51,48 +52,29 @@ export default function DataTable() {
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const limit = 10;
-  const supabase = createClient();
 
-  useEffect(() => {
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("admins")
-        .select("id", { count: "exact", head: true });
-      setTotalCount(count || 0);
-    };
-    fetchCount();
-  }, [supabase]);
+  const fetchAdmins = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admins?page=${page}&limit=${limit}`);
+      const result = await res.json();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("admins")
-        .select(
-          `
-          id,
-          email,
-          name,
-          is_verified,
-          role_id,
-          created_at,
-          updated_at,
-          roles (
-            id,
-            name
-          )
-        `,
-        )
-        .order("created_at", { ascending: false })
-        .range(page * limit, page * limit + limit - 1);
-
-      if (!error && data) {
-        setData(data as unknown as Admin[]);
+      if (result.success) {
+        setData(result.data || []);
+        setTotalCount(result.totalCount || 0);
+      } else {
+        console.error("Failed to fetch admins:", result.error);
       }
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+    } finally {
       setLoading(false);
-    };
-    fetchData();
-  }, [supabase, page]);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdmins();
+  }, [page]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -107,18 +89,26 @@ export default function DataTable() {
     setTogglingId(admin.id);
     const newStatus = !admin.is_verified;
 
-    const { error } = await supabase
-      .from("admins")
-      .update({ is_verified: newStatus, updated_at: new Date().toISOString() })
-      .eq("id", admin.id);
+    try {
+      const res = await fetch("/api/admins", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: admin.id, is_verified: newStatus }),
+      });
 
-    if (!error) {
-      setData((prev) =>
-        prev.map((a) =>
-          a.id === admin.id ? { ...a, is_verified: newStatus } : a,
-        ),
-      );
-    } else {
+      const result = await res.json();
+
+      if (result.success) {
+        setData((prev) =>
+          prev.map((a) =>
+            a.id === admin.id ? { ...a, is_verified: newStatus } : a,
+          ),
+        );
+      } else {
+        alert("Failed to update verification status");
+      }
+    } catch (error) {
+      console.error("Error toggling verification:", error);
       alert("Failed to update verification status");
     }
     setTogglingId(null);

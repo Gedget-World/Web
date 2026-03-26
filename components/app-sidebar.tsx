@@ -52,6 +52,11 @@ const items = [
     icon: ClockArrowUp,
   },
   {
+    title: "CMS",
+    url: `${baseURI}/ContentManagement`,
+    icon: Newspaper,
+  },
+  {
     title: "Admins",
     url: `${baseURI}/Admins`,
     icon: ShieldCheck,

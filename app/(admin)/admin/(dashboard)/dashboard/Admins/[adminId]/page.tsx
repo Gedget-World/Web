@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +33,11 @@ interface Admin {
   email: string;
   name: string | null;
   is_verified: boolean | null;
+  is_locked: boolean | null;
   role_id: string | null;
   created_at: string | null;
   updated_at: string | null;
+  last_login_at: string | null;
 }
 
 interface Role {
@@ -71,7 +72,6 @@ export default function AdminDetailPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
-  const supabase = createClient();
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -81,89 +81,30 @@ export default function AdminDetailPage() {
 
   useEffect(() => {
     const fetchAdminData = async () => {
-      // Fetch admin
-      const { data: adminData, error: adminError } = await supabase
-        .from("admins")
-        .select("*")
-        .eq("id", adminId)
-        .single();
+      try {
+        const res = await fetch(`/api/admins/${adminId}`);
+        const result = await res.json();
 
-      if (!adminError && adminData) {
-        setAdmin(adminData);
-
-        // Fetch role if exists
-        if (adminData.role_id) {
-          const { data: roleData } = await supabase
-            .from("roles")
-            .select("*")
-            .eq("id", adminData.role_id)
-            .single();
-
-          if (roleData) {
-            setRole(roleData);
-
-            // Fetch permissions for this role
-            const { data: rolePermData } = await supabase
-              .from("role_permissions")
-              .select(
-                `
-                permissions (
-                  id,
-                  name,
-                  description
-                )
-              `,
-              )
-              .eq("role_id", adminData.role_id);
-
-            if (rolePermData) {
-              const perms = rolePermData
-                .map((rp) => rp.permissions as unknown as Permission)
-                .filter(Boolean);
-              setRolePermissions(perms);
-            }
-          }
+        if (result.success) {
+          setAdmin(result.data.admin);
+          setRole(result.data.role);
+          setRolePermissions(result.data.rolePermissions || []);
+          setDirectPermissions(result.data.directPermissions || []);
+          setAuditLogs(result.data.auditLogs || []);
+        } else {
+          console.error("Failed to fetch admin:", result.error);
         }
-
-        // Fetch direct permissions for this admin
-        const { data: adminPermData } = await supabase
-          .from("admin_permissions")
-          .select(
-            `
-            permissions (
-              id,
-              name,
-              description
-            )
-          `,
-          )
-          .eq("admin_id", adminId);
-
-        if (adminPermData) {
-          const perms = adminPermData
-            .map((ap) => ap.permissions as unknown as Permission)
-            .filter(Boolean);
-          setDirectPermissions(perms);
-        }
-
-        // Fetch recent audit logs for this admin
-        const { data: auditData } = await supabase
-          .from("audit_logs")
-          .select("id, action, entity, entity_id, created_at, ip_address")
-          .eq("admin_id", adminId)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (auditData) {
-          setAuditLogs(auditData);
-        }
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    fetchAdminData();
-  }, [supabase, adminId]);
+    if (adminId) {
+      fetchAdminData();
+    }
+  }, [adminId]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";

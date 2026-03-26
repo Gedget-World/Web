@@ -26,7 +26,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
 import {
   MoreHorizontalIcon,
   ShieldCheck,
@@ -53,48 +52,26 @@ export default function DataTable() {
   const [submitting, setSubmitting] = useState(false);
 
   const limit = 10;
-  const supabase = createClient();
   const router = useRouter();
 
   const fetchData = async () => {
     setLoading(true);
-
-    // Fetch roles
-    const { data: rolesData, error } = await supabase
-      .from("roles")
-      .select("*")
-      .order("name", { ascending: true })
-      .range(page * limit, page * limit + limit - 1);
-
-    if (!error && rolesData) {
-      // Fetch permission counts for each role
-      const rolesWithCounts = await Promise.all(
-        rolesData.map(async (role) => {
-          const { count } = await supabase
-            .from("role_permissions")
-            .select("id", { count: "exact", head: true })
-            .eq("role_id", role.id);
-          return { ...role, permission_count: count || 0 };
-        }),
-      );
-      setData(rolesWithCounts);
+    try {
+      const res = await fetch(`/api/roles?page=${page}&limit=${limit}`);
+      const result = await res.json();
+      if (result.success) {
+        setData(result.data);
+        setTotalCount(result.totalCount);
+      }
+    } catch (error) {
+      console.error("Error fetching roles:", error);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("roles")
-        .select("id", { count: "exact", head: true });
-      setTotalCount(count || 0);
-    };
-    fetchCount();
-  }, [supabase]);
-
-  useEffect(() => {
     fetchData();
-  }, [supabase, page]);
+  }, [page]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -109,17 +86,22 @@ export default function DataTable() {
     if (!deleteRole) return;
 
     setSubmitting(true);
-    const { error } = await supabase
-      .from("roles")
-      .delete()
-      .eq("id", deleteRole.id);
+    try {
+      const res = await fetch(`/api/roles?id=${deleteRole.id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
 
-    if (!error) {
-      setDeleteRole(null);
-      fetchData();
-      setTotalCount((prev) => prev - 1);
-    } else {
-      alert("Error deleting role. It may be assigned to admins.");
+      if (result.success) {
+        setDeleteRole(null);
+        fetchData();
+      } else {
+        alert(
+          result.error || "Error deleting role. It may be assigned to admins.",
+        );
+      }
+    } catch (error) {
+      alert("Error deleting role. Please try again.");
     }
     setSubmitting(false);
   };

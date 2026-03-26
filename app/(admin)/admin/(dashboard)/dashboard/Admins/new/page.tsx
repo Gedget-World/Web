@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { debounce } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,6 @@ interface Permission {
 function NewAdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
 
   const adminId = searchParams.get("id");
   const isEditMode = !!adminId;
@@ -75,56 +73,58 @@ function NewAdminContent() {
   // Fetch roles and permissions
   useEffect(() => {
     const fetchRolesAndPermissions = async () => {
-      const [rolesResult, permissionsResult] = await Promise.all([
-        supabase.from("roles").select("*").order("name"),
-        supabase.from("permissions").select("*").order("name"),
+      const [rolesRes, permissionsRes] = await Promise.all([
+        fetch("/api/admins/roles"),
+        fetch("/api/admins/permissions"),
       ]);
 
-      if (rolesResult.data) setRoles(rolesResult.data);
-      if (permissionsResult.data) setPermissions(permissionsResult.data);
+      const rolesData = await rolesRes.json();
+      const permissionsData = await permissionsRes.json();
+
+      if (rolesData.success) setRoles(rolesData.data);
+      if (permissionsData.success) setPermissions(permissionsData.data);
     };
     fetchRolesAndPermissions();
-  }, [supabase]);
+  }, []);
 
   // Fetch existing admin data if editing
   useEffect(() => {
     if (adminId) {
       const fetchAdmin = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("admins")
-          .select("*")
-          .eq("id", adminId)
-          .single();
+        try {
+          const res = await fetch(`/api/admins/${adminId}`);
+          const result = await res.json();
 
-        if (data && !error) {
-          setOriginalEmail(data.email);
-          setAdmin({
-            email: data.email,
-            password: "", // Don't load password
-            name: data.name || "",
-            role_id: data.role_id || "",
-            is_verified: data.is_verified || false,
-          });
-          setEmailStatus("available");
+          if (result.success && result.data.admin) {
+            const data = result.data.admin;
+            setOriginalEmail(data.email);
+            setAdmin({
+              email: data.email,
+              password: "", // Don't load password
+              name: data.name || "",
+              role_id: data.role_id || "",
+              is_verified: data.is_verified || false,
+            });
+            setEmailStatus("available");
 
-          // Fetch existing direct permissions
-          const { data: permData } = await supabase
-            .from("admin_permissions")
-            .select("permission_id")
-            .eq("admin_id", adminId);
-
-          if (permData) {
-            const permIds = permData.map((p) => p.permission_id);
-            setSelectedPermissions(permIds);
-            setExistingPermissions(permIds);
+            // Get existing direct permissions from the API response
+            if (result.data.directPermissions) {
+              const permIds = result.data.directPermissions.map(
+                (p: any) => p.id,
+              );
+              setSelectedPermissions(permIds);
+              setExistingPermissions(permIds);
+            }
           }
+        } catch (error) {
+          console.error("Error fetching admin:", error);
         }
         setLoading(false);
       };
       fetchAdmin();
     }
-  }, [adminId, supabase]);
+  }, [adminId]);
 
   const handleChange = (key: string, value: any) => {
     setAdmin((prev) => ({ ...prev, [key]: value }));
@@ -144,15 +144,17 @@ function NewAdminContent() {
       }
       setEmailStatus("checking");
 
-      const { data } = await supabase
-        .from("admins")
-        .select("id")
-        .eq("email", value.toLowerCase())
-        .maybeSingle();
-
-      setEmailStatus(data ? "taken" : "available");
+      try {
+        const res = await fetch(
+          `/api/admins/check-email?email=${encodeURIComponent(value)}`,
+        );
+        const result = await res.json();
+        setEmailStatus(result.exists ? "taken" : "available");
+      } catch (error) {
+        setEmailStatus("");
+      }
     }, 500),
-    [isEditMode, originalEmail, supabase],
+    [isEditMode, originalEmail],
   );
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,80 +214,40 @@ function NewAdminContent() {
 
     try {
       if (isEditMode) {
-        // Update admin
-        const updateData: Record<string, any> = {
-          email: admin.email.toLowerCase(),
-          name: admin.name || null,
-          role_id: admin.role_id || null,
-          is_verified: admin.is_verified,
-          updated_at: new Date().toISOString(),
-        };
+        // Update admin via API
+        const res = await fetch(`/api/admins/${adminId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: admin.email.toLowerCase(),
+            password: admin.password || undefined,
+            name: admin.name || null,
+            role_id: admin.role_id || null,
+            is_verified: admin.is_verified,
+            permissions: selectedPermissions,
+            existingPermissions: existingPermissions,
+          }),
+        });
 
-        // Only update password if provided
-        if (admin.password) {
-          // Hash password using a simple approach (in production, use bcrypt on server)
-          updateData.password_hash = admin.password; // Should be hashed server-side
-        }
-
-        const { error: updateError } = await supabase
-          .from("admins")
-          .update(updateData)
-          .eq("id", adminId);
-
-        if (updateError) throw updateError;
-
-        // Update direct permissions
-        // First, remove permissions that were deselected
-        const permissionsToRemove = existingPermissions.filter(
-          (p) => !selectedPermissions.includes(p),
-        );
-        if (permissionsToRemove.length > 0) {
-          await supabase
-            .from("admin_permissions")
-            .delete()
-            .eq("admin_id", adminId)
-            .in("permission_id", permissionsToRemove);
-        }
-
-        // Add new permissions
-        const permissionsToAdd = selectedPermissions.filter(
-          (p) => !existingPermissions.includes(p),
-        );
-        if (permissionsToAdd.length > 0) {
-          await supabase.from("admin_permissions").insert(
-            permissionsToAdd.map((permId) => ({
-              admin_id: adminId,
-              permission_id: permId,
-            })),
-          );
-        }
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error);
       } else {
-        // Create new admin
-        const { data: newAdmin, error: createError } = await supabase
-          .from("admins")
-          .insert([
-            {
-              email: admin.email.toLowerCase(),
-              password_hash: admin.password, // Should be hashed server-side
-              name: admin.name || null,
-              role_id: admin.role_id || null,
-              is_verified: admin.is_verified,
-            },
-          ])
-          .select()
-          .single();
+        // Create new admin via API
+        const res = await fetch("/api/admins", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: admin.email.toLowerCase(),
+            password: admin.password,
+            name: admin.name || null,
+            role_id: admin.role_id || null,
+            is_verified: admin.is_verified,
+            permissions: selectedPermissions,
+          }),
+        });
 
-        if (createError) throw createError;
-
-        // Add direct permissions for new admin
-        if (selectedPermissions.length > 0 && newAdmin) {
-          await supabase.from("admin_permissions").insert(
-            selectedPermissions.map((permId) => ({
-              admin_id: newAdmin.id,
-              permission_id: permId,
-            })),
-          );
-        }
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error);
       }
 
       router.push("/admin/dashboard/Admins");

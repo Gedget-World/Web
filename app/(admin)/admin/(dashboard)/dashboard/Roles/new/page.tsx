@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +26,6 @@ interface Permission {
 function NewRoleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
 
   const roleId = searchParams.get("id");
   const isEditMode = !!roleId;
@@ -50,49 +48,45 @@ function NewRoleContent() {
   // Fetch all permissions
   useEffect(() => {
     const fetchPermissions = async () => {
-      const { data } = await supabase
-        .from("permissions")
-        .select("*")
-        .order("name");
-      if (data) setPermissions(data);
+      try {
+        const res = await fetch("/api/permissions?all=true");
+        const result = await res.json();
+        if (result.success) setPermissions(result.data);
+      } catch (error) {
+        console.error("Error fetching permissions:", error);
+      }
     };
     fetchPermissions();
-  }, [supabase]);
+  }, []);
 
   // Fetch existing role data if editing
   useEffect(() => {
     if (roleId) {
       const fetchRole = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("roles")
-          .select("*")
-          .eq("id", roleId)
-          .single();
+        try {
+          const res = await fetch(`/api/roles/${roleId}`);
+          const result = await res.json();
 
-        if (data && !error) {
-          setRole({
-            name: data.name,
-            description: data.description || "",
-          });
+          if (result.success && result.data.role) {
+            setRole({
+              name: result.data.role.name,
+              description: result.data.role.description || "",
+            });
 
-          // Fetch existing role permissions
-          const { data: permData } = await supabase
-            .from("role_permissions")
-            .select("permission_id")
-            .eq("role_id", roleId);
-
-          if (permData) {
-            const permIds = permData.map((p) => p.permission_id);
-            setSelectedPermissions(permIds);
-            setExistingPermissions(permIds);
+            if (result.data.permissionIds) {
+              setSelectedPermissions(result.data.permissionIds);
+              setExistingPermissions(result.data.permissionIds);
+            }
           }
+        } catch (error) {
+          console.error("Error fetching role:", error);
         }
         setLoading(false);
       };
       fetchRole();
     }
-  }, [roleId, supabase]);
+  }, [roleId]);
 
   const handleChange = (key: string, value: string) => {
     setRole((prev) => ({ ...prev, [key]: value }));
@@ -136,72 +130,47 @@ function NewRoleContent() {
 
     try {
       if (isEditMode) {
-        // Update role
-        const { error: updateError } = await supabase
-          .from("roles")
-          .update({
+        // Update role via API
+        const res = await fetch(`/api/roles/${roleId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             name: role.name,
             description: role.description || null,
-          })
-          .eq("id", roleId);
+            permissions: selectedPermissions,
+            existingPermissions: existingPermissions,
+          }),
+        });
 
-        if (updateError) throw updateError;
-
-        // Update role permissions
-        // Remove permissions that were deselected
-        const permissionsToRemove = existingPermissions.filter(
-          (p) => !selectedPermissions.includes(p),
-        );
-        if (permissionsToRemove.length > 0) {
-          await supabase
-            .from("role_permissions")
-            .delete()
-            .eq("role_id", roleId)
-            .in("permission_id", permissionsToRemove);
-        }
-
-        // Add new permissions
-        const permissionsToAdd = selectedPermissions.filter(
-          (p) => !existingPermissions.includes(p),
-        );
-        if (permissionsToAdd.length > 0) {
-          await supabase.from("role_permissions").insert(
-            permissionsToAdd.map((permId) => ({
-              role_id: roleId,
-              permission_id: permId,
-            })),
-          );
-        }
-      } else {
-        // Create new role
-        const { data: newRole, error: createError } = await supabase
-          .from("roles")
-          .insert([
-            {
-              name: role.name,
-              description: role.description || null,
-            },
-          ])
-          .select()
-          .single();
-
-        if (createError) {
-          if (createError.code === "23505") {
+        const result = await res.json();
+        if (!result.success) {
+          if (result.error?.includes("already exists")) {
             alert("A role with this name already exists.");
             setSubmitting(false);
             return;
           }
-          throw createError;
+          throw new Error(result.error);
         }
+      } else {
+        // Create new role via API
+        const res = await fetch("/api/roles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: role.name,
+            description: role.description || null,
+            permissions: selectedPermissions,
+          }),
+        });
 
-        // Add permissions for new role
-        if (selectedPermissions.length > 0 && newRole) {
-          await supabase.from("role_permissions").insert(
-            selectedPermissions.map((permId) => ({
-              role_id: newRole.id,
-              permission_id: permId,
-            })),
-          );
+        const result = await res.json();
+        if (!result.success) {
+          if (result.error?.includes("already exists")) {
+            alert("A role with this name already exists.");
+            setSubmitting(false);
+            return;
+          }
+          throw new Error(result.error);
         }
       }
 

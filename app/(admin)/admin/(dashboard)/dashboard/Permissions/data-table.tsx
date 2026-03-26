@@ -28,7 +28,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createClient } from "@/lib/supabase/client";
 import { MoreHorizontalIcon, Key, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -52,36 +51,26 @@ export default function DataTable() {
   const [editForm, setEditForm] = useState({ name: "", description: "" });
 
   const limit = 10;
-  const supabase = createClient();
   const router = useRouter();
 
   const fetchData = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("permissions")
-      .select("*")
-      .order("name", { ascending: true })
-      .range(page * limit, page * limit + limit - 1);
-
-    if (!error && data) {
-      setData(data);
+    try {
+      const res = await fetch(`/api/permissions?page=${page}&limit=${limit}`);
+      const result = await res.json();
+      if (result.success) {
+        setData(result.data);
+        setTotalCount(result.totalCount);
+      }
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("permissions")
-        .select("id", { count: "exact", head: true });
-      setTotalCount(count || 0);
-    };
-    fetchCount();
-  }, [supabase]);
-
-  useEffect(() => {
     fetchData();
-  }, [supabase, page]);
+  }, [page]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -104,18 +93,25 @@ export default function DataTable() {
     if (!editPermission) return;
 
     setSubmitting(true);
-    const { error } = await supabase
-      .from("permissions")
-      .update({
-        name: editForm.name,
-        description: editForm.description || null,
-      })
-      .eq("id", editPermission.id);
+    try {
+      const res = await fetch("/api/permissions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editPermission.id,
+          name: editForm.name,
+          description: editForm.description || null,
+        }),
+      });
+      const result = await res.json();
 
-    if (!error) {
-      setEditPermission(null);
-      fetchData();
-    } else {
+      if (result.success) {
+        setEditPermission(null);
+        fetchData();
+      } else {
+        alert(result.error || "Error updating permission. Please try again.");
+      }
+    } catch (error) {
       alert("Error updating permission. Please try again.");
     }
     setSubmitting(false);
@@ -125,18 +121,20 @@ export default function DataTable() {
     if (!deletePermission) return;
 
     setSubmitting(true);
-    const { error } = await supabase
-      .from("permissions")
-      .delete()
-      .eq("id", deletePermission.id);
+    try {
+      const res = await fetch(`/api/permissions?id=${deletePermission.id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
 
-    if (!error) {
-      setDeletePermission(null);
-      fetchData();
-      // Update total count
-      setTotalCount((prev) => prev - 1);
-    } else {
-      alert("Error deleting permission. It may be in use by roles or admins.");
+      if (result.success) {
+        setDeletePermission(null);
+        fetchData();
+      } else {
+        alert(result.error || "Error deleting permission. It may be in use.");
+      }
+    } catch (error) {
+      alert("Error deleting permission. Please try again.");
     }
     setSubmitting(false);
   };

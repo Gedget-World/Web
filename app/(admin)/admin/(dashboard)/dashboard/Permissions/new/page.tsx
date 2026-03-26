@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +18,6 @@ import Link from "next/link";
 
 export default function NewPermissionPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [permission, setPermission] = useState({
     name: "",
@@ -55,25 +53,34 @@ export default function NewPermissionPage() {
 
     setSubmitting(true);
 
-    const { error } = await supabase.from("permissions").insert([
-      {
-        name: permission.name.toLowerCase().replace(/\s+/g, "_"),
-        description: permission.description || null,
-      },
-    ]);
+    try {
+      const res = await fetch("/api/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: permission.name,
+          description: permission.description || null,
+        }),
+      });
 
-    if (error) {
-      console.error("Error creating permission:", error);
-      if (error.code === "23505") {
-        alert("A permission with this name already exists.");
-      } else {
-        alert("Error creating permission. Please try again.");
+      const result = await res.json();
+
+      if (!result.success) {
+        if (result.error?.includes("already exists")) {
+          alert("A permission with this name already exists.");
+        } else {
+          alert(result.error || "Error creating permission. Please try again.");
+        }
+        setSubmitting(false);
+        return;
       }
-      setSubmitting(false);
-      return;
-    }
 
-    router.push("/admin/dashboard/Permissions");
+      router.push("/admin/dashboard/Permissions");
+    } catch (error) {
+      console.error("Error creating permission:", error);
+      alert("Error creating permission. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   return (
