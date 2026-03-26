@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Crown,
   KeyRound,
+  Settings,
 } from "lucide-react";
 
 import {
@@ -85,6 +86,11 @@ const items = [
     title: "Reviews",
     url: `${baseURI}/Reviews`,
     icon: Newspaper,
+  },
+  {
+    title: "Settings",
+    url: `${baseURI}/Settings`,
+    icon: Settings,
   },
 
   // {
