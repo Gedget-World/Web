@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2, ShieldAlert } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShieldAlert, Lock } from "lucide-react";
 
 import Link from "next/link";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useAdminSession, type AdminSession } from "@/hooks/use-admin-session";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -27,13 +28,38 @@ export default function AdminLogin() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isNotVerified, setIsNotVerified] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const {
+    admin,
+    isLoading: sessionLoading,
+    isAllowed,
+    saveSession,
+  } = useAdminSession();
+
+  // Check for unauthorized redirect
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "unauthorized") {
+      setError("Please login to access the admin dashboard");
+    }
+  }, [searchParams]);
+
+  // Redirect to dashboard if already logged in and allowed
+  useEffect(() => {
+    if (!sessionLoading && admin && isAllowed) {
+      router.push("/admin/dashboard");
+    }
+  }, [admin, sessionLoading, isAllowed, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setIsNotVerified(false);
+    setIsLocked(false);
 
     try {
       const res = await fetch("/api/adminLogin", {
@@ -50,15 +76,34 @@ export default function AdminLogin() {
       const data = await res.json();
 
       if (data.status === 201) {
-        sessionStorage.setItem("admin", JSON.stringify(data.data));
-        if (data.data.is_verified === false) {
+        const adminData = data.data as AdminSession;
+
+        // Save session to client storage
+        saveSession(adminData);
+
+        // Check if admin is verified
+        if (adminData.is_verified === false) {
           setIsNotVerified(true);
-        } else {
-          router.push("/admin/dashboard");
+          return;
         }
+
+        // Check if admin is locked
+        if (adminData.is_locked === true) {
+          setIsLocked(true);
+          return;
+        }
+
+        // Redirect to dashboard
+        router.push("/admin/dashboard");
       }
+
       if (data.status === 400) {
-        setError(data.error || "Login failed");
+        // Check for specific error types
+        if (data.error?.includes("locked")) {
+          setIsLocked(true);
+        } else {
+          setError(data.error || "Login failed");
+        }
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -67,11 +112,50 @@ export default function AdminLogin() {
     }
   };
 
+  const resetState = () => {
+    setIsNotVerified(false);
+    setIsLocked(false);
+    setError(null);
+  };
+
+  // Show loading while checking existing session
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex min-h-screen w-full items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-sm">
-          {isNotVerified ? (
+          {isLocked ? (
+            <Card>
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+                  <Lock className="h-8 w-8 text-red-600" />
+                </div>
+                <CardTitle className="text-2xl">Account Locked</CardTitle>
+                <CardDescription>Your account has been locked</CardDescription>
+              </CardHeader>
+              <CardContent className="text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Your account has been locked due to too many failed login
+                  attempts. Please contact a system administrator to unlock your
+                  account.
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={resetState}
+                >
+                  Back to Login
+                </Button>
+              </CardContent>
+            </Card>
+          ) : isNotVerified ? (
             <Card>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
@@ -90,7 +174,7 @@ export default function AdminLogin() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => setIsNotVerified(false)}
+                  onClick={resetState}
                 >
                   Back to Login
                 </Button>
@@ -119,7 +203,15 @@ export default function AdminLogin() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="password">Password</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        <Link
+                          href="/admin/forgot-password"
+                          className="text-sm text-muted-foreground hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                       <div className="relative">
                         <Input
                           id="password"

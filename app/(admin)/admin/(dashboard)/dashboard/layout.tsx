@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 
 import "../../../../globals.css";
 import { AdminHeader } from "@/components/admin/admin-header";
+import { AdminAuthGuard } from "@/components/admin/admin-auth-guard";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,12 +26,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="w-full">
-        <AdminHeader />
-        {children}
-      </main>
-    </SidebarProvider>
+    <AdminAuthGuard>
+      <SidebarProvider>
+        <AppSidebar />
+        <main className="w-full">
+          <AdminHeader />
+          {children}
+        </main>
+      </SidebarProvider>
+    </AdminAuthGuard>
   );
 }

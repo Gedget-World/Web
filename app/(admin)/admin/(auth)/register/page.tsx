@@ -13,27 +13,78 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Check, X } from "lucide-react";
 
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+
+// Password strength checker
+function getPasswordStrength(password: string): {
+  score: number;
+  label: string;
+  color: string;
+} {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  if (score <= 2) return { score, label: "Weak", color: "bg-red-500" };
+  if (score <= 4) return { score, label: "Medium", color: "bg-yellow-500" };
+  return { score, label: "Strong", color: "bg-green-500" };
+}
 
 export default function AdminRegister() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
 
+  const passwordStrength = useMemo(
+    () => getPasswordStrength(password),
+    [password],
+  );
+
+  const passwordRequirements = useMemo(() => {
+    return [
+      { met: password.length >= 8, text: "At least 8 characters" },
+      { met: /[a-z]/.test(password), text: "One lowercase letter" },
+      { met: /[A-Z]/.test(password), text: "One uppercase letter" },
+      { met: /[0-9]/.test(password), text: "One number" },
+      {
+        met: /[^a-zA-Z0-9]/.test(password),
+        text: "One special character (optional)",
+      },
+    ];
+  }, [password]);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
+
+    // Client-side validation
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const res = await fetch("/api/adminRegister", {
@@ -123,9 +174,99 @@ export default function AdminRegister() {
                         )}
                       </button>
                     </div>
+                    {/* Password strength indicator */}
+                    {password && (
+                      <div className="space-y-2">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div
+                              key={i}
+                              className={`h-1 flex-1 rounded-full ${
+                                i <= passwordStrength.score
+                                  ? passwordStrength.color
+                                  : "bg-gray-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p
+                          className={`text-xs ${
+                            passwordStrength.label === "Weak"
+                              ? "text-red-500"
+                              : passwordStrength.label === "Medium"
+                                ? "text-yellow-600"
+                                : "text-green-600"
+                          }`}
+                        >
+                          Password strength: {passwordStrength.label}
+                        </p>
+                        <ul className="space-y-1">
+                          {passwordRequirements.slice(0, 4).map((req, i) => (
+                            <li
+                              key={i}
+                              className={`flex items-center gap-1 text-xs ${
+                                req.met ? "text-green-600" : "text-gray-500"
+                              }`}
+                            >
+                              {req.met ? (
+                                <Check className="h-3 w-3" />
+                              ) : (
+                                <X className="h-3 w-3" />
+                              )}
+                              {req.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    {confirmPassword && password !== confirmPassword && (
+                      <p className="text-xs text-red-500">
+                        Passwords do not match
+                      </p>
+                    )}
+                    {confirmPassword && password === confirmPassword && (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        Passwords match
+                      </p>
+                    )}
                   </div>
                   {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={
+                      isLoading ||
+                      password.length < 8 ||
+                      password !== confirmPassword
+                    }
+                  >
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
