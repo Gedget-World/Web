@@ -12,6 +12,7 @@ import {
   Crown,
   KeyRound,
   Settings,
+  BarChart3,
 } from "lucide-react";
 
 import {
@@ -36,6 +37,11 @@ const items = [
     title: "Home",
     url: `${baseURI}`,
     icon: Home,
+  },
+  {
+    title: "Analytics",
+    url: `${baseURI}/Analytics`,
+    icon: BarChart3,
   },
   {
     title: "Products",
