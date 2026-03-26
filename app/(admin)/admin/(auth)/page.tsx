@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -21,7 +22,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAdminSession, type AdminSession } from "@/hooks/use-admin-session";
 
-export default function AdminLogin() {
+function AdminLoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -262,5 +263,19 @@ export default function AdminLogin() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLogin() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen w-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        </div>
+      }
+    >
+      <AdminLoginContent />
+    </Suspense>
   );
 }
