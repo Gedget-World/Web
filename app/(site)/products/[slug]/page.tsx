@@ -86,7 +86,10 @@ export default async function ProductDetailPage({
       <div className="grid md:grid-cols-2 gap-12">
         {/* Images */}
         <div className="relative">
-          <ProductImagesSection productId={product.id} />
+          <ProductImagesSection
+            productId={product.id}
+            thumbnailUrl={product.image_url}
+          />
         </div>
 
         {/* Product Info */}

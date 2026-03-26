@@ -24,7 +24,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    minimumCacheTTL: 86400, // Cache images for 1 day (in seconds)
     remotePatterns: [
       {
         protocol: "https",
@@ -46,6 +46,16 @@ const nextConfig = {
         // Apply these headers to all routes
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // Cache images for 1 day
+        source: "/_next/image(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
       },
     ];
   },

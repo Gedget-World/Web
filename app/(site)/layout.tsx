@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import Footer from "@/components/site-footer";
 import { FirstLoadHandler } from "@/components/first-load-handler";
+import { NavigationProgressWrapper } from "@/components/navigation-progress-wrapper";
+import { PageTransition } from "@/components/page-transition";
 
 export const metadata: Metadata = {
   title: "Gadgets Kabila - Your Ultimate Tech Destination",
@@ -17,9 +19,10 @@ export default function SiteLayout({
 }>) {
   return (
     <>
+      <NavigationProgressWrapper />
       <FirstLoadHandler />
       <SiteHeader />
-      {children}
+      <PageTransition>{children}</PageTransition>
       <Footer />
     </>
   );

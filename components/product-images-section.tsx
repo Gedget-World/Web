@@ -19,16 +19,21 @@ interface ProductImage {
   display_order: number | null;
 }
 
+interface ProductImagesSectionProps {
+  productId: number;
+  thumbnailUrl?: string | null; // Cached thumbnail from product listing
+}
+
 export default function ProductImagesSection({
   productId,
-}: {
-  productId: number;
-}) {
+  thumbnailUrl,
+}: ProductImagesSectionProps) {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [showGallery, setShowGallery] = useState(false);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -49,6 +54,8 @@ export default function ProductImagesSection({
         if (data && data.length > 0) {
           setImages(data as ProductImage[]);
           setSelectedIndex(0);
+          // Small delay before showing gallery for smooth transition
+          setTimeout(() => setShowGallery(true), 100);
         }
 
         setError(null);
@@ -89,18 +96,37 @@ export default function ProductImagesSection({
     }
   };
 
-  if (loading) {
-    return <div className="flex gap-4">Loading images...</div>;
-  }
-
-  if (error) {
-    return <div className="flex gap-4 text-red-500">Error: {error}</div>;
+  // Show thumbnail while loading or on error
+  if (loading || error || images.length === 0) {
+    return (
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            {thumbnailUrl ? (
+              <Image
+                src={thumbnailUrl}
+                alt="Product"
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200" />
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex gap-4">
       {/* Thumbnail Gallery - Hidden on Mobile */}
-      <div className="hidden md:flex flex-col items-center gap-1">
+      <div
+        className={`hidden md:flex flex-col items-center gap-1 transition-opacity duration-500 ${
+          showGallery ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {/* Scroll Up Zone */}
         <div
           className="w-[70px] h-6 flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded transition-colors"
@@ -171,7 +197,24 @@ export default function ProductImagesSection({
       </div>
 
       {/* Main Image Display - Carousel */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
+        {/* Thumbnail overlay that fades out */}
+        {thumbnailUrl && (
+          <div
+            className={`absolute inset-0 z-10 bg-gray-100 rounded-lg overflow-hidden transition-opacity duration-500 pointer-events-none ${
+              showGallery ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            <Image
+              src={thumbnailUrl}
+              alt="Product"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        )}
+
         {images.length > 0 && (
           <Carousel className="w-full" setApi={setCarouselApi}>
             <CarouselContent>
