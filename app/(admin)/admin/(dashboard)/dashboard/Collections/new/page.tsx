@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import debounce from "lodash.debounce";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Image as LucideImage, Plus, Trash2 } from "lucide-react";
+import { Image as LucideImage, Plus, Trash2, Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -14,14 +14,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function CreateCollectionPage() {
-  const supabase = createClient();
-  const router = useRouter();
+interface ParentCollection {
+  id: string;
+  name: string;
+  parent_id: string | null;
+}
 
+export default function CreateCollectionPage() {
+  const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id");
+  const presetParentId = searchParams.get("parent");
+  const isEditMode = !!editId;
+
+  const [loading, setLoading] = useState(isEditMode);
+  const [parentCollections, setParentCollections] = useState<
+    ParentCollection[]
+  >([]);
+  const [parentId, setParentId] = useState<string | null>(presetParentId);
   const [collection, setCollection] = useState({
     name: "",
     description: "",
@@ -36,14 +58,77 @@ export default function CreateCollectionPage() {
 
   // Slug
   const [slug, setSlug] = useState("");
+  const [originalSlug, setOriginalSlug] = useState("");
   const [status, setStatus] = useState<"checking" | "available" | "taken" | "">(
-    ""
+    "",
   );
+
+  // Fetch available parent collections
+  useEffect(() => {
+    const fetchParentCollections = async () => {
+      const { data, error } = await supabase
+        .from("collections")
+        .select("id, name, parent_id")
+        .order("name");
+
+      if (!error && data) {
+        // Filter out current collection (can't be its own parent) and its descendants
+        const filtered = editId ? data.filter((c) => c.id !== editId) : data;
+        setParentCollections(filtered);
+      }
+    };
+    fetchParentCollections();
+  }, [supabase, editId]);
+
+  // Fetch existing collection data when editing
+  useEffect(() => {
+    if (!editId) return;
+
+    const fetchCollection = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("collections")
+        .select("*")
+        .eq("id", editId)
+        .single();
+
+      if (error || !data) {
+        console.error("Error fetching collection:", error);
+        alert("Collection not found");
+        router.push("/admin/dashboard/Collections");
+        return;
+      }
+
+      setCollection({
+        name: data.name || "",
+        description: data.description || "",
+        image_urls: data.image_url || "",
+        image_name: data.image_name || "",
+        is_active: data.is_active ?? true,
+        is_featured: data.is_featured ?? false,
+        seo_title: data.seo_title || "",
+        seo_keyword: data.seo_keywords || "",
+        seo_description: data.seo_description || "",
+      });
+      setSlug(data.slug || "");
+      setOriginalSlug(data.slug || "");
+      setParentId(data.parent_id || null);
+      setLoading(false);
+    };
+
+    fetchCollection();
+  }, [editId, supabase, router]);
 
   // --- Debounced function (runs only after user stops typing) ---
   const checkSlug = useCallback(
     debounce(async (value: string) => {
       if (!value) return;
+
+      // If editing and slug hasn't changed, it's available
+      if (isEditMode && value === originalSlug) {
+        setStatus("available");
+        return;
+      }
 
       setStatus("checking");
 
@@ -60,7 +145,7 @@ export default function CreateCollectionPage() {
 
       setStatus(data ? "taken" : "available");
     }, 500), // delay: 500ms
-    []
+    [isEditMode, originalSlug],
   );
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +171,7 @@ export default function CreateCollectionPage() {
   };
 
   const handleFilesSelected = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     console.log("Selected files:", files);
@@ -184,8 +269,13 @@ export default function CreateCollectionPage() {
     }
 
     if (status === "taken" || slug.trim() === "") {
-      setSlugValidationError(true);
-      res = false;
+      // In edit mode, if slug matches original, it's valid
+      if (isEditMode && slug === originalSlug) {
+        setSlugValidationError(false);
+      } else {
+        setSlugValidationError(true);
+        res = false;
+      }
     } else {
       setSlugValidationError(false);
     }
@@ -229,261 +319,323 @@ export default function CreateCollectionPage() {
   };
 
   const handleSubmit = async () => {
-    console.log("Creating collection:", collection);
+    console.log(
+      isEditMode ? "Updating collection:" : "Creating collection:",
+      collection,
+    );
 
     if (!collectionValidation()) {
       console.log("Collection validation failed");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("collections")
-      .insert([
-        {
-          name: collection.name,
-          slug: slug,
-          description: collection.description,
-          image_name: collection.image_name,
-          image_url: collection.image_urls,
-          is_active: collection.is_active,
-          is_featured: collection.is_featured,
-          seo_title: collection.seo_title,
-          seo_keywords: collection.seo_keyword,
-          seo_description: collection.seo_description,
-        },
-      ])
-      .select();
+    const collectionData = {
+      name: collection.name,
+      slug: slug,
+      description: collection.description,
+      image_name: collection.image_name,
+      image_url: collection.image_urls,
+      is_active: collection.is_active,
+      is_featured: collection.is_featured,
+      seo_title: collection.seo_title,
+      seo_keywords: collection.seo_keyword,
+      seo_description: collection.seo_description,
+      parent_id: parentId,
+    };
 
-    if (error) {
-      console.error("Error creating collection:", error);
-      alert("Error creating collection. Please try again.");
-      return;
+    if (isEditMode) {
+      // Update existing collection
+      const { error } = await supabase
+        .from("collections")
+        .update(collectionData)
+        .eq("id", editId);
+
+      if (error) {
+        console.error("Error updating collection:", error);
+        alert("Error updating collection. Please try again.");
+        return;
+      }
+      alert("Collection updated successfully!");
+    } else {
+      // Create new collection
+      const { data, error } = await supabase
+        .from("collections")
+        .insert([collectionData])
+        .select();
+
+      if (error) {
+        console.error("Error creating collection:", error);
+        alert("Error creating collection. Please try again.");
+        return;
+      }
+      console.log("Collection created successfully:", data);
+      alert("Collection created successfully!");
     }
-    console.log("Collection created successfully:", data);
-    alert("Collection created successfully!");
+
     router.push("/admin/dashboard/Collections");
   };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Card className="border">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold">
-            Create New Collection
-          </CardTitle>
-          <CardDescription>
-            Fill in the details below to add a new collection to your store.
-          </CardDescription>
-        </CardHeader>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <Card className="border">
+          <CardHeader>
+            <CardTitle className="text-2xl font-semibold">
+              {isEditMode
+                ? "Edit Collection"
+                : presetParentId
+                  ? "Create Sub-collection"
+                  : "Create New Collection"}
+            </CardTitle>
+            <CardDescription>
+              {isEditMode
+                ? "Update the collection details below."
+                : presetParentId
+                  ? "Create a nested collection under the selected parent."
+                  : "Fill in the details below to add a new collection to your store."}
+            </CardDescription>
+          </CardHeader>
 
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* LEFT SIDE - IMAGES */}
-          <div className="flex flex-col">
-            {/* Thumbnail Image */}
-            <div>
-              <p className="text-left text-gray-500 text-sm mb-2">
-                Thumbnail Image
-              </p>
-              {collection.image_urls.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-4 w-full p-4 rounded border border-dashed border-gray-300">
-                  <div className="w-10 h-10 bg-gray-300 rounded-3xl flex items-center justify-center">
-                    <LucideImage className="text-gray-600 w-5 h-5" />
-                  </div>
-                  <p className="text-xs text-gray-400">No image added</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {collection.image_urls == "" ? null : (
-                    <div
-                      className="relative w-[150px] flex flex-col border border-gray-300 
-                        items-center justify-center p-2 rounded"
-                    >
-                      <Image
-                        src={collection.image_urls}
-                        alt="Product image"
-                        width={100}
-                        height={100}
-                      />
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="cursor-pointer"
-                          onClick={() => _handleThumbnailImageDelete()}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* LEFT SIDE - IMAGES */}
+            <div className="flex flex-col">
+              {/* Thumbnail Image */}
+              <div>
+                <p className="text-left text-gray-500 text-sm mb-2">
+                  Thumbnail Image
+                </p>
+                {collection.image_urls.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-4 w-full p-4 rounded border border-dashed border-gray-300">
+                    <div className="w-10 h-10 bg-gray-300 rounded-3xl flex items-center justify-center">
+                      <LucideImage className="text-gray-600 w-5 h-5" />
                     </div>
-                  )}
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFilesSelected}
-              />
-              {collection.image_urls === "" && (
-                <Button
-                  className="mt-3 w-fit"
-                  variant="outline"
-                  onClick={handleClick}
+                    <p className="text-xs text-gray-400">No image added</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {collection.image_urls == "" ? null : (
+                      <div
+                        className="relative w-[150px] flex flex-col border border-gray-300 
+                        items-center justify-center p-2 rounded"
+                      >
+                        <Image
+                          src={collection.image_urls}
+                          alt="Product image"
+                          width={100}
+                          height={100}
+                        />
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="cursor-pointer"
+                            onClick={() => _handleThumbnailImageDelete()}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFilesSelected}
+                />
+                {collection.image_urls === "" && (
+                  <Button
+                    className="mt-3 w-fit"
+                    variant="outline"
+                    onClick={handleClick}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add Thumbnail Image
+                  </Button>
+                )}
+                {thumbnailValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Please add a thumbnail image.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT SIDE - DETAILS FORM */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Collection Name
+                </label>
+                <Input
+                  placeholder="Enter collection name"
+                  value={collection.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                />
+                {nameValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Collection name is required.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Slug</label>
+                <Input
+                  placeholder="example-collection"
+                  value={slug}
+                  onChange={handleSlugChange}
+                />
+                {/* UI feedback */}
+                {status === "checking" && (
+                  <p className="text-blue-500 text-xs mt-1 font-semibold">
+                    Checking...
+                  </p>
+                )}
+                {status === "available" && (
+                  <p className="text-green-600 text-xs mt-1 font-semibold">
+                    Slug is available
+                  </p>
+                )}
+                {status === "taken" && (
+                  <p className="text-red-500 text-xs mt-1 font-semibold">
+                    Slug already exists
+                  </p>
+                )}
+                {slugValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Please provide a valid and unique slug.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Parent Collection (Optional)
+                </label>
+                <Select
+                  value={parentId || "none"}
+                  onValueChange={(value) =>
+                    setParentId(value === "none" ? null : value)
+                  }
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add Thumbnail Image
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select parent collection" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Top Level)</SelectItem>
+                    {parentCollections.map((pc) => (
+                      <SelectItem key={pc.id} value={pc.id}>
+                        {pc.parent_id ? `↳ ${pc.name}` : pc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-400 mt-1">
+                  Select a parent to create a sub-collection
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Seo Title
+                </label>
+                <Input
+                  type="text"
+                  value={collection.seo_title}
+                  onChange={(e) => handleChange("seo_title", e.target.value)}
+                />
+                {seoTitleValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Please provide a SEO title.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Seo Keyword (Keyword1, Keyword2, ...)
+                </label>
+                <Input
+                  type="text"
+                  value={collection.seo_keyword}
+                  onChange={(e) => handleChange("seo_keyword", e.target.value)}
+                />
+                {seoKeywordValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Please provide SEO keywords.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Seo Description
+                </label>
+                <Textarea
+                  value={collection.seo_description}
+                  onChange={(e) =>
+                    handleChange("seo_description", e.target.value)
+                  }
+                />
+                {seoDescriptionValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Please provide a SEO description.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  Description
+                </label>
+                <Textarea
+                  placeholder="Describe your collection..."
+                  value={collection.description}
+                  onChange={(e) => handleChange("description", e.target.value)}
+                />
+                {descriptionValidationError && (
+                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
+                    Description is required.
+                  </p>
+                )}
+              </div>
+
+              {/* Toggles */}
+              <div className="grid grid-cols-1 gap-4 pt-4">
+                {[
+                  { key: "is_active", label: "Active" },
+                  { key: "is_featured", label: "Featured" },
+                ].map(({ key, label }) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between bg-gray-100 p-2 rounded-md"
+                  >
+                    <label className="text-sm text-gray-600">{label}</label>
+                    <Switch
+                      checked={
+                        collection[key as keyof typeof collection] as boolean
+                      }
+                      onCheckedChange={(val) => handleChange(key, val)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-6 flex justify-end">
+                <Button className="px-6" onClick={handleSubmit}>
+                  {isEditMode ? "Update Collection" : "Create Collection"}
                 </Button>
-              )}
-              {thumbnailValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Please add a thumbnail image.
-                </p>
-              )}
+              </div>
             </div>
-          </div>
-
-          {/* RIGHT SIDE - DETAILS FORM */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Collection Name
-              </label>
-              <Input
-                placeholder="Enter collection name"
-                value={collection.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-              />
-              {nameValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Collection name is required.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">Slug</label>
-              <Input
-                placeholder="example-collection"
-                value={slug}
-                onChange={handleSlugChange}
-              />
-              {/* UI feedback */}
-              {status === "checking" && (
-                <p className="text-blue-500 text-xs mt-1 font-semibold">
-                  Checking...
-                </p>
-              )}
-              {status === "available" && (
-                <p className="text-green-600 text-xs mt-1 font-semibold">
-                  Slug is available
-                </p>
-              )}
-              {status === "taken" && (
-                <p className="text-red-500 text-xs mt-1 font-semibold">
-                  Slug already exists
-                </p>
-              )}
-              {slugValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Please provide a valid and unique slug.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Seo Title
-              </label>
-              <Input
-                type="text"
-                value={collection.seo_title}
-                onChange={(e) => handleChange("seo_title", e.target.value)}
-              />
-              {seoTitleValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Please provide a SEO title.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Seo Keyword (Keyword1, Keyword2, ...)
-              </label>
-              <Input
-                type="text"
-                value={collection.seo_keyword}
-                onChange={(e) => handleChange("seo_keyword", e.target.value)}
-              />
-              {seoKeywordValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Please provide SEO keywords.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Seo Description
-              </label>
-              <Textarea
-                value={collection.seo_description}
-                onChange={(e) =>
-                  handleChange("seo_description", e.target.value)
-                }
-              />
-              {seoDescriptionValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Please provide a SEO description.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Description
-              </label>
-              <Textarea
-                placeholder="Describe your collection..."
-                value={collection.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-              />
-              {descriptionValidationError && (
-                <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                  Description is required.
-                </p>
-              )}
-            </div>
-
-            {/* Toggles */}
-            <div className="grid grid-cols-1 gap-4 pt-4">
-              {[
-                { key: "is_active", label: "Active" },
-                { key: "is_featured", label: "Featured" },
-              ].map(({ key, label }) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between bg-gray-100 p-2 rounded-md"
-                >
-                  <label className="text-sm text-gray-600">{label}</label>
-                  <Switch
-                    checked={
-                      collection[key as keyof typeof collection] as boolean
-                    }
-                    onCheckedChange={(val) => handleChange(key, val)}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-6 flex justify-end">
-              <Button className="px-6" onClick={handleSubmit}>
-                Create Collection
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

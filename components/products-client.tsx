@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
+import { LazySection, ProductCardSkeleton } from "@/components/lazy-section";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -37,13 +38,20 @@ interface Product {
   discount_percentage: number | null;
   average_rating: number;
   review_count: number;
-  collections?: { name: string; slug: string };
+  collections?: {
+    name: string;
+    slug: string;
+    parent_id: string | null;
+    parent: { name: string; slug: string }[] | null;
+  };
 }
 
 interface Collection {
   id: string;
   name: string;
   slug: string;
+  parent_id: string | null;
+  parent: { name: string; slug: string }[] | null;
 }
 
 interface ProductsClientProps {
@@ -122,9 +130,12 @@ export function ProductsClient({
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
+      // Match collection directly OR if the product's collection is a child of the selected collection
       const matchesCollection =
         selectedCollection === "all" ||
-        product.collections?.slug === selectedCollection;
+        product.collections?.slug === selectedCollection ||
+        (product.collections?.parent &&
+          product.collections.parent[0]?.slug === selectedCollection);
 
       const matchesPrice =
         product.price >= priceRange[0] && product.price <= priceRange[1];
@@ -234,96 +245,119 @@ export function ProductsClient({
     handleFilterChange();
   };
 
-  const FilterContent = () => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label>Collection</Label>
-        <Select
-          value={selectedCollection}
-          onValueChange={(value) => {
-            setSelectedCollection(value);
-            handleFilterChange();
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Collections" />
-          </SelectTrigger>
-          <SelectContent>
-            {collections.map((collection) => (
-              <SelectItem key={collection.id} value={collection.slug}>
-                {collection.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  const FilterContent = () => {
+    // Organize collections: parent collections first, then children grouped under parents
+    const parentCollections = collections.filter((c) => !c.parent_id);
+    const childCollections = collections.filter((c) => c.parent_id);
 
-      <div className="space-y-3">
-        <Label>
-          Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
-        </Label>
-        <Slider
-          min={0}
-          max={maxPrice}
-          step={1}
-          value={priceRange}
-          onValueChange={(value) => {
-            setPriceRange(value as [number, number]);
-            handleFilterChange();
-          }}
-          className="w-full"
-        />
-      </div>
+    // Create ordered list: parent -> its children -> next parent -> its children
+    const orderedCollections = parentCollections.flatMap((parent) => {
+      const children = childCollections.filter(
+        (child) => child.parent && child.parent[0]?.slug === parent.slug,
+      );
+      return [parent, ...children];
+    });
 
-      <div className="space-y-2">
-        <Label>Minimum Rating</Label>
-        <Select
-          value={minRating.toString()}
-          onValueChange={(value) => {
-            setMinRating(Number(value));
-            handleFilterChange();
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="0">All Ratings</SelectItem>
-            <SelectItem value="1">1+ Stars</SelectItem>
-            <SelectItem value="2">2+ Stars</SelectItem>
-            <SelectItem value="3">3+ Stars</SelectItem>
-            <SelectItem value="4">4+ Stars</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    // Add any orphaned children (parent may not be in the list)
+    const includedIds = new Set(orderedCollections.map((c) => c.id));
+    const orphanedChildren = childCollections.filter(
+      (c) => !includedIds.has(c.id),
+    );
+    const finalCollections = [...orderedCollections, ...orphanedChildren];
 
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="inStock"
-          checked={inStockOnly}
-          onChange={(e) => {
-            setInStockOnly(e.target.checked);
-            handleFilterChange();
-          }}
-          className="h-4 w-4 rounded border-slate-300"
-        />
-        <Label htmlFor="inStock" className="cursor-pointer">
-          In Stock Only
-        </Label>
-      </div>
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Label>Collection</Label>
+          <Select
+            value={selectedCollection}
+            onValueChange={(value) => {
+              setSelectedCollection(value);
+              handleFilterChange();
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All Collections" />
+            </SelectTrigger>
+            <SelectContent>
+              {finalCollections.map((collection) => (
+                <SelectItem key={collection.id} value={collection.slug}>
+                  {collection.parent_id
+                    ? `↳ ${collection.name}`
+                    : collection.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {activeFiltersCount > 0 && (
-        <Button
-          variant="outline"
-          onClick={clearFilters}
-          className="w-full bg-transparent"
-        >
-          Clear All Filters
-        </Button>
-      )}
-    </div>
-  );
+        <div className="space-y-3">
+          <Label>
+            Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
+          </Label>
+          <Slider
+            min={0}
+            max={maxPrice}
+            step={1}
+            value={priceRange}
+            onValueChange={(value) => {
+              setPriceRange(value as [number, number]);
+              handleFilterChange();
+            }}
+            className="w-full"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Minimum Rating</Label>
+          <Select
+            value={minRating.toString()}
+            onValueChange={(value) => {
+              setMinRating(Number(value));
+              handleFilterChange();
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">All Ratings</SelectItem>
+              <SelectItem value="1">1+ Stars</SelectItem>
+              <SelectItem value="2">2+ Stars</SelectItem>
+              <SelectItem value="3">3+ Stars</SelectItem>
+              <SelectItem value="4">4+ Stars</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="inStock"
+            checked={inStockOnly}
+            onChange={(e) => {
+              setInStockOnly(e.target.checked);
+              handleFilterChange();
+            }}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          <Label htmlFor="inStock" className="cursor-pointer">
+            In Stock Only
+          </Label>
+        </div>
+
+        {activeFiltersCount > 0 && (
+          <Button
+            variant="outline"
+            onClick={clearFilters}
+            className="w-full bg-transparent"
+          >
+            Clear All Filters
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <main className="min-h-screen py-12 px-4 md:px-8 max-w-7xl mx-auto">
@@ -505,7 +539,14 @@ export function ProductsClient({
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 md:gap-4 lg:gap-6 gap-2 mb-8">
                 {paginatedProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <LazySection
+                    key={product.id}
+                    fallback={<ProductCardSkeleton />}
+                    threshold={0.1}
+                    rootMargin="50px"
+                  >
+                    <ProductCard product={product} />
+                  </LazySection>
                 ))}
               </div>
 

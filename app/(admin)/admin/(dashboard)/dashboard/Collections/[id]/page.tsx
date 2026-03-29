@@ -1,11 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Lock, Image as LucideImage } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardContent,
@@ -13,291 +10,421 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Pencil, Check, X, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  ArrowLeft,
+  Edit,
+  Loader2,
+  Calendar,
+  Tag,
+  FileText,
+  Search,
+  Layers,
+} from "lucide-react";
 import Image from "next/image";
-import { Spinner } from "@/components/ui/spinner";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
-export default function CollectionDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const supabase = createClient();
-  const { id } = React.use(params);
+interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image_url: string | null;
+  image_name: string | null;
+  is_active: boolean;
+  is_featured: boolean;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
+  created_at: string | null;
+  parent_id: string | null;
+  parent?: { id: string; name: string; slug: string } | null;
+  children?: { id: string; name: string; slug: string }[];
+}
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  image_url: string | null;
+  is_active: boolean;
+}
+
+export default function ViewCollectionPage() {
+  const params = useParams();
   const router = useRouter();
-  const [editingField, setEditingField] = useState<string | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+  const collectionId = params.id as string;
 
-  const [collection, setCollection] = useState({
-    name: "",
-    description: "",
-    image_urls: "",
-    image_name: "",
-    is_active: true,
-    is_featured: false,
-    seo_title: "",
-    seo_keywords: "",
-    seo_description: "",
-    slug: "",
-  });
-
-  const [pageLoading, setPageLoading] = useState(true);
+  const [collection, setCollection] = useState<Collection | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProductData = async () => {
-      setPageLoading(true);
-      const { data, error } = await supabase
+    const fetchCollection = async () => {
+      setLoading(true);
+
+      // Fetch collection with parent info
+      const { data: collectionData, error: collectionError } = await supabase
         .from("collections")
-        .select("*")
-        .eq("id", id)
+        .select("*, parent:parent_id(id, name, slug)")
+        .eq("id", collectionId)
         .single();
-      if (error) {
-        console.error("Error fetching collection:", error);
-      } else if (data) {
-        console.log("Fetched collection data:", data);
-        setCollection({
-          name: data.name,
-          description: data.description,
-          image_urls: data.image_url,
-          image_name: data.image_name,
-          is_active: data.is_active,
-          is_featured: data.is_featured,
-          seo_title: data.seo_title,
-          seo_keywords: data.seo_keywords,
-          seo_description: data.seo_description,
-          slug: data.slug,
-        });
+
+      if (collectionError || !collectionData) {
+        console.error("Error fetching collection:", collectionError);
+        alert("Collection not found");
+        router.push("/admin/dashboard/Collections");
+        return;
       }
-      setPageLoading(false);
+
+      // Fetch child collections
+      const { data: childrenData } = await supabase
+        .from("collections")
+        .select("id, name, slug")
+        .eq("parent_id", collectionId)
+        .order("name");
+
+      // Fetch products in this collection
+      const { data: productsData } = await supabase
+        .from("products")
+        .select("id, name, slug, price, image_url, is_active")
+        .eq("collection_id", collectionId)
+        .order("name")
+        .limit(10);
+
+      setCollection({
+        ...collectionData,
+        children: childrenData || [],
+      });
+      setProducts(productsData || []);
+      setLoading(false);
     };
 
-    fetchProductData();
-  }, []);
+    if (collectionId) {
+      fetchCollection();
+    }
+  }, [collectionId, supabase, router]);
 
-  const handleChange = (key: string, value: any) => {
-    setCollection((prev) => ({ ...prev, [key]: value }));
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!collection) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {pageLoading ? (
-        <div className="text-gray-500 w-full h-[500px] flex items-center justify-center">
-          <Spinner className="size-8" />
-          <p className="ml-3">Loading product details...</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/admin/dashboard/Collections")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold">{collection.name}</h1>
+            <p className="text-sm text-gray-500">/{collection.slug}</p>
+          </div>
         </div>
-      ) : (
-        <>
-          <Card className="border">
+        <Link href={`/admin/dashboard/Collections/new?id=${collection.id}`}>
+          <Button>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Collection
+          </Button>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Info */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Basic Details */}
+          <Card>
             <CardHeader>
-              <CardTitle className="text-2xl font-semibold">
-                {collection.name}
-              </CardTitle>
+              <CardTitle>Collection Details</CardTitle>
               <CardDescription>
-                {`Manage and edit the details of "${collection.slug}"`}
+                Basic information about this collection
               </CardDescription>
             </CardHeader>
-
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col">
-                {/* Thumbnails Section */}
-                <div>
-                  <p className="text-left text-gray-500 text-sm mb-2">
-                    Thumbnail Image
-                  </p>
-                  {/* If no image is present, show placeholder */}
-                  <div className="flex flex-col items-center justify-center gap-4 w-full p-4 rounded border border-dashed border-gray-300">
-                    <div className="w-10 h-10 bg-gray-300 rounded-3xl flex items-center justify-center">
-                      <LucideImage className="text-gray-600 w-5 h-5" />
-                    </div>
-                    <p className="text-xs text-gray-400">Please add an image</p>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                {collection.image_url && (
+                  <div className="w-32 h-32 rounded-lg overflow-hidden border">
+                    <Image
+                      src={collection.image_url}
+                      alt={collection.name}
+                      width={128}
+                      height={128}
+                      className="object-cover w-full h-full"
+                    />
                   </div>
-                  {/* If image is present, show image preview */}
-
-                  <Button
-                    className="mt-3 w-fit"
-                    variant={"outline"}
-                    // onClick={addNewImage}
-                  >
-                    <Plus className="w-4 h-4 mr-1" /> Add Image
-                  </Button>
+                )}
+                <div className="flex-1 space-y-3">
+                  <div className="flex gap-2">
+                    {collection.is_active ? (
+                      <Badge className="bg-green-600/10 text-green-600 border-none">
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-600/10 text-red-500 border-none">
+                        Inactive
+                      </Badge>
+                    )}
+                    {collection.is_featured && (
+                      <Badge className="bg-yellow-500/10 text-yellow-600 border-none">
+                        Featured
+                      </Badge>
+                    )}
+                  </div>
+                  {collection.description && (
+                    <p className="text-gray-600">{collection.description}</p>
+                  )}
                 </div>
               </div>
 
-              {/* Editable Product Info */}
-              <div className="space-y-4">
-                {[
-                  {
-                    key: "name",
-                    label: "Collection Name",
-                    type: "text",
-                    editable: true,
-                  },
-                  { key: "slug", label: "Slug", type: "text", editable: false },
-                  {
-                    key: "Seo Title",
-                    label: "Seo Title",
-                    type: "text",
-                    editable: true,
-                  },
-                  {
-                    key: "Seo Keyword",
-                    label: "Seo Keyword",
-                    type: "text",
-                    editable: true,
-                  },
-                  {
-                    key: "Seo Description",
-                    label: "Seo Description",
-                    type: "textarea",
-                    editable: true,
-                  },
-                ].map(({ key, label, type, editable }) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <div className="w-full">
-                      <label className="block text-sm text-gray-500">
-                        {label}
-                      </label>
-                      {editable ? (
-                        <>
-                          {editingField === key ? (
-                            <div className="flex gap-2 items-center">
-                              <Input
-                                type={type}
-                                value={
-                                  collection[
-                                    key as keyof typeof collection
-                                  ] as any
-                                }
-                                onChange={(e) =>
-                                  handleChange(
-                                    key,
-                                    type === "number"
-                                      ? parseFloat(e.target.value) || 0
-                                      : e.target.value
-                                  )
-                                }
-                              />
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => setEditingField(null)}
-                              >
-                                <Check className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => setEditingField(null)}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between">
-                              <p className="text-base">
-                                {collection[key as keyof typeof collection]}
-                              </p>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setEditingField(key)}
-                              >
-                                <Pencil className="w-4 h-4 text-gray-500" />
-                              </Button>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <p className="text-base">
-                            {collection[key as keyof typeof collection]}
-                          </p>
-                          <Button size="icon" variant="ghost">
-                            <Lock className="w-4 h-4 text-gray-500" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <Separator />
 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    Description
-                  </label>
-                  {editingField === "description" ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={collection.description}
-                        onChange={(e) =>
-                          handleChange("description", e.target.value)
-                        }
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => setEditingField(null)}
-                        >
-                          <Check className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => setEditingField(null)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+              {/* Parent Collection */}
+              {collection.parent && (
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">Parent:</span>
+                  <Link
+                    href={`/admin/dashboard/Collections/${collection.parent.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {collection.parent.name}
+                  </Link>
+                </div>
+              )}
+
+              {/* Created At */}
+              {collection.created_at && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">Created:</span>
+                  <span className="text-sm">
+                    {new Date(collection.created_at).toLocaleDateString(
+                      "en-IN",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* SEO Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                SEO Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {collection.seo_title ? (
+                <>
+                  <div>
+                    <label className="text-sm text-gray-500">SEO Title</label>
+                    <p className="font-medium">{collection.seo_title}</p>
+                  </div>
+                  {collection.seo_keywords && (
+                    <div>
+                      <label className="text-sm text-gray-500">Keywords</label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {collection.seo_keywords
+                          .split(",")
+                          .map((keyword, i) => (
+                            <Badge
+                              key={i}
+                              variant="outline"
+                              className="font-normal"
+                            >
+                              {keyword.trim()}
+                            </Badge>
+                          ))}
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex justify-between items-start">
-                      <p className="text-base max-w-lg">
-                        {collection.description}
+                  )}
+                  {collection.seo_description && (
+                    <div>
+                      <label className="text-sm text-gray-500">
+                        Meta Description
+                      </label>
+                      <p className="text-gray-600 text-sm">
+                        {collection.seo_description}
                       </p>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setEditingField("description")}
-                      >
-                        <Pencil className="w-4 h-4 text-gray-500" />
-                      </Button>
                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <p className="text-gray-400 text-sm">
+                  No SEO information added
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-                {/* Toggles */}
-                <div className="grid grid-cols-1 gap-4 pt-4">
-                  {[
-                    { key: "is_active", label: "Active" },
-                    { key: "is_featured", label: "Featured" },
-                  ].map(({ key, label }) => (
+          {/* Products in Collection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5" />
+                Products ({products.length})
+              </CardTitle>
+              <CardDescription>Products in this collection</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {products.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-4">
+                  No products in this collection
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {products.map((product) => (
                     <div
-                      key={key}
-                      className="flex items-center justify-between bg-gray-100 p-2 rounded-md"
+                      key={product.id}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
                     >
-                      <label className="text-sm text-gray-600">{label}</label>
-                      <Switch
-                        checked={
-                          collection[key as keyof typeof collection] as boolean
-                        }
-                        onCheckedChange={(val) => handleChange(key, val)}
-                        className="cursor-pointer"
-                      />
+                      {product.image_url && (
+                        <div className="w-10 h-10 rounded overflow-hidden">
+                          <Image
+                            src={product.image_url}
+                            alt={product.name}
+                            width={40}
+                            height={40}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <Link
+                          href={`/admin/dashboard/Products/${product.id}`}
+                          className="font-medium text-sm hover:text-blue-600"
+                        >
+                          {product.name}
+                        </Link>
+                        <p className="text-xs text-gray-500">
+                          ₹{product.price}
+                        </p>
+                      </div>
+                      {product.is_active ? (
+                        <Badge
+                          variant="outline"
+                          className="text-green-600 text-xs"
+                        >
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-red-500 text-xs"
+                        >
+                          Inactive
+                        </Badge>
+                      )}
                     </div>
                   ))}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                <div className="pt-6 flex justify-end">
-                  <Button className="px-6">Save All Changes</Button>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Sub-collections */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Sub-collections
+              </CardTitle>
+              <CardDescription>
+                Nested collections under this one
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {collection.children && collection.children.length > 0 ? (
+                <div className="space-y-2">
+                  {collection.children.map((child) => (
+                    <Link
+                      key={child.id}
+                      href={`/admin/dashboard/Collections/${child.id}`}
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50"
+                    >
+                      <Layers className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm">{child.name}</span>
+                    </Link>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-gray-400 text-sm text-center py-4">
+                  No sub-collections
+                </p>
+              )}
+              <Separator className="my-4" />
+              <Link
+                href={`/admin/dashboard/Collections/new?parent=${collection.id}`}
+              >
+                <Button variant="outline" className="w-full" size="sm">
+                  Add Sub-collection
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Quick Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Quick Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Slug</span>
+                <code className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                  {collection.slug}
+                </code>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Products</span>
+                <span>{products.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Sub-collections</span>
+                <span>{collection.children?.length || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Status</span>
+                <span>{collection.is_active ? "Active" : "Inactive"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Featured</span>
+                <span>{collection.is_featured ? "Yes" : "No"}</span>
               </div>
             </CardContent>
           </Card>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

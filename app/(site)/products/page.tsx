@@ -6,13 +6,15 @@ export default async function ProductsPage() {
 
   const { data: products } = await supabase
     .from("products")
-    .select("*, collections(name, slug)")
+    .select(
+      "*, collections(name, slug, parent_id, parent:parent_id(name, slug))",
+    )
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
   const { data: collections } = await supabase
     .from("collections")
-    .select("id, name, slug")
+    .select("id, name, slug, parent_id, parent:parent_id(name, slug)")
     .order("name");
 
   const productsWithRatings = products?.map((product) => {

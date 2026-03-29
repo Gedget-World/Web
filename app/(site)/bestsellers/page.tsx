@@ -18,9 +18,11 @@ export default async function BestsellersPage() {
       collections (
         id,
         name,
-        slug
+        slug,
+        parent_id,
+        parent:parent_id(name, slug)
       )
-    `
+    `,
     )
     .gt("sales_count", 0)
     .order("sales_count", { ascending: false });
@@ -28,7 +30,7 @@ export default async function BestsellersPage() {
   // Fetch all collections for filters
   const { data: collections } = await supabase
     .from("collections")
-    .select("id, name, slug")
+    .select("id, name, slug, parent_id, parent:parent_id(name, slug)")
     .order("name");
 
   return (

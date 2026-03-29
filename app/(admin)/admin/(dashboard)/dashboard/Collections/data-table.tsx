@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,26 +21,43 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
-import { MoreHorizontalIcon } from "lucide-react";
+import { MoreHorizontalIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  parent_id: string | null;
+  parent?: { name: string } | null;
+}
+
 export default function DataTable() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Collection[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
   const limit = 10;
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const fetchData = async () => {
-      let query = supabase
+      setLoading(true);
+      const query = supabase
         .from("collections")
-        .select("*")
+        .select("*, parent:parent_id(name)")
         .ilike("name", `%${search}%`)
         .range(page * limit, page * limit + limit - 1);
       const { data, error } = await query;
-      console.log("Fetched data:", data);
-      if (!error && data) setData(data);
+      if (!error && data) {
+        setData(data);
+        setHasMore(data.length === limit);
+      }
+      setLoading(false);
     };
     fetchData();
   }, [supabase, search, page]);
@@ -61,6 +78,7 @@ export default function DataTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead>Parent</TableHead>
             <TableHead>Slug</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Active</TableHead>
@@ -68,78 +86,102 @@ export default function DataTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="flex flex-row align-middle items-center">
-                <div className="mr-2 mt-1 rounded-sm overflow-hidden">
-                  <Image
-                    src={row.image_url}
-                    alt={row.name}
-                    width={20}
-                    height={20}
-                  />
-                </div>
-                <div className="mt-1">
-                  <Link
-                    href={`/admin/dashboard/Collections/${row.id}`}
-                    className="hover:text-blue-800 hover:underline"
-                  >
-                    {row.name}
-                  </Link>
-                </div>
-              </TableCell>
-              <TableCell>{row.slug}</TableCell>
-              <TableCell>{row.description}</TableCell>
-              <TableCell>
-                {row.is_active ? (
-                  <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
-                    <span
-                      className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
-                      aria-hidden="true"
-                    />
-                    Active
-                  </Badge>
-                ) : (
-                  <Badge className="bg-red-600/10 [a&]:hover:bg-red-600/5 focus-visible:ring-red-600/20 dark:focus-visible:ring-red-600/40 text-red-400 rounded-full border-none focus-visible:outline-none">
-                    <span
-                      className="bg-red-600 size-1.5 rounded-full"
-                      aria-hidden="true"
-                    />
-                    Inactive
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      aria-label="Open menu"
-                      size="icon-sm"
-                    >
-                      <MoreHorizontalIcon />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuGroup>
-                      <Link href={`/admin/dashboard/Collections/${row.id}`}>
-                        <DropdownMenuItem className="cursor-pointer">
-                          View Collection
-                        </DropdownMenuItem>
-                      </Link>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin mx-auto" />
               </TableCell>
             </TableRow>
-          ))}
-
-          {data.length === 0 && (
+          ) : data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={2} className="text-center py-6">
+              <TableCell colSpan={6} className="text-center py-6">
                 No results found.
               </TableCell>
             </TableRow>
+          ) : (
+            data.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell className="flex flex-row align-middle items-center">
+                  {row.image_url && (
+                    <div className="mr-2 mt-1 rounded-sm overflow-hidden">
+                      <Image
+                        src={row.image_url}
+                        alt={row.name}
+                        width={20}
+                        height={20}
+                      />
+                    </div>
+                  )}
+                  <div className="mt-1">
+                    <Link
+                      href={`/admin/dashboard/Collections/${row.id}`}
+                      className="hover:text-blue-800 hover:underline"
+                    >
+                      {row.name}
+                    </Link>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {row.parent ? (
+                    <Badge variant="outline" className="font-normal">
+                      {row.parent.name}
+                    </Badge>
+                  ) : (
+                    <span className="text-gray-400 text-sm">—</span>
+                  )}
+                </TableCell>
+                <TableCell>{row.slug}</TableCell>
+                <TableCell>{row.description}</TableCell>
+                <TableCell>
+                  {row.is_active ? (
+                    <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
+                      <span
+                        className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
+                        aria-hidden="true"
+                      />
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-600/10 [a&]:hover:bg-red-600/5 focus-visible:ring-red-600/20 dark:focus-visible:ring-red-600/40 text-red-400 rounded-full border-none focus-visible:outline-none">
+                      <span
+                        className="bg-red-600 size-1.5 rounded-full"
+                        aria-hidden="true"
+                      />
+                      Inactive
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        aria-label="Open menu"
+                        size="icon-sm"
+                      >
+                        <MoreHorizontalIcon />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-40" align="end">
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem asChild className="cursor-pointer">
+                          <Link href={`/admin/dashboard/Collections/${row.id}`}>
+                            View Collection
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="cursor-pointer">
+                          <Link
+                            href={`/admin/dashboard/Collections/new?id=${row.id}`}
+                          >
+                            Edit Collection
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
           )}
         </TableBody>
       </Table>
@@ -153,7 +195,11 @@ export default function DataTable() {
         >
           Previous
         </Button>
-        <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
+        <Button
+          variant="outline"
+          disabled={!hasMore}
+          onClick={() => setPage((p) => p + 1)}
+        >
           Next
         </Button>
       </div>

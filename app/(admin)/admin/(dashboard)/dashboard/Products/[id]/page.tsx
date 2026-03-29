@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Lock, Image as LucideImage, TriangleAlertIcon } from "lucide-react";
+import { Lock, Image as LucideImage } from "lucide-react";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
 import {
   Card,
@@ -14,17 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import { Pencil, Check, X, Plus, Trash2 } from "lucide-react";
 import {
   Select,
@@ -87,9 +77,14 @@ export default function ProductDetailsPage({
     youtube_url: "" as string,
   });
 
-  const [collections, setCollections] = useState([
-    { id: "a9e064bc-a81f-42f0-92ec-6247b0875e63", name: "Essentials" },
-  ]);
+  const [collections, setCollections] = useState<
+    {
+      id: string;
+      name: string;
+      parent_id: string | null;
+      parent: { name: string }[] | null;
+    }[]
+  >([]);
   const [loadingCollections, setLoadingCollections] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
@@ -180,7 +175,8 @@ export default function ProductDetailsPage({
       setLoadingCollections(true);
       const { data, error } = await supabase
         .from("collections")
-        .select("id, name");
+        .select("id, name, parent_id, parent:parent_id(name)")
+        .order("name");
       if (error) {
         console.error("Error fetching collections:", error);
         return;
@@ -487,87 +483,6 @@ export default function ProductDetailsPage({
     router.push("/admin/dashboard/Products");
   };
 
-  const _handleProductDelete = async () => {
-    // Get the thumbnail image name before deleting the product
-    let thumbnailImageName = product.image_name;
-
-    // If image_name is empty, extract filename from image_url
-    if (!thumbnailImageName && product.image_urls) {
-      try {
-        const url = new URL(product.image_urls);
-        // Extract the filename from the URL path (last segment after bucket name)
-        const pathParts = url.pathname.split("/");
-        thumbnailImageName = pathParts[pathParts.length - 1];
-        console.log("Extracted thumbnail name from URL:", thumbnailImageName);
-      } catch (e) {
-        console.error("Error parsing image URL:", e);
-      }
-    }
-
-    // Get all product images for this product before deleting the product
-    const { data: productImagesData, error: productImagesError } =
-      await supabase.from("product_images").select("*").eq("product_id", id);
-
-    if (productImagesError) {
-      console.error(
-        "Error fetching product images for deletion:",
-        productImagesError,
-      );
-      alert("There was an error deleting the product. Please try again.");
-      return;
-    }
-
-    // Delete the product images and thumbnail image from Supabase Storage
-    const thumbnailBucket =
-      process.env.NEXT_PUBLIC_SUPABASE_THUMBNAIL_BUCKET ||
-      "product_thumbnail_images";
-
-    // Delete thumbnail image
-    if (thumbnailImageName) {
-      console.log("Deleting thumbnail:", thumbnailImageName);
-      const { error: thumbnailDeleteError } = await supabase.storage
-        .from(thumbnailBucket)
-        .remove([thumbnailImageName]);
-
-      if (thumbnailDeleteError) {
-        console.error("Error deleting thumbnail image:", thumbnailDeleteError);
-      } else {
-        console.log("Thumbnail image deleted successfully");
-      }
-    }
-
-    // Delete product images
-    if (productImagesData && productImagesData.length > 0) {
-      const productImagesBucket =
-        process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_IMAGES_BUCKET ||
-        "product_images";
-      const productImageNames = productImagesData.map((img) => img.image_name);
-
-      const { error: productImagesDeleteError } = await supabase.storage
-        .from(productImagesBucket)
-        .remove(productImageNames);
-
-      if (productImagesDeleteError) {
-        console.error(
-          "Error deleting product images:",
-          productImagesDeleteError,
-        );
-      } else {
-        console.log("Product images deleted successfully");
-      }
-    }
-
-    // Now delete the product record from the database
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) {
-      console.error("Error deleting product:", error);
-      alert("There was an error deleting the product. Please try again.");
-      return;
-    }
-    alert("Product deleted successfully!");
-    router.push("/admin/dashboard/Products");
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       {pageLoading ? (
@@ -609,52 +524,6 @@ export default function ProductDetailsPage({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-
-                  <AlertDialog>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant={"destructive"}
-                              className="cursor-pointer"
-                              size={"sm"}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </AlertDialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete entire product</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <AlertDialogContent>
-                      <AlertDialogHeader className="items-center">
-                        <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
-                          <TriangleAlertIcon className="text-destructive size-6" />
-                        </div>
-                        <AlertDialogTitle>
-                          Are you absolutely sure you want to delete{" "}
-                          {product.name}?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-center">
-                          This action cannot be undone. This will permanently
-                          delete your product and remove your data from our
-                          servers.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={_handleProductDelete}
-                          className="bg-destructive dark:bg-destructive/60 hover:bg-destructive focus-visible:ring-destructive text-white"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </div>
               </CardTitle>
               <CardDescription>
@@ -881,7 +750,12 @@ export default function ProductDetailsPage({
                           <SelectContent>
                             {collections.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
-                                {c.name}
+                                {c.parent_id ? `↳ ${c.name}` : c.name}
+                                {c.parent?.[0] && (
+                                  <span className="text-gray-400 text-xs ml-1">
+                                    (in {c.parent[0].name})
+                                  </span>
+                                )}
                               </SelectItem>
                             ))}
                           </SelectContent>

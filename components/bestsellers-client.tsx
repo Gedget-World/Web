@@ -1,72 +1,110 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useMemo } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Search, SlidersHorizontal, X, TrendingUp } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { Label } from "@/components/ui/label"
-import { ProductCard } from "@/components/product-card"
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, SlidersHorizontal, X, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { ProductCard } from "@/components/product-card";
 
-const ITEMS_PER_PAGE = 12
+const ITEMS_PER_PAGE = 12;
 
 type Product = {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  price: number
-  discount_percentage: number
-  image_url: string | null
-  stock: number
-  sales_count: number
-  collections: { id: string; name: string; slug: string } | null
-}
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number;
+  discount_percentage: number;
+  image_url: string | null;
+  stock: number;
+  sales_count: number;
+  collections: {
+    id: string;
+    name: string;
+    slug: string;
+    parent_id: string | null;
+    parent: { name: string; slug: string }[] | null;
+  } | null;
+};
 
 type Collection = {
-  id: string
-  name: string
-  slug: string
-}
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+  parent: { name: string; slug: string }[] | null;
+};
 
 export function BestsellersClient({
   initialProducts,
   collections,
 }: {
-  initialProducts: Product[]
-  collections: Collection[]
+  initialProducts: Product[];
+  collections: Collection[];
 }) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const maxPrice = Math.max(...initialProducts.map((p) => p.price), 1000)
+  const maxPrice = Math.max(...initialProducts.map((p) => p.price), 1000);
 
   // Initialize state from URL params
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
-  const [selectedCollection, setSelectedCollection] = useState(searchParams.get("collection") || "all")
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || "",
+  );
+  const [selectedCollection, setSelectedCollection] = useState(
+    searchParams.get("collection") || "all",
+  );
   const [priceRange, setPriceRange] = useState([
     Number(searchParams.get("minPrice")) || 0,
     Number(searchParams.get("maxPrice")) || maxPrice,
-  ])
-  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "sales-desc")
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1)
+  ]);
+  const [sortBy, setSortBy] = useState(
+    searchParams.get("sort") || "sales-desc",
+  );
+  const [currentPage, setCurrentPage] = useState(
+    Number(searchParams.get("page")) || 1,
+  );
 
   // Update URL when filters change
   useEffect(() => {
-    const params = new URLSearchParams()
-    if (searchQuery) params.set("search", searchQuery)
-    if (selectedCollection !== "all") params.set("collection", selectedCollection)
-    if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString())
-    if (priceRange[1] < maxPrice) params.set("maxPrice", priceRange[1].toString())
-    if (sortBy !== "sales-desc") params.set("sort", sortBy)
-    if (currentPage > 1) params.set("page", currentPage.toString())
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("search", searchQuery);
+    if (selectedCollection !== "all")
+      params.set("collection", selectedCollection);
+    if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString());
+    if (priceRange[1] < maxPrice)
+      params.set("maxPrice", priceRange[1].toString());
+    if (sortBy !== "sales-desc") params.set("sort", sortBy);
+    if (currentPage > 1) params.set("page", currentPage.toString());
 
-    router.push(`/bestsellers?${params.toString()}`, { scroll: false })
-  }, [searchQuery, selectedCollection, priceRange, sortBy, currentPage, router, maxPrice])
+    router.push(`/bestsellers?${params.toString()}`, { scroll: false });
+  }, [
+    searchQuery,
+    selectedCollection,
+    priceRange,
+    sortBy,
+    currentPage,
+    router,
+    maxPrice,
+  ]);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
@@ -74,56 +112,83 @@ export function BestsellersClient({
       const matchesSearch =
         searchQuery === "" ||
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        product.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesCollection = selectedCollection === "all" || product.collections?.id === selectedCollection
+      // Match collection directly OR if the product's collection is a child of the selected collection
+      const matchesCollection =
+        selectedCollection === "all" ||
+        product.collections?.id === selectedCollection ||
+        (product.collections?.parent &&
+          product.collections.parent[0]?.slug ===
+            collections.find((c) => c.id === selectedCollection)?.slug);
 
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1]
+      const matchesPrice =
+        product.price >= priceRange[0] && product.price <= priceRange[1];
 
-      return matchesSearch && matchesCollection && matchesPrice
-    })
+      return matchesSearch && matchesCollection && matchesPrice;
+    });
 
     // Sort products
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "sales-desc":
-          return b.sales_count - a.sales_count
+          return b.sales_count - a.sales_count;
         case "sales-asc":
-          return a.sales_count - b.sales_count
+          return a.sales_count - b.sales_count;
         case "price-asc":
-          return a.price - b.price
+          return a.price - b.price;
         case "price-desc":
-          return b.price - a.price
+          return b.price - a.price;
         case "name":
-          return a.name.localeCompare(b.name)
+          return a.name.localeCompare(b.name);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
-    return filtered
-  }, [initialProducts, searchQuery, selectedCollection, priceRange, sortBy])
+    return filtered;
+  }, [initialProducts, searchQuery, selectedCollection, priceRange, sortBy]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
   const handleFilterChange = () => {
-    setCurrentPage(1)
-  }
+    setCurrentPage(1);
+  };
 
   const clearAllFilters = () => {
-    setSearchQuery("")
-    setSelectedCollection("all")
-    setPriceRange([0, maxPrice])
-    setSortBy("sales-desc")
-    setCurrentPage(1)
-  }
+    setSearchQuery("");
+    setSelectedCollection("all");
+    setPriceRange([0, maxPrice]);
+    setSortBy("sales-desc");
+    setCurrentPage(1);
+  };
 
   const activeFiltersCount =
     (searchQuery ? 1 : 0) +
     (selectedCollection !== "all" ? 1 : 0) +
-    (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0)
+    (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0);
+
+  // Organize collections: parent collections first, then children grouped under parents
+  const parentCollections = collections.filter((c) => !c.parent_id);
+  const childCollections = collections.filter((c) => c.parent_id);
+
+  const orderedCollections = parentCollections.flatMap((parent) => {
+    const children = childCollections.filter(
+      (child) => child.parent && child.parent[0]?.slug === parent.slug,
+    );
+    return [parent, ...children];
+  });
+
+  const includedIds = new Set(orderedCollections.map((c) => c.id));
+  const orphanedChildren = childCollections.filter(
+    (c) => !includedIds.has(c.id),
+  );
+  const finalCollections = [...orderedCollections, ...orphanedChildren];
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -132,8 +197,8 @@ export function BestsellersClient({
         <Select
           value={selectedCollection}
           onValueChange={(value) => {
-            setSelectedCollection(value)
-            handleFilterChange()
+            setSelectedCollection(value);
+            handleFilterChange();
           }}
         >
           <SelectTrigger>
@@ -141,9 +206,11 @@ export function BestsellersClient({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Collections</SelectItem>
-            {collections.map((collection) => (
+            {finalCollections.map((collection) => (
               <SelectItem key={collection.id} value={collection.id}>
-                {collection.name}
+                {collection.parent_id
+                  ? `↳ ${collection.name}`
+                  : collection.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -157,8 +224,8 @@ export function BestsellersClient({
         <Slider
           value={priceRange}
           onValueChange={(value) => {
-            setPriceRange(value)
-            handleFilterChange()
+            setPriceRange(value);
+            handleFilterChange();
           }}
           max={maxPrice}
           step={10}
@@ -170,7 +237,7 @@ export function BestsellersClient({
         </div>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="container py-8 px-4 md:px-8">
@@ -179,7 +246,9 @@ export function BestsellersClient({
           <TrendingUp className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-bold text-balance">Bestsellers</h1>
         </div>
-        <p className="text-muted-foreground text-pretty">Our most popular and top-selling items</p>
+        <p className="text-muted-foreground text-pretty">
+          Our most popular and top-selling items
+        </p>
       </div>
 
       {/* Search and Sort Bar */}
@@ -190,8 +259,8 @@ export function BestsellersClient({
             placeholder="Search bestsellers..."
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value)
-              handleFilterChange()
+              setSearchQuery(e.target.value);
+              handleFilterChange();
             }}
             className="pl-9"
           />
@@ -212,11 +281,17 @@ export function BestsellersClient({
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto bg-transparent">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto bg-transparent"
+            >
               <SlidersHorizontal className="h-4 w-4 mr-2" />
               Filters
               {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                <Badge
+                  variant="secondary"
+                  className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+                >
                   {activeFiltersCount}
                 </Badge>
               )}
@@ -238,15 +313,18 @@ export function BestsellersClient({
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {searchQuery && (
-            <Badge variant="secondary" className="gap-1 pr-1 hover:bg-secondary/80 transition-colors">
+            <Badge
+              variant="secondary"
+              className="gap-1 pr-1 hover:bg-secondary/80 transition-colors"
+            >
               Search: {searchQuery}
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-4 w-4 p-0 hover:bg-secondary-foreground/20 rounded-full"
                 onClick={() => {
-                  setSearchQuery("")
-                  handleFilterChange()
+                  setSearchQuery("");
+                  handleFilterChange();
                 }}
                 aria-label="Remove search filter"
               >
@@ -255,15 +333,18 @@ export function BestsellersClient({
             </Badge>
           )}
           {selectedCollection !== "all" && (
-            <Badge variant="secondary" className="gap-1 pr-1 hover:bg-secondary/80 transition-colors">
+            <Badge
+              variant="secondary"
+              className="gap-1 pr-1 hover:bg-secondary/80 transition-colors"
+            >
               {collections.find((c) => c.id === selectedCollection)?.name}
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-4 w-4 p-0 hover:bg-secondary-foreground/20 rounded-full"
                 onClick={() => {
-                  setSelectedCollection("all")
-                  handleFilterChange()
+                  setSelectedCollection("all");
+                  handleFilterChange();
                 }}
                 aria-label="Remove collection filter"
               >
@@ -272,15 +353,18 @@ export function BestsellersClient({
             </Badge>
           )}
           {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
-            <Badge variant="secondary" className="gap-1 pr-1 hover:bg-secondary/80 transition-colors">
+            <Badge
+              variant="secondary"
+              className="gap-1 pr-1 hover:bg-secondary/80 transition-colors"
+            >
               ${priceRange[0]} - ${priceRange[1]}
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-4 w-4 p-0 hover:bg-secondary-foreground/20 rounded-full"
                 onClick={() => {
-                  setPriceRange([0, maxPrice])
-                  handleFilterChange()
+                  setPriceRange([0, maxPrice]);
+                  handleFilterChange();
                 }}
                 aria-label="Remove price filter"
               >
@@ -288,7 +372,12 @@ export function BestsellersClient({
               </Button>
             </Badge>
           )}
-          <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-7 text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="h-7 text-xs"
+          >
             Clear all
           </Button>
         </div>
@@ -296,7 +385,8 @@ export function BestsellersClient({
 
       {/* Results Count */}
       <p className="text-sm text-muted-foreground mb-4">
-        Showing {paginatedProducts.length} of {filteredProducts.length} bestsellers
+        Showing {paginatedProducts.length} of {filteredProducts.length}{" "}
+        bestsellers
       </p>
 
       {/* Products Grid */}
@@ -308,7 +398,9 @@ export function BestsellersClient({
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No bestsellers found matching your criteria.</p>
+          <p className="text-muted-foreground">
+            No bestsellers found matching your criteria.
+          </p>
           <Button variant="link" onClick={clearAllFilters} className="mt-2">
             Clear all filters
           </Button>
@@ -327,7 +419,11 @@ export function BestsellersClient({
           </Button>
           <div className="flex items-center gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
                 return (
                   <Button
                     key={page}
@@ -338,15 +434,15 @@ export function BestsellersClient({
                   >
                     {page}
                   </Button>
-                )
+                );
               } else if (page === currentPage - 2 || page === currentPage + 2) {
                 return (
                   <span key={page} className="px-2">
                     ...
                   </span>
-                )
+                );
               }
-              return null
+              return null;
             })}
           </div>
           <Button
@@ -359,5 +455,5 @@ export function BestsellersClient({
         </div>
       )}
     </div>
-  )
+  );
 }

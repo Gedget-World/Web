@@ -105,11 +105,14 @@ export default function CreateProductPage() {
     checkSlug(newSlug);
   };
 
-  const [collections, setCollections] = useState([
-    { id: "a9e064bc-a81f-42f0-92ec-6247b0875e63", name: "Essentials" },
-    { id: "b0b3456a-23ef-45aa-93d1-f021f9f4a1ef", name: "Premium" },
-    { id: "c8d2348f-12df-49aa-87a2-8123ac0a12cd", name: "Summer" },
-  ]);
+  const [collections, setCollections] = useState<
+    {
+      id: string;
+      name: string;
+      parent_id: string | null;
+      parent: { name: string }[] | null;
+    }[]
+  >([]);
   const [loadingCollections, setLoadingCollections] = useState(false);
   const [handleSubmitLoading, setHandleSubmitLoading] = useState(false);
 
@@ -119,7 +122,8 @@ export default function CreateProductPage() {
       setLoadingCollections(true);
       const { data, error } = await supabase
         .from("collections")
-        .select("id, name");
+        .select("id, name, parent_id, parent:parent_id(name)")
+        .order("name");
       if (error) {
         console.error("Error fetching collections:", error);
         return;
@@ -629,7 +633,12 @@ export default function CreateProductPage() {
                 <SelectContent>
                   {collections.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.name}
+                      {c.parent_id ? `↳ ${c.name}` : c.name}
+                      {c.parent?.[0] && (
+                        <span className="text-gray-400 text-xs ml-1">
+                          (in {c.parent[0].name})
+                        </span>
+                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>
