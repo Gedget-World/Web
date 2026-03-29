@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,33 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import FAQSections from "@/components/faq-sections";
+import { useStoreSettings } from "@/hooks/use-store-settings";
+import { createClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 export default function ContactUsPage() {
+  const { getSetting } = useStoreSettings([
+    "contact_email",
+    "contact_phone",
+    "store_address",
+    "store_city",
+    "store_state",
+    "store_pincode",
+    "store_country",
+  ]);
+
+  const contactEmail = getSetting("contact_email", "support@gadgetkabila.com");
+  const contactPhone = getSetting("contact_phone", "+91 9876543210");
+  const storeAddress = getSetting(
+    "store_address",
+    "123 Business Avenue, Suite 100",
+  );
+  const storeCity = getSetting("store_city", "Bengaluru");
+  const storeState = getSetting("store_state", "Karnataka");
+  const storePincode = getSetting("store_pincode", "560001");
+  const storeCountry = getSetting("store_country", "India");
+
+  const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +60,41 @@ export default function ContactUsPage() {
     phone: "",
     message: "",
   });
+
+  // Check if user is logged in and pre-fill data
+  useEffect(() => {
+    const supabase = createClient();
+
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        setFormData((prev) => ({ ...prev, email: user.email || "" }));
+
+        // Fetch customer data for name
+        try {
+          const response = await fetch(`/api/customers?user_id=${user.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data) {
+              setFormData((prev) => ({
+                ...prev,
+                firstName: data.first_name || "",
+                lastName: data.last_name || "",
+                phone: data.phone || prev.phone,
+              }));
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching customer data:", err);
+        }
+      }
+    };
+
+    checkUser();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,16 +120,16 @@ export default function ContactUsPage() {
 
       setIsSubmitted(true);
 
-      // Reset form after 3 seconds
+      // Reset form after 3 seconds but keep user info
       setTimeout(() => {
         setIsSubmitted(false);
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
+        setFormData((prev) => ({
+          firstName: user ? prev.firstName : "",
+          lastName: user ? prev.lastName : "",
+          email: user?.email || "",
+          phone: user ? prev.phone : "",
           message: "",
-        });
+        }));
       }, 3000);
     } catch (err) {
       setError(
@@ -139,7 +199,7 @@ export default function ContactUsPage() {
 
               {/* Email Us */}
               <Link
-                href="mailto:support@gadgetskabila.com"
+                href={`mailto:${contactEmail}`}
                 className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all group"
               >
                 <div className="p-3 bg-gray-100 rounded-lg group-hover:bg-blue-50 transition-colors">
@@ -147,15 +207,13 @@ export default function ContactUsPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Email Us</h3>
-                  <p className="text-sm text-gray-500">
-                    support@gadgetskabila.com
-                  </p>
+                  <p className="text-sm text-gray-500">{contactEmail}</p>
                 </div>
               </Link>
 
               {/* Call Us */}
               <Link
-                href="tel:+911234567890"
+                href={`tel:${contactPhone.replace(/\s/g, "")}`}
                 className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all group"
               >
                 <div className="p-3 bg-gray-100 rounded-lg group-hover:bg-blue-50 transition-colors">
@@ -163,7 +221,7 @@ export default function ContactUsPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Call Us</h3>
-                  <p className="text-sm text-gray-500">+91 12345 67890</p>
+                  <p className="text-sm text-gray-500">{contactPhone}</p>
                 </div>
               </Link>
 
@@ -193,11 +251,11 @@ export default function ContactUsPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900">Our Office</h3>
                   <address className="text-sm text-gray-600 not-italic mt-1">
-                    123 Business Avenue, Suite 100
+                    {storeAddress}
                     <br />
-                    Bengaluru, Karnataka 560001
+                    {storeCity}, {storeState} {storePincode}
                     <br />
-                    India
+                    {storeCountry}
                   </address>
                 </div>
               </div>
@@ -322,7 +380,14 @@ export default function ContactUsPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={!!user}
+                    className={user ? "bg-gray-50 cursor-not-allowed" : ""}
                   />
+                  {user && (
+                    <p className="text-xs text-gray-500">
+                      Email is pre-filled from your account
+                    </p>
+                  )}
                 </div>
 
                 {/* Phone */}

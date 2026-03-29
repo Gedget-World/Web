@@ -55,6 +55,15 @@ export default async function OrderDetailPage({
     .eq("order_id", order.id)
     .order("created_at", { ascending: false });
 
+  // Fetch currency symbol from settings
+  const { data: currencySetting } = await supabase
+    .from("store_settings")
+    .select("setting_value")
+    .eq("setting_key", "currency_symbol")
+    .single();
+
+  const currencySymbol = currencySetting?.setting_value || "₹";
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending":
@@ -200,13 +209,14 @@ export default async function OrderDetailPage({
                         {item.products?.name}
                       </Link>
                       <p className="text-sm text-slate-500 mt-1">
-                        Qty: {item.quantity} × &#8377;
+                        Qty: {item.quantity} × {currencySymbol}
                         {Number(item.price).toFixed(0)}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-semibold text-slate-900">
-                        &#8377;{(Number(item.price) * item.quantity).toFixed(0)}
+                        {currencySymbol}
+                        {(Number(item.price) * item.quantity).toFixed(0)}
                       </p>
                     </div>
                   </div>
@@ -226,7 +236,7 @@ export default async function OrderDetailPage({
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Subtotal</span>
                 <span className="text-slate-900">
-                  &#8377;
+                  {currencySymbol}
                   {Number(order.total - (order.discount_amount || 0)).toFixed(
                     0,
                   )}
@@ -238,18 +248,27 @@ export default async function OrderDetailPage({
                     Discount {order.coupon_code && `(${order.coupon_code})`}
                   </span>
                   <span>
-                    -&#8377;{Number(order.discount_amount).toFixed(0)}
+                    -{currencySymbol}
+                    {Number(order.discount_amount).toFixed(0)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Shipping</span>
-                <span className="text-slate-900">&#8377;10</span>
-              </div>
+              {order.shipping_amount !== undefined &&
+                order.shipping_amount !== null && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Shipping</span>
+                    <span className="text-slate-900">
+                      {order.shipping_amount === 0
+                        ? "Free"
+                        : `${currencySymbol}${Number(order.shipping_amount).toFixed(0)}`}
+                    </span>
+                  </div>
+                )}
               <div className="flex justify-between font-semibold pt-2 border-t">
                 <span className="text-slate-900">Total</span>
                 <span className="text-slate-900">
-                  &#8377;{Number(order.total).toFixed(0)}
+                  {currencySymbol}
+                  {Number(order.total).toFixed(0)}
                 </span>
               </div>
             </div>

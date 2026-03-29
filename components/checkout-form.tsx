@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useCart } from "@/hooks/use-cart";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,16 +18,37 @@ import ContactForm from "./contact-form";
 
 export function CheckoutForm({ user }: { user: User }) {
   const { items, clearCart, appliedCoupon } = useCart();
+  const { getSetting, getNumberSetting } = useStoreSettings([
+    "currency_symbol",
+    "flat_shipping_rate",
+    "free_shipping_threshold",
+    "store_country",
+  ]);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
+  const currencySymbol = getSetting("currency_symbol", "₹");
+  const flatShippingRate = getNumberSetting("flat_shipping_rate", 50);
+  const freeShippingThreshold = getNumberSetting(
+    "free_shipping_threshold",
+    500,
+  );
+  const defaultCountry = getSetting("store_country", "India");
+
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const shipping = 10;
+
+  // Free shipping if subtotal exceeds threshold (0 means free shipping disabled)
+  const shipping =
+    subtotal > 0
+      ? freeShippingThreshold > 0 && subtotal >= freeShippingThreshold
+        ? 0
+        : flatShippingRate
+      : 0;
 
   // Calculate discount based on applied coupon
   let discount = 0;
@@ -52,7 +74,7 @@ export function CheckoutForm({ user }: { user: User }) {
     city: "",
     state: "",
     postal_code: "",
-    country: "US",
+    country: defaultCountry,
   });
   const [customerInfo, setCustomerInfo] = useState<{
     first_name: string;
@@ -90,7 +112,7 @@ export function CheckoutForm({ user }: { user: User }) {
               city: data.address.city || "",
               state: data.address.state || "",
               postal_code: data.address.postal_code || "",
-              country: data.address.country || "US",
+              country: data.address.country || defaultCountry,
             }));
           }
         }
@@ -535,6 +557,7 @@ export function CheckoutForm({ user }: { user: User }) {
                         }
                         alt={item.name}
                         fill
+                        sizes="40px"
                         className="object-cover"
                       />
                     </div>
@@ -547,7 +570,8 @@ export function CheckoutForm({ user }: { user: User }) {
                       </p>
                     </div>
                     <p className="text-sm font-medium text-slate-900">
-                      &#8377;{(item.price * item.quantity).toFixed(2)}
+                      {currencySymbol}
+                      {(item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 ))}
@@ -556,21 +580,46 @@ export function CheckoutForm({ user }: { user: User }) {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Subtotal</span>
-                  <span>&#8377;{subtotal.toFixed(2)}</span>
+                  <span>
+                    {currencySymbol}
+                    {subtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Shipping</span>
-                  <span>&#8377;{shipping.toFixed(2)}</span>
+                  {shipping === 0 && subtotal > 0 ? (
+                    <span className="text-green-600">Free</span>
+                  ) : (
+                    <span>
+                      {currencySymbol}
+                      {shipping.toFixed(2)}
+                    </span>
+                  )}
                 </div>
+                {freeShippingThreshold > 0 &&
+                  subtotal < freeShippingThreshold &&
+                  subtotal > 0 && (
+                    <p className="text-xs text-slate-500">
+                      Add {currencySymbol}
+                      {(freeShippingThreshold - subtotal).toFixed(2)} more for
+                      free shipping
+                    </p>
+                  )}
                 {discount > 0 && (
                   <div className="flex justify-between text-sm text-green-600 font-medium">
                     <span>Discount ({appliedCoupon?.code})</span>
-                    <span>-&#8377;{discount.toFixed(2)}</span>
+                    <span>
+                      -{currencySymbol}
+                      {discount.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between text-md font-bold text-slate-900 pt-2 border-t">
                   <span>Total</span>
-                  <span>&#8377;{total.toFixed(2)}</span>
+                  <span>
+                    {currencySymbol}
+                    {total.toFixed(2)}
+                  </span>
                 </div>
               </div>
 

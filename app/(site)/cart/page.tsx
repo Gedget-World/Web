@@ -1,6 +1,7 @@
 "use client";
 
 import { useCart } from "@/hooks/use-cart";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CouponInput } from "@/components/coupon-input";
@@ -17,12 +18,36 @@ import {
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, appliedCoupon } = useCart();
+  const {
+    getSetting,
+    getNumberSetting,
+    loading: settingsLoading,
+  } = useStoreSettings([
+    "currency_symbol",
+    "flat_shipping_rate",
+    "free_shipping_threshold",
+    "shipping_enabled",
+  ]);
+
+  const currencySymbol = getSetting("currency_symbol", "₹");
+  const flatShippingRate = getNumberSetting("flat_shipping_rate", 50);
+  const freeShippingThreshold = getNumberSetting(
+    "free_shipping_threshold",
+    500,
+  );
 
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
-  const shipping = subtotal > 0 ? 10 : 0;
+
+  // Free shipping if subtotal exceeds threshold (0 means free shipping disabled)
+  const shipping =
+    subtotal > 0
+      ? freeShippingThreshold > 0 && subtotal >= freeShippingThreshold
+        ? 0
+        : flatShippingRate
+      : 0;
 
   let discount = 0;
   if (appliedCoupon && subtotal >= appliedCoupon.min_purchase_amount) {
@@ -73,6 +98,7 @@ export default function CartPage() {
                       }
                       alt={item.name}
                       fill
+                      sizes="88px"
                       className="object-cover"
                     />
                   </div>
@@ -83,7 +109,8 @@ export default function CartPage() {
                         {item.name}
                       </h3>
                       <p className="text-slate-700 font-semibold text-sm mt-2">
-                        &#8377;{item.price.toFixed(2)}
+                        {currencySymbol}
+                        {item.price.toFixed(2)}
                       </p>
                     </div>
 
@@ -142,21 +169,46 @@ export default function CartPage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-slate-700 text-sm">
                   <span>Subtotal</span>
-                  <span>&#8377;{subtotal.toFixed(2)}</span>
+                  <span>
+                    {currencySymbol}
+                    {subtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-700 text-sm">
                   <span>Shipping</span>
-                  <span>&#8377;{shipping.toFixed(2)}</span>
+                  {shipping === 0 && subtotal > 0 ? (
+                    <span className="text-green-600">Free</span>
+                  ) : (
+                    <span>
+                      {currencySymbol}
+                      {shipping.toFixed(2)}
+                    </span>
+                  )}
                 </div>
+                {freeShippingThreshold > 0 &&
+                  subtotal < freeShippingThreshold &&
+                  subtotal > 0 && (
+                    <p className="text-xs text-slate-500">
+                      Add {currencySymbol}
+                      {(freeShippingThreshold - subtotal).toFixed(2)} more for
+                      free shipping
+                    </p>
+                  )}
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>Discount</span>
-                    <span>-&#8377;{discount.toFixed(2)}</span>
+                    <span>
+                      -{currencySymbol}
+                      {discount.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <div className="border-t pt-3 flex justify-between text-md font-bold text-black">
                   <span>Total</span>
-                  <span>&#8377;{total.toFixed(2)}</span>
+                  <span>
+                    {currencySymbol}
+                    {total.toFixed(2)}
+                  </span>
                 </div>
               </div>
 

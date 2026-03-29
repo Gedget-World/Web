@@ -13,6 +13,8 @@ import {
   KeyRound,
   Settings,
   BarChart3,
+  MessageSquare,
+  Star,
 } from "lucide-react";
 
 import {
@@ -91,7 +93,12 @@ const items = [
   {
     title: "Reviews",
     url: `${baseURI}/Reviews`,
-    icon: Newspaper,
+    icon: Star,
+  },
+  {
+    title: "Queries",
+    url: `${baseURI}/Queries`,
+    icon: MessageSquare,
   },
   {
     title: "Settings",

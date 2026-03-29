@@ -31,6 +31,15 @@ export default async function OrdersPage({
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  // Fetch currency symbol from settings
+  const { data: currencySetting } = await supabase
+    .from("store_settings")
+    .select("setting_value")
+    .eq("setting_key", "currency_symbol")
+    .single();
+
+  const currencySymbol = currencySetting?.setting_value || "₹";
+
   const totalPages = Math.ceil((totalOrders || 0) / ORDERS_PER_PAGE);
 
   // Fetch user's orders with order items (paginated)
@@ -150,7 +159,8 @@ export default async function OrdersPage({
                           {/* Price & Arrow */}
                           <div className="flex items-center gap-3">
                             <span className="font-semibold text-slate-900">
-                              &#8377;{Number(order.total).toFixed(0)}
+                              {currencySymbol}
+                              {Number(order.total).toFixed(0)}
                             </span>
                             <ChevronRight className="h-5 w-5 text-slate-400" />
                           </div>

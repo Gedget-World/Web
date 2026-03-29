@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,10 +98,6 @@ export default function SettingsPage() {
     message: string;
   } | null>(null);
 
-  // File upload refs
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const faviconInputRef = useRef<HTMLInputElement>(null);
-
   // Fetch all settings via API
   useEffect(() => {
     const fetchSettings = async () => {
@@ -139,17 +135,17 @@ export default function SettingsPage() {
 
   // Update setting value in state
   const updateSetting = (key: string, value: string | null) => {
-    setSettings((prev) =>
-      prev.map((s) =>
+    setSettings((prev) => {
+      const updated = prev.map((s) =>
         s.setting_key === key ? { ...s, setting_value: value } : s,
-      ),
-    );
-    // Check if there are changes
-    const newValue = value;
-    const originalValue = originalValues[key];
-    if (newValue !== originalValue) {
-      setHasChanges(true);
-    }
+      );
+      // Check if there are any changes compared to original
+      const hasAnyChanges = updated.some(
+        (s) => s.setting_value !== originalValues[s.setting_key],
+      );
+      setHasChanges(hasAnyChanges);
+      return updated;
+    });
   };
 
   // Save all settings via API
@@ -369,6 +365,7 @@ export default function SettingsPage() {
                       src={setting_value}
                       alt={label}
                       fill
+                      sizes="96px"
                       className="object-contain"
                     />
                   </div>
@@ -387,13 +384,6 @@ export default function SettingsPage() {
               )}
               <div>
                 <input
-                  ref={
-                    setting_key === "store_logo"
-                      ? logoInputRef
-                      : setting_key === "store_favicon"
-                        ? faviconInputRef
-                        : undefined
-                  }
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleFileChange(e, setting_key)}
@@ -534,7 +524,7 @@ export default function SettingsPage() {
         onValueChange={(value) => setActiveTab(value as SettingCategory)}
         className="space-y-4"
       >
-        <TabsList className="grid grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-1">
+        <TabsList className="flex flex-wrap gap-2 h-auto p-1">
           {CATEGORY_INFO.map((category) => {
             const Icon = category.icon;
             return (
