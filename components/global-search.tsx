@@ -156,15 +156,27 @@ export function GlobalSearch() {
 
   return (
     <>
+      {/* Desktop Search Button */}
       <Button
         variant="outline"
-        className="h-9 w-full justify-start px-3 bg-transparent"
+        className="hidden md:flex h-9 w-full justify-start px-3 bg-transparent"
         onClick={() => setOpen(true)}
       >
         <Search className="h-4 w-4 mr-2" />
         <span className="text-sm text-muted-foreground">
           Search products, collections...
         </span>
+      </Button>
+
+      {/* Mobile Search Icon */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-5 w-5" />
+        <span className="sr-only">Search</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

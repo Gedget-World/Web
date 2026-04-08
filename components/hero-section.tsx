@@ -9,6 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import Link from "next/link";
 
 const BANNER_IMAGES = [
   {
@@ -34,8 +35,9 @@ const BANNER_IMAGES = [
 ];
 
 export function HeroSection() {
-  const plugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true })
+  const plugin = React.useMemo(
+    () => Autoplay({ delay: 5000, stopOnInteraction: true }),
+    [],
   );
 
   return (
@@ -45,7 +47,7 @@ export function HeroSection() {
           align: "start",
           loop: true,
         }}
-        plugins={[plugin.current]}
+        plugins={[plugin]}
         className="w-full h-[300px] md:h-[300px] lg:h-[400px]"
       >
         <CarouselContent className="m-0">
