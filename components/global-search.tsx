@@ -35,14 +35,6 @@ export function GlobalSearch() {
   const supabase = createClient();
   const router = useRouter();
 
-  // Change the kbd shortcut based on OS
-  const [isAppleDevice, setIsAppleDevice] = useState(false);
-  useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isApple = /mac|iphone|ipad|ipod/.test(userAgent);
-    setIsAppleDevice(isApple);
-  }, []);
-
   // Fetch recommended products when dialog opens
   const fetchRecommendedProducts = useCallback(async () => {
     try {
@@ -129,7 +121,7 @@ export function GlobalSearch() {
         setLoading(false);
       }
     },
-    [supabase]
+    [supabase],
   );
 
   useEffect(() => {
@@ -166,24 +158,13 @@ export function GlobalSearch() {
     <>
       <Button
         variant="outline"
-        className="relative h-9 w-9 p-0 md:w-64 md:justify-start md:px-3 bg-transparent"
+        className="h-9 w-full justify-start px-3 bg-transparent"
         onClick={() => setOpen(true)}
       >
-        <Search className="h-4 w-4 md:mr-2" />
-        <span className="hidden md:inline-flex text-sm text-muted-foreground">
+        <Search className="h-4 w-4 mr-2" />
+        <span className="text-sm text-muted-foreground">
           Search products, collections...
         </span>
-        <kbd className="pointer-events-none absolute right-2 top-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 md:flex">
-          {isAppleDevice ? (
-            <>
-              <span className="text-xs">⌘</span>K
-            </>
-          ) : (
-            <>
-              <span className="text-xs">Ctrl</span>K
-            </>
-          )}
-        </kbd>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -193,7 +174,7 @@ export function GlobalSearch() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search products, collections..."
+                placeholder="Search products ..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-9 pr-9 h-12 text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0"

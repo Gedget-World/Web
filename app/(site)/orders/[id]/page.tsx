@@ -237,7 +237,7 @@ export default async function OrderDetailPage({
                 <span className="text-slate-500">Subtotal</span>
                 <span className="text-slate-900">
                   {currencySymbol}
-                  {Number(order.total - (order.discount_amount || 0)).toFixed(
+                  {Number(order.total + (order.discount_amount || 0)).toFixed(
                     0,
                   )}
                 </span>
@@ -253,17 +253,10 @@ export default async function OrderDetailPage({
                   </span>
                 </div>
               )}
-              {order.shipping_amount !== undefined &&
-                order.shipping_amount !== null && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Shipping</span>
-                    <span className="text-slate-900">
-                      {order.shipping_amount === 0
-                        ? "Free"
-                        : `${currencySymbol}${Number(order.shipping_amount).toFixed(0)}`}
-                    </span>
-                  </div>
-                )}
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Shipping</span>
+                <span className="text-green-600">Free</span>
+              </div>
               <div className="flex justify-between font-semibold pt-2 border-t">
                 <span className="text-slate-900">Total</span>
                 <span className="text-slate-900">

@@ -18,23 +18,13 @@ import ContactForm from "./contact-form";
 
 export function CheckoutForm({ user }: { user: User }) {
   const { items, clearCart, appliedCoupon } = useCart();
-  const { getSetting, getNumberSetting } = useStoreSettings([
-    "currency_symbol",
-    "flat_shipping_rate",
-    "free_shipping_threshold",
-    "store_country",
-  ]);
+  const { getSetting } = useStoreSettings(["currency_symbol", "store_country"]);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
   const currencySymbol = getSetting("currency_symbol", "₹");
-  const flatShippingRate = getNumberSetting("flat_shipping_rate", 50);
-  const freeShippingThreshold = getNumberSetting(
-    "free_shipping_threshold",
-    500,
-  );
   const defaultCountry = getSetting("store_country", "India");
 
   const subtotal = items.reduce(
@@ -42,13 +32,8 @@ export function CheckoutForm({ user }: { user: User }) {
     0,
   );
 
-  // Free shipping if subtotal exceeds threshold (0 means free shipping disabled)
-  const shipping =
-    subtotal > 0
-      ? freeShippingThreshold > 0 && subtotal >= freeShippingThreshold
-        ? 0
-        : flatShippingRate
-      : 0;
+  // Always free shipping
+  const shipping = 0;
 
   // Calculate discount based on applied coupon
   let discount = 0;
@@ -587,24 +572,8 @@ export function CheckoutForm({ user }: { user: User }) {
                 </div>
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Shipping</span>
-                  {shipping === 0 && subtotal > 0 ? (
-                    <span className="text-green-600">Free</span>
-                  ) : (
-                    <span>
-                      {currencySymbol}
-                      {shipping.toFixed(2)}
-                    </span>
-                  )}
+                  <span className="text-green-600">Free</span>
                 </div>
-                {freeShippingThreshold > 0 &&
-                  subtotal < freeShippingThreshold &&
-                  subtotal > 0 && (
-                    <p className="text-xs text-slate-500">
-                      Add {currencySymbol}
-                      {(freeShippingThreshold - subtotal).toFixed(2)} more for
-                      free shipping
-                    </p>
-                  )}
                 {discount > 0 && (
                   <div className="flex justify-between text-sm text-green-600 font-medium">
                     <span>Discount ({appliedCoupon?.code})</span>

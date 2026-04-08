@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import Link from "next/link";
 import {
-  Bookmark,
   TriangleAlert,
   Check,
   XCircle,
@@ -14,12 +13,6 @@ import {
 } from "lucide-react";
 import { LazyProductReviews } from "@/components/lazy-product-reviews";
 import ProductImagesSection from "@/components/product-images-section";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { ProductViewTracker } from "@/components/product-view-tracker";
 import { ProductSpecifications } from "@/components/product-specifications";
 import { Badge } from "@/components/ui/badge";
@@ -104,7 +97,7 @@ export default async function ProductDetailPage({
             {product.collections.parent && product.collections.parent[0] && (
               <>
                 <Link
-                  href={`/collections/${product.collections.parent[0].slug}`}
+                  href={`/products?collection=${product.collections.parent[0].slug}`}
                   className="hover:text-blue-600 transition-colors"
                 >
                   {product.collections.parent[0].name}
@@ -113,7 +106,7 @@ export default async function ProductDetailPage({
               </>
             )}
             <Link
-              href={`/collections/${product.collections.slug}`}
+              href={`/products?collection=${product.collections.slug}`}
               className="hover:text-blue-600 transition-colors"
             >
               {product.collections.name}
@@ -133,22 +126,6 @@ export default async function ProductDetailPage({
 
         {/* Product Info */}
         <div className="flex flex-col">
-          {/* Collection Badge */}
-          {product.collections && (
-            <Link
-              href={`/collections/${product.collections.slug}`}
-              className="w-fit"
-            >
-              <Badge
-                variant="secondary"
-                className="mb-2 text-xs hover:bg-slate-200 transition-colors"
-              >
-                <Bookmark className="h-3 w-3 mr-1" />
-                {product.collections.name}
-              </Badge>
-            </Link>
-          )}
-
           {/* Product Title */}
           <h1 className="text-lg md:text-xl font-bold text-slate-900 mb-2">
             {product.name}
@@ -188,18 +165,12 @@ export default async function ProductDetailPage({
           <div className="mb-4">
             {product.is_out_of_stock || product.stock <= 0 ? (
               <div className="flex items-center gap-1.5 text-red-600">
-                <XCircle className="h-4 w-4" />
                 <span className="text-sm font-medium">Out of Stock</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-green-600">
                 <Check className="h-4 w-4" />
                 <span className="text-sm font-medium">In Stock</span>
-                {product.stock <= 10 && (
-                  <span className="text-xs text-orange-500 ml-1">
-                    (Only {product.stock} left!)
-                  </span>
-                )}
               </div>
             )}
           </div>
@@ -212,6 +183,7 @@ export default async function ProductDetailPage({
                 name: product.name,
                 price: product.price,
                 image_url: product.image_url,
+                stock: product.stock,
               }}
               disabled={product.is_out_of_stock || product.stock <= 0}
             />
@@ -259,35 +231,25 @@ export default async function ProductDetailPage({
             </div>
           </div>
 
-          {/* Details Accordion */}
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="specifications" className="border-b">
-              <AccordionTrigger className="text-sm font-medium hover:no-underline py-3">
-                Product Specifications
-              </AccordionTrigger>
-              <AccordionContent>
-                <ProductSpecifications
-                  specifications={
-                    (product.specifications as {
-                      title: string;
-                      description: string;
-                    }[]) || []
-                  }
-                />
-              </AccordionContent>
-            </AccordionItem>
+          {/* Product Specifications */}
+          <div className="mb-6">
+            <ProductSpecifications
+              specifications={
+                (product.specifications as {
+                  title: string;
+                  description: string;
+                }[]) || []
+              }
+            />
+          </div>
 
-            <AccordionItem value="description" className="border-b">
-              <AccordionTrigger className="text-sm font-medium hover:no-underline py-3">
-                Description
-              </AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {product.description || "No description available"}
-                </p>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          {/* Description */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-medium mb-2">Description</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              {product.description || "No description available"}
+            </p>
+          </div>
         </div>
       </div>
 

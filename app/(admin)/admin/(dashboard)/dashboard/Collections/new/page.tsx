@@ -154,9 +154,28 @@ export default function CreateCollectionPage() {
       setStatus("");
       return;
     }
-    const newSlug = e.target.value.toLowerCase().trim().replaceAll(" ", "-");
+    // Remove spaces, special characters (except hyphen), numbers, and convert to lowercase
+    const newSlug = e.target.value.toLowerCase().replace(/[^a-z-]/g, "");
     setSlug(newSlug);
-    checkSlug(newSlug);
+    if (newSlug) {
+      checkSlug(newSlug);
+    } else {
+      setStatus("");
+    }
+  };
+
+  // Handle paste for slug - sanitize input
+  const handleSlugPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData("text");
+    // Remove spaces, special characters (except hyphen), numbers, and convert to lowercase
+    const sanitized = pastedText.toLowerCase().replace(/[^a-z-]/g, "");
+    setSlug(sanitized);
+    if (sanitized) {
+      checkSlug(sanitized);
+    } else {
+      setStatus("");
+    }
   };
 
   const handleChange = (key: string, value: any) => {
@@ -243,19 +262,17 @@ export default function CreateCollectionPage() {
   const [slugValidationError, setSlugValidationError] = useState(false);
   const [descriptionValidationError, setDescriptionValidationError] =
     useState(false);
-  const [thumbnailValidationError, setThumbnailValidationError] =
-    useState(false);
   const [seoTitleValidationError, setSeoTitleValidationError] = useState(false);
   const [seoKeywordValidationError, setSeoKeywordValidationError] =
     useState(false);
   const [seoDescriptionValidationError, setSeoDescriptionValidationError] =
     useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const collectionValidation = () => {
     setNameValidationError(false);
     setSlugValidationError(false);
     setDescriptionValidationError(false);
-    setThumbnailValidationError(false);
     setSeoTitleValidationError(false);
     setSeoKeywordValidationError(false);
     setSeoDescriptionValidationError(false);
@@ -285,13 +302,6 @@ export default function CreateCollectionPage() {
       res = false;
     } else {
       setDescriptionValidationError(false);
-    }
-
-    if (collection.image_urls.trim() === "") {
-      setThumbnailValidationError(true);
-      res = false;
-    } else {
-      setThumbnailValidationError(false);
     }
 
     if (collection.seo_title.trim() === "") {
@@ -329,12 +339,14 @@ export default function CreateCollectionPage() {
       return;
     }
 
+    setIsSubmitting(true);
+
     const collectionData = {
       name: collection.name,
       slug: slug,
       description: collection.description,
-      image_name: collection.image_name,
-      image_url: collection.image_urls,
+      image_name: collection.image_name || null,
+      image_url: collection.image_urls || null,
       is_active: collection.is_active,
       is_featured: collection.is_featured,
       seo_title: collection.seo_title,
@@ -353,6 +365,7 @@ export default function CreateCollectionPage() {
       if (error) {
         console.error("Error updating collection:", error);
         alert("Error updating collection. Please try again.");
+        setIsSubmitting(false);
         return;
       }
       alert("Collection updated successfully!");
@@ -366,12 +379,13 @@ export default function CreateCollectionPage() {
       if (error) {
         console.error("Error creating collection:", error);
         alert("Error creating collection. Please try again.");
+        setIsSubmitting(false);
         return;
       }
       console.log("Collection created successfully:", data);
-      alert("Collection created successfully!");
     }
 
+    setIsSubmitting(false);
     router.push("/admin/dashboard/Collections");
   };
 
@@ -458,11 +472,6 @@ export default function CreateCollectionPage() {
                     <Plus className="w-4 h-4 mr-1" /> Add Thumbnail Image
                   </Button>
                 )}
-                {thumbnailValidationError && (
-                  <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
-                    Please add a thumbnail image.
-                  </p>
-                )}
               </div>
             </div>
 
@@ -487,10 +496,15 @@ export default function CreateCollectionPage() {
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Slug</label>
                 <Input
-                  placeholder="example-collection"
+                  placeholder="Enter slug"
                   value={slug}
+                  onPaste={handleSlugPaste}
                   onChange={handleSlugChange}
                 />
+                <p className="text-gray-400 mt-1 text-xs">
+                  Only lowercase letters and hyphens allowed. Spaces, numbers,
+                  and other special characters will be removed.
+                </p>
                 {/* UI feedback */}
                 {status === "checking" && (
                   <p className="text-blue-500 text-xs mt-1 font-semibold">
@@ -628,8 +642,21 @@ export default function CreateCollectionPage() {
               </div>
 
               <div className="pt-6 flex justify-end">
-                <Button className="px-6" onClick={handleSubmit}>
-                  {isEditMode ? "Update Collection" : "Create Collection"}
+                <Button
+                  className="px-6"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isSubmitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditMode
+                      ? "Update Collection"
+                      : "Create Collection"}
                 </Button>
               </div>
             </div>

@@ -11,6 +11,7 @@ type Product = {
   name: string;
   price: number;
   image_url: string | null;
+  stock?: number;
 };
 
 export function AddToCartButton({
@@ -29,7 +30,10 @@ export function AddToCartButton({
   const quantity = cartItem?.quantity ?? 0;
 
   const handleAddToCart = () => {
-    addItem(product);
+    const success = addItem({ ...product, stock: product.stock });
+    if (!success) {
+      return;
+    }
     setAdded(true);
 
     // Confetti celebration effect
@@ -40,9 +44,12 @@ export function AddToCartButton({
 
   const handleBuyNow = () => {
     if (quantity === 0) {
+      const success = addItem({ ...product, stock: product.stock });
+      if (!success) {
+        return;
+      }
       // Confetti celebration effect
       createConfetti();
-      addItem(product);
     }
     router.push("/cart");
   };
@@ -85,7 +92,7 @@ export function AddToCartButton({
         confetti.style.top = y + "px";
         const opacity = Math.max(
           0,
-          Math.min(1, 1 - y / (window.innerHeight * 1.5))
+          Math.min(1, 1 - y / (window.innerHeight * 1.5)),
         );
         confetti.style.opacity = opacity.toString();
 
@@ -100,7 +107,7 @@ export function AddToCartButton({
   };
 
   const handleIncrement = () => {
-    updateQuantity(product.id, quantity + 1);
+    updateQuantity(product.id, quantity + 1, product.stock);
   };
 
   const handleDecrement = () => {
@@ -117,7 +124,11 @@ export function AddToCartButton({
             // Show Add to Cart button when product is not in cart
             <Button
               onClick={handleAddToCart}
-              disabled={disabled || added}
+              disabled={
+                disabled ||
+                added ||
+                (product.stock !== undefined && product.stock <= 0)
+              }
               size="lg"
               className="w-full bg-amber-400 text-black hover:bg-amber-500 cursor-pointer text-sm sm:text-base"
             >
@@ -144,6 +155,9 @@ export function AddToCartButton({
                 variant="outline"
                 size="icon"
                 className="h-7 w-7 sm:h-8 sm:w-8 bg-transparent"
+                disabled={
+                  product.stock !== undefined && quantity >= product.stock
+                }
               >
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
@@ -162,6 +176,13 @@ export function AddToCartButton({
           </Button>
         </div>
       </div>
+      {product.stock !== undefined &&
+        quantity >= product.stock &&
+        quantity > 0 && (
+          <div className="mt-2 text-center text-amber-600 text-sm font-medium">
+            Max {product.stock} items available
+          </div>
+        )}
     </>
   );
 }

@@ -10,6 +10,7 @@ import {
 
 export function FirstLoadHandler() {
   const removeItem = useCart((state) => state.removeItem);
+  const updateItemStock = useCart((state) => state.updateItemStock);
   const items = useCart((state) => state.items);
 
   const recentlyViewedProducts = useRecentlyViewed((state) => state.products);
@@ -30,9 +31,9 @@ export function FirstLoadHandler() {
   useEffect(() => {
     if (items.length > 0 && !hasValidatedCart.current) {
       hasValidatedCart.current = true;
-      validateCartProducts(items, removeItem);
+      validateCartProducts(items, removeItem, updateItemStock);
     }
-  }, [items, removeItem]);
+  }, [items, removeItem, updateItemStock]);
 
   // Validate recently viewed products
   useEffect(() => {
@@ -59,8 +60,9 @@ export function FirstLoadHandler() {
 }
 
 async function validateCartProducts(
-  cartItems: { id: string }[],
+  cartItems: { id: string; quantity: number }[],
   removeItem: (id: string) => void,
+  updateItemStock: (id: string, stock: number) => void,
 ) {
   if (cartItems.length === 0) return;
 
@@ -69,7 +71,7 @@ async function validateCartProducts(
 
   const { data: activeProducts, error } = await supabase
     .from("products")
-    .select("id")
+    .select("id, stock, is_out_of_stock")
     .in("id", productIds)
     .eq("is_active", true);
 
@@ -78,13 +80,31 @@ async function validateCartProducts(
     return;
   }
 
-  const activeProductIds = new Set(activeProducts?.map((p) => p.id) || []);
+  const activeProductsMap = new Map(
+    activeProducts?.map((p) => [p.id, p]) || [],
+  );
 
-  // Remove inactive products from cart
+  // Remove inactive products and validate stock for active ones
   cartItems.forEach((item) => {
-    if (!activeProductIds.has(item.id)) {
+    const product = activeProductsMap.get(item.id);
+
+    if (!product) {
+      // Product is inactive or doesn't exist
       removeItem(item.id);
       console.log(`Removed inactive product from cart: ${item.id}`);
+    } else if (product.is_out_of_stock || product.stock <= 0) {
+      // Product is out of stock
+      removeItem(item.id);
+      console.log(`Removed out of stock product from cart: ${item.id}`);
+    } else if (item.quantity > product.stock) {
+      // Cart quantity exceeds available stock - adjust it
+      updateItemStock(item.id, product.stock);
+      console.log(
+        `Adjusted cart quantity for ${item.id}: ${item.quantity} -> ${product.stock}`,
+      );
+    } else {
+      // Update stock value in cart to keep it in sync
+      updateItemStock(item.id, product.stock);
     }
   });
 }

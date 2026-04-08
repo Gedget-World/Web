@@ -18,36 +18,19 @@ import {
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, appliedCoupon } = useCart();
-  const {
-    getSetting,
-    getNumberSetting,
-    loading: settingsLoading,
-  } = useStoreSettings([
+  const { getSetting, loading: settingsLoading } = useStoreSettings([
     "currency_symbol",
-    "flat_shipping_rate",
-    "free_shipping_threshold",
-    "shipping_enabled",
   ]);
 
   const currencySymbol = getSetting("currency_symbol", "₹");
-  const flatShippingRate = getNumberSetting("flat_shipping_rate", 50);
-  const freeShippingThreshold = getNumberSetting(
-    "free_shipping_threshold",
-    500,
-  );
 
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
 
-  // Free shipping if subtotal exceeds threshold (0 means free shipping disabled)
-  const shipping =
-    subtotal > 0
-      ? freeShippingThreshold > 0 && subtotal >= freeShippingThreshold
-        ? 0
-        : flatShippingRate
-      : 0;
+  // Always free shipping
+  const shipping = 0;
 
   let discount = 0;
   if (appliedCoupon && subtotal >= appliedCoupon.min_purchase_amount) {
@@ -133,13 +116,27 @@ export default function CartPage() {
                           variant="outline"
                           size="icon"
                           className="h-8 w-8 bg-transparent"
+                          disabled={
+                            item.stock !== undefined &&
+                            item.quantity >= item.stock
+                          }
                           onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
+                            updateQuantity(
+                              item.id,
+                              item.quantity + 1,
+                              item.stock,
+                            )
                           }
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
+                      {item.stock !== undefined &&
+                        item.quantity >= item.stock && (
+                          <span className="text-amber-600 text-xs font-medium">
+                            Max {item.stock} available
+                          </span>
+                        )}
                     </div>
                   </div>
 
@@ -176,24 +173,8 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-slate-700 text-sm">
                   <span>Shipping</span>
-                  {shipping === 0 && subtotal > 0 ? (
-                    <span className="text-green-600">Free</span>
-                  ) : (
-                    <span>
-                      {currencySymbol}
-                      {shipping.toFixed(2)}
-                    </span>
-                  )}
+                  <span className="text-green-600">Free</span>
                 </div>
-                {freeShippingThreshold > 0 &&
-                  subtotal < freeShippingThreshold &&
-                  subtotal > 0 && (
-                    <p className="text-xs text-slate-500">
-                      Add {currencySymbol}
-                      {(freeShippingThreshold - subtotal).toFixed(2)} more for
-                      free shipping
-                    </p>
-                  )}
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>Discount</span>

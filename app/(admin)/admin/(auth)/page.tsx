@@ -38,6 +38,7 @@ function AdminLoginContent() {
     isLoading: sessionLoading,
     isAllowed,
     saveSession,
+    validateSession,
   } = useAdminSession();
 
   // Check for unauthorized redirect
@@ -48,12 +49,23 @@ function AdminLoginContent() {
     }
   }, [searchParams]);
 
-  // Redirect to dashboard if already logged in and allowed
+  // Validate session and redirect to dashboard if valid
   useEffect(() => {
-    if (!sessionLoading && admin && isAllowed) {
-      router.push("/admin/dashboard");
-    }
-  }, [admin, sessionLoading, isAllowed, router]);
+    const checkAndRedirect = async () => {
+      if (sessionLoading) return;
+
+      if (admin && isAllowed) {
+        // Validate session with server before redirecting
+        const isValid = await validateSession();
+        if (isValid) {
+          router.push("/admin/dashboard");
+        }
+        // If not valid, session is cleared by validateSession, user stays on login
+      }
+    };
+
+    checkAndRedirect();
+  }, [admin, sessionLoading, isAllowed, router, validateSession]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -24,17 +24,25 @@ type Product = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { addItem, getItemQuantity } = useCart();
   const [added, setAdded] = useState(false);
+
+  const cartQuantity = getItemQuantity(product.id);
 
   // Check both is_out_of_stock flag and stock quantity
   const isOutOfStock = product.is_out_of_stock || product.stock <= 0;
+  const isAtMaxStock = cartQuantity >= product.stock;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isOutOfStock) return;
-    addItem(product);
+    if (isOutOfStock || isAtMaxStock) return;
+
+    const success = addItem({ ...product, stock: product.stock });
+    if (!success) {
+      return;
+    }
+
     setAdded(true);
     setTimeout(() => setAdded(false), 1000);
   };
@@ -52,6 +60,11 @@ export function ProductCard({ product }: { product: Product }) {
           {isOutOfStock && (
             <div className="absolute top-4 left-2 bg-black opacity-70 text-white font-semibold text-xs px-3 py-2 rounded-full">
               Out of Stock
+            </div>
+          )}
+          {isAtMaxStock && !isOutOfStock && (
+            <div className="absolute bottom-2 left-2 right-2 bg-amber-500 text-white font-semibold text-xs px-2 py-1.5 rounded-md text-center">
+              Max {product.stock} in cart
             </div>
           )}
         </div>
@@ -108,7 +121,7 @@ export function ProductCard({ product }: { product: Product }) {
               variant="outline"
               size="sm"
               onClick={handleAddToCart}
-              disabled={isOutOfStock || added}
+              disabled={isOutOfStock || isAtMaxStock || added}
             >
               {added ? (
                 <Spinner className="h-5 w-5" />

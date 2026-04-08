@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { Suspense, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +20,7 @@ import Link from "next/link";
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
+import { useAdminSession } from "@/hooks/use-admin-session";
 
 // Password strength checker
 function getPasswordStrength(password: string): {
@@ -39,7 +41,7 @@ function getPasswordStrength(password: string): {
   return { score, label: "Strong", color: "bg-green-500" };
 }
 
-export default function AdminRegister() {
+function AdminRegisterContent() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,6 +52,28 @@ export default function AdminRegister() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
+  const {
+    admin,
+    isLoading: sessionLoading,
+    isAllowed,
+    validateSession,
+  } = useAdminSession();
+
+  // Validate session and redirect to dashboard if valid
+  useEffect(() => {
+    const checkAndRedirect = async () => {
+      if (sessionLoading) return;
+
+      if (admin && isAllowed) {
+        const isValid = await validateSession();
+        if (isValid) {
+          router.push("/admin/dashboard");
+        }
+      }
+    };
+
+    checkAndRedirect();
+  }, [admin, sessionLoading, isAllowed, router, validateSession]);
 
   const passwordStrength = useMemo(
     () => getPasswordStrength(password),
@@ -114,6 +138,15 @@ export default function AdminRegister() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking existing session
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -285,5 +318,19 @@ export default function AdminRegister() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminRegister() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen w-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        </div>
+      }
+    >
+      <AdminRegisterContent />
+    </Suspense>
   );
 }
