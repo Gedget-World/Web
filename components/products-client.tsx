@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ProductCard } from "@/components/product-card";
-import { LazySection, ProductCardSkeleton } from "@/components/lazy-section";
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Filter,
+  SlidersHorizontal,
+  ChevronDown,
+  X,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -15,492 +21,505 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, SlidersHorizontal, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useSearch, useFacets } from "@/hooks/use-search";
+import { SearchSortBy, PRICE_RANGES } from "@/lib/types/search";
+import { ProductCard } from "@/components/product-card";
 
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  image_url: string;
-  stock: number;
-  is_out_of_stock: boolean;
-  discount_percentage: number | null;
-  average_rating: number;
-  review_count: number;
-  collections?: {
+export function ProductsClient() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialQuery = searchParams.get("q") || "";
+  const initialCollection = searchParams.get("collection") || undefined;
+  const initialMinPrice = searchParams.get("minPrice")
+    ? Number(searchParams.get("minPrice"))
+    : undefined;
+  const initialMaxPrice = searchParams.get("maxPrice")
+    ? Number(searchParams.get("maxPrice"))
+    : undefined;
+  const initialFeatured = searchParams.get("featured") === "true" || undefined;
+  const initialNewArrival =
+    searchParams.get("newArrival") === "true" || undefined;
+  const initialInStock = searchParams.get("inStock") === "true" || undefined;
+  const initialSort = (searchParams.get("sort") as SearchSortBy) || "newest";
+
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(initialQuery);
+
+  // Collections state for filter sidebar
+  interface CollectionItem {
+    id: string;
     name: string;
     slug: string;
-    parent_id: string | null;
-    parent: { name: string; slug: string }[] | null;
+    count: number;
+  }
+  const [allCollections, setAllCollections] = useState<CollectionItem[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [collectionSearchQuery, setCollectionSearchQuery] = useState("");
+  const [visibleCollectionsCount, setVisibleCollectionsCount] = useState(5);
+  const COLLECTIONS_PER_LOAD = 5;
+
+  // Track selected collection slug for URL (resolve to ID for filtering)
+  const [selectedCollectionSlug, setSelectedCollectionSlug] = useState<
+    string | undefined
+  >(initialCollection);
+
+  // Resolve slug to ID for filtering
+  const getCollectionIdFromSlug = (slug: string | undefined) => {
+    if (!slug || allCollections.length === 0) return undefined;
+    const collection = allCollections.find((c) => c.slug === slug);
+    return collection?.id;
   };
-}
 
-interface Collection {
-  id: string;
-  name: string;
-  slug: string;
-  parent_id: string | null;
-  parent: { name: string; slug: string }[] | null;
-}
+  // Search hook with initial values from URL
+  const {
+    results,
+    loading,
+    error,
+    query,
+    setQuery,
+    filters,
+    updateFilter,
+    clearFilters,
+    sortBy,
+    setSortBy,
+    loadMore,
+    hasMore,
+    totalCount,
+  } = useSearch({
+    initialQuery,
+    initialFilters: {
+      collectionId: undefined, // Will be set after collections load
+      minPrice: initialMinPrice,
+      maxPrice: initialMaxPrice,
+      isFeatured: initialFeatured,
+      isNewArrival: initialNewArrival,
+      inStock: initialInStock,
+    },
+    initialSortBy: initialSort,
+    debounceMs: 300,
+  });
 
-interface ProductsClientProps {
-  initialProducts: Product[];
-  collections: Collection[];
-}
+  // Sync selectedCollectionSlug with URL when navigating (client-side navigation)
+  useEffect(() => {
+    const collectionFromUrl = searchParams.get("collection") || undefined;
+    if (collectionFromUrl !== selectedCollectionSlug) {
+      setSelectedCollectionSlug(collectionFromUrl);
+    }
+  }, [searchParams]);
 
-const ITEMS_PER_PAGE = 12;
+  // Update collection filter when collections load or slug changes
+  useEffect(() => {
+    if (!collectionsLoading && allCollections.length > 0) {
+      const collectionId = getCollectionIdFromSlug(selectedCollectionSlug);
+      if (collectionId !== filters.collectionId) {
+        updateFilter("collectionId", collectionId);
+      }
+    }
+  }, [selectedCollectionSlug, allCollections, collectionsLoading]);
 
-export function ProductsClient({
-  initialProducts,
-  collections,
-}: ProductsClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  // Facets hook
+  const { facets, loading: facetsLoading } = useFacets({ query });
 
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || "",
+  // Fetch all collections on mount
+  useEffect(() => {
+    async function fetchCollections() {
+      try {
+        setCollectionsLoading(true);
+        const response = await fetch("/api/collections");
+        if (response.ok) {
+          const data = await response.json();
+          setAllCollections(data.collections || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch collections:", error);
+      } finally {
+        setCollectionsLoading(false);
+      }
+    }
+    fetchCollections();
+  }, []);
+
+  // Filter collections by search query
+  const filteredCollections = allCollections.filter((collection) =>
+    collection.name.toLowerCase().includes(collectionSearchQuery.toLowerCase()),
   );
-  const [selectedCollection, setSelectedCollection] = useState<string>(
-    searchParams.get("collection") || "all",
-  );
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    Number(searchParams.get("minPrice")) || 0,
-    Number(searchParams.get("maxPrice")) || getMaxPrice(initialProducts),
-  ]);
-  const [minRating, setMinRating] = useState<number>(
-    Number(searchParams.get("rating")) || 0,
-  );
-  const [inStockOnly, setInStockOnly] = useState(
-    searchParams.get("inStock") === "true",
-  );
-  const [sortBy, setSortBy] = useState<string>(
-    searchParams.get("sort") || "newest",
-  );
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get("page")) || 1,
-  );
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const maxPrice = getMaxPrice(initialProducts);
+  // Collections to display (with load more logic)
+  const displayedCollections = filteredCollections.slice(
+    0,
+    visibleCollectionsCount,
+  );
+  const hasMoreCollections =
+    filteredCollections.length > visibleCollectionsCount;
 
+  // Load more collections
+  const loadMoreCollections = () => {
+    setVisibleCollectionsCount((prev) => prev + COLLECTIONS_PER_LOAD);
+  };
+
+  // Reset visible count when search changes
+  useEffect(() => {
+    setVisibleCollectionsCount(5);
+  }, [collectionSearchQuery]);
+
+  // Sync search input with debounced query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery(searchInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, setQuery]);
+
+  // Update URL when query/filters/sort change (use slug for collection)
   useEffect(() => {
     const params = new URLSearchParams();
-
-    if (searchQuery) params.set("search", searchQuery);
-    if (selectedCollection !== "all")
-      params.set("collection", selectedCollection);
-    if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString());
-    if (priceRange[1] < maxPrice)
-      params.set("maxPrice", priceRange[1].toString());
-    if (minRating > 0) params.set("rating", minRating.toString());
-    if (inStockOnly) params.set("inStock", "true");
+    if (query) params.set("q", query);
+    if (selectedCollectionSlug)
+      params.set("collection", selectedCollectionSlug);
+    if (filters.minPrice) params.set("minPrice", String(filters.minPrice));
+    if (filters.maxPrice) params.set("maxPrice", String(filters.maxPrice));
+    if (filters.isFeatured) params.set("featured", "true");
+    if (filters.isNewArrival) params.set("newArrival", "true");
+    if (filters.inStock) params.set("inStock", "true");
     if (sortBy !== "newest") params.set("sort", sortBy);
-    if (currentPage > 1) params.set("page", currentPage.toString());
 
-    const queryString = params.toString();
-    const newUrl = queryString ? `/products?${queryString}` : "/products";
+    const newUrl = `/products${params.toString() ? `?${params.toString()}` : ""}`;
+    router.replace(newUrl, { scroll: false });
+  }, [query, selectedCollectionSlug, filters, sortBy, router]);
 
-    router.push(newUrl, { scroll: false });
-  }, [
-    searchQuery,
-    selectedCollection,
-    priceRange,
-    minRating,
-    inStockOnly,
-    sortBy,
-    currentPage,
-    router,
-    maxPrice,
-  ]);
-
-  const filteredProducts = useMemo(() => {
-    const filtered = initialProducts.filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Match collection directly OR if the product's collection is a child of the selected collection
-      const matchesCollection =
-        selectedCollection === "all" ||
-        product.collections?.slug === selectedCollection ||
-        (product.collections?.parent &&
-          product.collections.parent[0]?.slug === selectedCollection);
-
-      const matchesPrice =
-        product.price >= priceRange[0] && product.price <= priceRange[1];
-
-      const matchesRating = product.average_rating >= minRating;
-
-      const matchesStock =
-        !inStockOnly || (!product.is_out_of_stock && product.stock > 0);
-
-      return (
-        matchesSearch &&
-        matchesCollection &&
-        matchesPrice &&
-        matchesRating &&
-        matchesStock
-      );
-    });
-
-    switch (sortBy) {
-      case "price-asc":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case "rating":
-        filtered.sort((a, b) => b.average_rating - a.average_rating);
-        break;
-      case "name":
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "newest":
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [
-    initialProducts,
-    searchQuery,
-    selectedCollection,
-    priceRange,
-    minRating,
-    inStockOnly,
-    sortBy,
-  ]);
-
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredProducts, currentPage]);
-
-  const handleFilterChange = () => {
-    setCurrentPage(1);
+  // Handle price range selection
+  const handlePriceRange = (min: number | null, max: number | null) => {
+    updateFilter("minPrice", min ?? undefined);
+    updateFilter("maxPrice", max ?? undefined);
   };
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedCollection("all");
-    setPriceRange([0, maxPrice]);
-    setMinRating(0);
-    setInStockOnly(false);
-    setSortBy("newest");
-    setCurrentPage(1);
+  // Handle clear all filters
+  const handleClearFilters = () => {
+    setSearchInput("");
+    setSelectedCollectionSlug(undefined);
+    clearFilters();
   };
 
-  const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    if (searchQuery) count++;
-    if (selectedCollection !== "all") count++;
-    if (priceRange[0] > 0 || priceRange[1] < maxPrice) count++;
-    if (minRating > 0) count++;
-    if (inStockOnly) count++;
-    return count;
-  }, [
-    searchQuery,
-    selectedCollection,
-    priceRange,
-    minRating,
-    inStockOnly,
-    maxPrice,
-  ]);
+  // Get active filter count (use slug for collection)
+  const activeFilterCount =
+    (query ? 1 : 0) +
+    (selectedCollectionSlug ? 1 : 0) +
+    (filters.minPrice !== undefined ? 1 : 0) +
+    (filters.maxPrice !== undefined ? 1 : 0) +
+    (filters.isFeatured ? 1 : 0) +
+    (filters.isNewArrival ? 1 : 0) +
+    (filters.inStock ? 1 : 0);
 
-  const removeSearchFilter = () => {
-    setSearchQuery("");
-    handleFilterChange();
-  };
-
-  const removeCollectionFilter = () => {
-    setSelectedCollection("all");
-    handleFilterChange();
-  };
-
-  const removePriceFilter = () => {
-    setPriceRange([0, maxPrice]);
-    handleFilterChange();
-  };
-
-  const removeRatingFilter = () => {
-    setMinRating(0);
-    handleFilterChange();
-  };
-
-  const removeStockFilter = () => {
-    setInStockOnly(false);
-    handleFilterChange();
-  };
-
-  const FilterContent = () => {
-    // Organize collections: parent collections first, then children grouped under parents
-    const parentCollections = collections.filter((c) => !c.parent_id);
-    const childCollections = collections.filter((c) => c.parent_id);
-
-    // Create ordered list: parent -> its children -> next parent -> its children
-    const orderedCollections = parentCollections.flatMap((parent) => {
-      const children = childCollections.filter(
-        (child) => child.parent && child.parent[0]?.slug === parent.slug,
-      );
-      return [parent, ...children];
-    });
-
-    // Add any orphaned children (parent may not be in the list)
-    const includedIds = new Set(orderedCollections.map((c) => c.id));
-    const orphanedChildren = childCollections.filter(
-      (c) => !includedIds.has(c.id),
-    );
-    const finalCollections = [...orderedCollections, ...orphanedChildren];
-
-    return (
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Label>Collection</Label>
-          <Select
-            value={selectedCollection}
-            onValueChange={(value) => {
-              setSelectedCollection(value);
-              handleFilterChange();
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="All Collections" />
-            </SelectTrigger>
-            <SelectContent>
-              {finalCollections.map((collection) => (
-                <SelectItem key={collection.id} value={collection.slug}>
-                  {collection.parent_id
-                    ? `↳ ${collection.name}`
-                    : collection.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-3">
-          <Label>
-            Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
-          </Label>
-          <Slider
-            min={0}
-            max={maxPrice}
-            step={1}
-            value={priceRange}
-            onValueChange={(value) => {
-              setPriceRange(value as [number, number]);
-              handleFilterChange();
-            }}
-            className="w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Minimum Rating</Label>
-          <Select
-            value={minRating.toString()}
-            onValueChange={(value) => {
-              setMinRating(Number(value));
-              handleFilterChange();
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">All Ratings</SelectItem>
-              <SelectItem value="1">1+ Stars</SelectItem>
-              <SelectItem value="2">2+ Stars</SelectItem>
-              <SelectItem value="3">3+ Stars</SelectItem>
-              <SelectItem value="4">4+ Stars</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="inStock"
-            checked={inStockOnly}
-            onChange={(e) => {
-              setInStockOnly(e.target.checked);
-              handleFilterChange();
-            }}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          <Label htmlFor="inStock" className="cursor-pointer">
-            In Stock Only
-          </Label>
-        </div>
-
-        {activeFiltersCount > 0 && (
-          <Button
-            variant="outline"
-            onClick={clearFilters}
-            className="w-full bg-transparent"
-          >
-            Clear All Filters
-          </Button>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <main className="min-h-screen py-12 px-4 md:px-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-900 mb-4">All Products</h1>
-        <p className="text-lg text-slate-600">Browse our complete collection</p>
-      </div>
-
-      <div className="mb-8 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+  // Render filters sidebar content
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Collections */}
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
+          Collections
+          <ChevronDown className="h-4 w-4" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 space-y-3">
+          {/* Collection Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                handleFilterChange();
-              }}
-              className="pl-10"
+              placeholder="Search collections..."
+              value={collectionSearchQuery}
+              onChange={(e) => setCollectionSearchQuery(e.target.value)}
+              className="pl-8 h-9 text-sm"
             />
           </div>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="price-asc">Price: Low to High</SelectItem>
-              <SelectItem value="price-desc">Price: High to Low</SelectItem>
-              <SelectItem value="rating">Highest Rated</SelectItem>
-              <SelectItem value="name">Name: A to Z</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                className="md:hidden relative bg-transparent"
-              >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filters
-                {activeFiltersCount > 0 && (
-                  <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-                <SheetDescription>Refine your product search</SheetDescription>
-              </SheetHeader>
-              <div className="mt-6">
-                <FilterContent />
+          {/* Collections List */}
+          {collectionsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : filteredCollections.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">
+              {collectionSearchQuery
+                ? "No collections found"
+                : "No collections available"}
+            </p>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {displayedCollections.map((collection) => (
+                  <label
+                    key={collection.id}
+                    className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded px-1 py-0.5 -mx-1 transition-colors"
+                  >
+                    <Checkbox
+                      checked={selectedCollectionSlug === collection.slug}
+                      onCheckedChange={(checked) =>
+                        setSelectedCollectionSlug(
+                          checked ? collection.slug : undefined,
+                        )
+                      }
+                    />
+                    <span className="flex-1 truncate">{collection.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      ({collection.count})
+                    </span>
+                  </label>
+                ))}
               </div>
-            </SheetContent>
-          </Sheet>
+
+              {/* Load More Button */}
+              {hasMoreCollections && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadMoreCollections}
+                  className="w-full text-xs h-8"
+                >
+                  Load More (
+                  {filteredCollections.length - visibleCollectionsCount}{" "}
+                  remaining)
+                </Button>
+              )}
+            </>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Price Range */}
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
+          Price Range
+          <ChevronDown className="h-4 w-4" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2 space-y-2">
+          {PRICE_RANGES.map((range) => (
+            <label
+              key={range.label}
+              className="flex items-center gap-2 text-sm cursor-pointer"
+            >
+              <Checkbox
+                checked={
+                  (filters.minPrice ?? null) === range.min &&
+                  (filters.maxPrice ?? null) === range.max
+                }
+                onCheckedChange={(checked) =>
+                  checked
+                    ? handlePriceRange(range.min, range.max)
+                    : handlePriceRange(null, null)
+                }
+              />
+              <span>{range.label}</span>
+              {facets?.priceRanges.find((f) => f.value === range.label) && (
+                <span className="text-muted-foreground ml-auto">
+                  (
+                  {
+                    facets.priceRanges.find((f) => f.value === range.label)
+                      ?.count
+                  }
+                  )
+                </span>
+              )}
+            </label>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Other Filters */}
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
+          Other Filters
+          <ChevronDown className="h-4 w-4" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2 space-y-2">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox
+              checked={filters.inStock === true}
+              onCheckedChange={(checked) =>
+                updateFilter("inStock", checked ? true : undefined)
+              }
+            />
+            <span>In Stock Only</span>
+          </label>
+
+          {facets?.isFeatured && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={filters.isFeatured === true}
+                onCheckedChange={(checked) =>
+                  updateFilter("isFeatured", checked ? true : undefined)
+                }
+              />
+              <span>Featured</span>
+              <span className="text-muted-foreground ml-auto">
+                ({facets.isFeatured.count})
+              </span>
+            </label>
+          )}
+
+          {facets?.isNewArrival && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={filters.isNewArrival === true}
+                onCheckedChange={(checked) =>
+                  updateFilter("isNewArrival", checked ? true : undefined)
+                }
+              />
+              <span>New Arrivals</span>
+              <span className="text-muted-foreground ml-auto">
+                ({facets.isNewArrival.count})
+              </span>
+            </label>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Clear Filters */}
+      {activeFilterCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleClearFilters}
+          className="w-full"
+        >
+          Clear All Filters
+        </Button>
+      )}
+    </div>
+  );
+
+  return (
+    <main className="min-h-screen py-8 md:py-12 px-4 md:px-8 max-w-7xl mx-auto">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+          {query ? `Results for "${query}"` : "All Products"}
+        </h1>
+        {results && (
+          <p className="text-muted-foreground">
+            {totalCount} {totalCount === 1 ? "product" : "products"} found
+          </p>
+        )}
+      </div>
+
+      {/* Search and Sort Bar */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Sort & Filter Controls */}
+          <div className="flex items-center gap-2 ml-auto">
+            {/* Mobile Filter Button */}
+            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="lg:hidden">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <FilterContent />
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Sort Dropdown */}
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as SearchSortBy)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevance">Relevance</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                <SelectItem value="popularity">Popularity</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {activeFiltersCount > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-slate-600">Active filters:</span>
-            {searchQuery && (
-              <Badge
-                variant="secondary"
-                className="gap-1.5 pr-1 hover:bg-slate-200 transition-colors"
-              >
-                <span>Search: {searchQuery}</span>
+        {/* Active Filters */}
+        {activeFilterCount > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {query && (
+              <Badge variant="secondary" className="gap-1">
+                Search: {query}
                 <button
-                  onClick={removeSearchFilter}
-                  className="ml-1 rounded-sm hover:bg-slate-300 p-0.5 transition-colors"
-                  aria-label="Remove search filter"
+                  onClick={() => {
+                    setSearchInput("");
+                    setQuery("");
+                  }}
                 >
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
             )}
-            {selectedCollection !== "all" && (
-              <Badge
-                variant="secondary"
-                className="gap-1.5 pr-1 hover:bg-slate-200 transition-colors"
-              >
-                <span>
-                  Collection:{" "}
-                  {collections.find((c) => c.slug === selectedCollection)?.name}
-                </span>
-                <button
-                  onClick={removeCollectionFilter}
-                  className="ml-1 rounded-sm hover:bg-slate-300 p-0.5 transition-colors"
-                  aria-label="Remove collection filter"
-                >
+            {selectedCollectionSlug && allCollections.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                {
+                  allCollections.find((c) => c.slug === selectedCollectionSlug)
+                    ?.name
+                }
+                <button onClick={() => setSelectedCollectionSlug(undefined)}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
             )}
-            {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
-              <Badge
-                variant="secondary"
-                className="gap-1.5 pr-1 hover:bg-slate-200 transition-colors"
-              >
-                <span>
-                  Price: ₹{priceRange[0]} - ₹{priceRange[1]}
-                </span>
-                <button
-                  onClick={removePriceFilter}
-                  className="ml-1 rounded-sm hover:bg-slate-300 p-0.5 transition-colors"
-                  aria-label="Remove price filter"
-                >
+            {(filters.minPrice || filters.maxPrice) && (
+              <Badge variant="secondary" className="gap-1">
+                {filters.minPrice && filters.maxPrice
+                  ? `₹${filters.minPrice} - ₹${filters.maxPrice}`
+                  : filters.minPrice
+                    ? `Over ₹${filters.minPrice}`
+                    : `Under ₹${filters.maxPrice}`}
+                <button onClick={() => handlePriceRange(null, null)}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
             )}
-            {minRating > 0 && (
-              <Badge
-                variant="secondary"
-                className="gap-1.5 pr-1 hover:bg-slate-200 transition-colors"
-              >
-                <span>{minRating}+ Stars</span>
-                <button
-                  onClick={removeRatingFilter}
-                  className="ml-1 rounded-sm hover:bg-slate-300 p-0.5 transition-colors"
-                  aria-label="Remove rating filter"
-                >
+            {filters.inStock && (
+              <Badge variant="secondary" className="gap-1">
+                In Stock
+                <button onClick={() => updateFilter("inStock", undefined)}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
             )}
-            {inStockOnly && (
-              <Badge
-                variant="secondary"
-                className="gap-1.5 pr-1 hover:bg-slate-200 transition-colors"
-              >
-                <span>In Stock</span>
-                <button
-                  onClick={removeStockFilter}
-                  className="ml-1 rounded-sm hover:bg-slate-300 p-0.5 transition-colors"
-                  aria-label="Remove stock filter"
-                >
+            {filters.isFeatured && (
+              <Badge variant="secondary" className="gap-1">
+                Featured
+                <button onClick={() => updateFilter("isFeatured", undefined)}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {filters.isNewArrival && (
+              <Badge variant="secondary" className="gap-1">
+                New Arrivals
+                <button onClick={() => updateFilter("isNewArrival", undefined)}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
@@ -510,97 +529,92 @@ export function ProductsClient({
       </div>
 
       <div className="flex gap-8">
-        <aside className="hidden md:block w-64">
-          <div className="sticky top-4 bg-white rounded-lg border border-slate-200 p-6">
+        {/* Desktop Sidebar Filters */}
+        <aside className="hidden lg:block w-64 shrink-0">
+          <div className="sticky top-24 bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-lg">Filters</h2>
-              {activeFiltersCount > 0 && (
-                <Badge variant="secondary">{activeFiltersCount}</Badge>
+              <h2 className="text-lg font-semibold">Filters</h2>
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary">{activeFilterCount}</Badge>
               )}
             </div>
-            <FilterContent />
+            {facetsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              <FilterContent />
+            )}
           </div>
         </aside>
 
+        {/* Results Grid */}
         <div className="flex-1">
-          <div className="mb-4 text-sm text-slate-600">
-            Showing {paginatedProducts.length} of {filteredProducts.length}{" "}
-            products
-          </div>
-
-          {paginatedProducts.length === 0 ? (
+          {loading && !results ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : error ? (
             <div className="text-center py-12">
-              <p className="text-slate-600 text-lg mb-4">No products found</p>
-              <Button onClick={clearFilters} variant="outline">
-                Clear Filters
+              <p className="text-red-500">{error}</p>
+              <Button onClick={() => setQuery(query)} className="mt-4">
+                Try Again
               </Button>
+            </div>
+          ) : results?.items.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">
+                No products found matching your criteria.
+              </p>
+              {activeFilterCount > 0 && (
+                <Button
+                  onClick={handleClearFilters}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 md:gap-4 lg:gap-6 gap-2 mb-8">
-                {paginatedProducts.map((product) => (
-                  <LazySection
+              {/* Product Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                {results?.items.map((product) => (
+                  <ProductCard
                     key={product.id}
-                    fallback={<ProductCardSkeleton />}
-                    threshold={0.1}
-                    rootMargin="50px"
-                  >
-                    <ProductCard product={product} />
-                  </LazySection>
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      slug: product.slug,
+                      description: product.description,
+                      price: product.price,
+                      image_url: product.imageUrl,
+                      stock: product.stock,
+                      discount_percentage: product.discountPercentage,
+                      is_out_of_stock: product.isOutOfStock,
+                    }}
+                  />
                 ))}
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2">
+              {/* Load More */}
+              {hasMore && (
+                <div className="flex justify-center mt-8">
                   <Button
+                    onClick={loadMore}
+                    disabled={loading}
                     variant="outline"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
+                    size="lg"
                   >
-                    Previous
-                  </Button>
-                  <div className="flex gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => {
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
-                          return (
-                            <Button
-                              key={page}
-                              variant={
-                                currentPage === page ? "default" : "outline"
-                              }
-                              onClick={() => setCurrentPage(page)}
-                              className="w-10"
-                            >
-                              {page}
-                            </Button>
-                          );
-                        } else if (
-                          page === currentPage - 2 ||
-                          page === currentPage + 2
-                        ) {
-                          return (
-                            <span key={page} className="px-2">
-                              ...
-                            </span>
-                          );
-                        }
-                        return null;
-                      },
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load More"
                     )}
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
                   </Button>
                 </div>
               )}
@@ -611,6 +625,3 @@ export function ProductsClient({
     </main>
   );
 }
-
-const getMaxPrice = (products: Product[]) =>
-  Math.max(...products.map((p) => p.price), 100) + 100;

@@ -1,41 +1,24 @@
-import { createClient } from "@/lib/supabase/server";
+import { Suspense } from "react";
 import { ProductsClient } from "@/components/products-client";
+import { Loader2 } from "lucide-react";
 
-export default async function ProductsPage() {
-  const supabase = await createClient();
+export const metadata = {
+  title: "Products",
+  description: "Browse our complete collection of products",
+};
 
-  const { data: products } = await supabase
-    .from("products")
-    .select(
-      "*, collections(name, slug, parent_id, parent:parent_id(name, slug))",
-    )
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  const { data: collections } = await supabase
-    .from("collections")
-    .select("id, name, slug, parent_id, parent:parent_id(name, slug)")
-    .order("name");
-
-  const productsWithRatings = products?.map((product) => {
-    const reviews = product.reviews as { rating: number }[];
-    const reviewCount = reviews?.length || 0;
-    const averageRating =
-      reviewCount > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
-        : 0;
-
-    return {
-      ...product,
-      average_rating: averageRating,
-      review_count: reviewCount,
-    };
-  });
-
+function ProductsLoading() {
   return (
-    <ProductsClient
-      initialProducts={productsWithRatings || []}
-      collections={collections || []}
-    />
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<ProductsLoading />}>
+      <ProductsClient />
+    </Suspense>
   );
 }
