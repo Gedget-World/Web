@@ -11,6 +11,7 @@ import {
   CarouselNext,
 } from "@/components/ui/carousel";
 import type { CarouselApi } from "@/components/ui/carousel";
+import { ZoomIn } from "lucide-react";
 
 interface ProductImage {
   id: string;
@@ -36,6 +37,21 @@ export default function ProductImagesSection({
   const [showGallery, setShowGallery] = useState(false);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Zoom state
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imageContainerRef.current) return;
+
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    setZoomPosition({ x, y });
+  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -71,6 +87,20 @@ export default function ProductImagesSection({
       fetchImages();
     }
   }, [productId]);
+
+  // Sync carousel with selected index
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      setSelectedIndex(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on("select", onSelect);
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
 
   const handleThumbnailHover = (index: number) => {
     setSelectedIndex(index);
@@ -218,17 +248,52 @@ export default function ProductImagesSection({
         {images.length > 0 && (
           <Carousel className="w-full" setApi={setCarouselApi}>
             <CarouselContent>
-              {images.map((image) => (
+              {images.map((image, index) => (
                 <CarouselItem key={image.id}>
-                  <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden">
+                  <div
+                    ref={index === selectedIndex ? imageContainerRef : null}
+                    className="relative w-full bg-gray-100 rounded-lg overflow-hidden cursor-zoom-in group"
+                    onMouseEnter={() => setIsZooming(true)}
+                    onMouseLeave={() => setIsZooming(false)}
+                    onMouseMove={handleMouseMove}
+                  >
+                    {/* Normal Image */}
                     <Image
                       src={image.image_url}
                       alt={image.image_name}
                       width={800}
                       height={800}
-                      className="w-full h-auto object-contain"
+                      className={`w-full h-auto object-contain transition-opacity duration-200 ${
+                        isZooming && index === selectedIndex
+                          ? "opacity-0"
+                          : "opacity-100"
+                      }`}
                       priority
                     />
+
+                    {/* Zoomed Image */}
+                    {isZooming && index === selectedIndex && (
+                      <div
+                        className="absolute inset-0 bg-no-repeat"
+                        style={{
+                          backgroundImage: `url(${image.image_url})`,
+                          backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                          backgroundSize: "200%",
+                        }}
+                      />
+                    )}
+
+                    {/* Zoom Hint */}
+                    <div
+                      className={`absolute bottom-3 right-3 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-1 rounded-md transition-opacity ${
+                        isZooming
+                          ? "opacity-0"
+                          : "opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
+                      <ZoomIn className="h-3 w-3" />
+                      Hover to zoom
+                    </div>
                   </div>
                 </CarouselItem>
               ))}
@@ -236,6 +301,26 @@ export default function ProductImagesSection({
             <CarouselPrevious className="left-2" />
             <CarouselNext className="right-2" />
           </Carousel>
+        )}
+
+        {/* Mobile Dots Navigation */}
+        {images.length > 1 && (
+          <div className="flex justify-center gap-1.5 mt-3 md:hidden">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setSelectedIndex(index);
+                  carouselApi?.scrollTo(index);
+                }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  selectedIndex === index
+                    ? "bg-blue-600 w-4"
+                    : "bg-gray-300 hover:bg-gray-400"
+                }`}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

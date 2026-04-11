@@ -10,12 +10,25 @@ import {
   Shield,
   CreditCard,
   ChevronRight,
+  Flame,
+  TrendingUp,
+  Award,
+  Star,
+  BadgeCheck,
+  Users,
 } from "lucide-react";
 import { LazyProductReviews } from "@/components/lazy-product-reviews";
 import ProductImagesSection from "@/components/product-images-section";
 import { ProductViewTracker } from "@/components/product-view-tracker";
 import { ProductSpecifications } from "@/components/product-specifications";
 import { Badge } from "@/components/ui/badge";
+import { ProductActions } from "@/components/product-actions";
+import { RatingDisplay } from "@/components/rating-display";
+import { SimilarProducts } from "@/components/similar-products";
+import { FrequentlyBoughtTogether } from "@/components/frequently-bought-together";
+import { ProductQA } from "@/components/product-qa";
+import { StickyAddToCart } from "@/components/sticky-add-to-cart";
+import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 
 export default async function ProductDetailPage({
   params,
@@ -59,6 +72,27 @@ export default async function ProductDetailPage({
       </>
     );
   }
+
+  // Fetch review stats
+  const { data: reviewStats } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("product_id", product.id)
+    .eq("is_active", true);
+
+  const reviewCount = reviewStats?.length || 0;
+  const averageRating =
+    reviewCount > 0
+      ? reviewStats!.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+      : 0;
+
+  // Calculate discount savings
+  const hasDiscount =
+    product.discount_percentage && product.discount_percentage > 0;
+  const originalPrice = hasDiscount
+    ? Math.round(product.price / (1 - product.discount_percentage / 100))
+    : null;
+  const savingsAmount = originalPrice ? originalPrice - product.price : 0;
 
   const {
     data: { user },
@@ -126,31 +160,88 @@ export default async function ProductDetailPage({
 
         {/* Product Info */}
         <div className="flex flex-col">
-          {/* Product Title */}
-          <h1 className="text-lg md:text-xl font-bold text-slate-900 mb-2">
-            {product.name}
-          </h1>
+          {/* Product Tags */}
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {product.is_featured && (
+              <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white text-[10px] px-2 py-0.5 font-medium">
+                <Flame className="w-3 h-3 mr-0.5" />
+                Bestseller
+              </Badge>
+            )}
+            {product.is_new_arrival && (
+              <Badge className="bg-linear-to-r from-blue-500 to-indigo-500 text-white text-[10px] px-2 py-0.5 font-medium">
+                <TrendingUp className="w-3 h-3 mr-0.5" />
+                Trending
+              </Badge>
+            )}
+            {averageRating >= 4.5 && reviewCount > 5 && (
+              <Badge className="bg-linear-to-r from-emerald-500 to-teal-500 text-white text-[10px] px-2 py-0.5 font-medium">
+                <Award className="w-3 h-3 mr-0.5" />
+                Top Rated
+              </Badge>
+            )}
+          </div>
+
+          {/* Product Title and Actions */}
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h1 className="text-lg md:text-xl font-bold text-slate-900">
+              {product.name}
+            </h1>
+            <ProductActions
+              productName={product.name}
+              productSlug={product.slug}
+            />
+          </div>
+
+          {/* Rating Display */}
+          {reviewCount > 0 && (
+            <div className="mb-3">
+              <RatingDisplay
+                rating={averageRating}
+                reviewCount={reviewCount}
+                size="md"
+              />
+            </div>
+          )}
+
+          {/* Sold Count / Popularity */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-1 text-slate-600">
+              <Users className="h-3.5 w-3.5" />
+              <span className="text-xs">500+ bought this month</span>
+            </div>
+          </div>
 
           {/* Price Section */}
-          <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-2xl font-bold text-slate-900">
-              ₹
-              {Number(product.price) % 1 === 0
-                ? Math.round(product.price).toLocaleString("en-IN")
-                : product.price.toLocaleString("en-IN")}
-            </span>
-            {product.discount_percentage && product.discount_percentage > 0 && (
-              <>
-                <span className="text-sm text-slate-400 line-through">
-                  ₹
-                  {Math.round(
-                    product.price / (1 - product.discount_percentage / 100),
-                  ).toLocaleString("en-IN")}
+          <div className="flex flex-col gap-1 mb-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-900">
+                ₹
+                {Number(product.price) % 1 === 0
+                  ? Math.round(product.price).toLocaleString("en-IN")
+                  : product.price.toLocaleString("en-IN")}
+              </span>
+              {hasDiscount && (
+                <>
+                  <span className="text-sm text-slate-400 line-through">
+                    ₹{originalPrice?.toLocaleString("en-IN")}
+                  </span>
+                  <Badge className="bg-linear-to-r from-green-500 to-teal-500 text-white text-xs px-1.5 py-0">
+                    {product.discount_percentage}% OFF
+                  </Badge>
+                </>
+              )}
+            </div>
+            {/* You Save Highlight */}
+            {hasDiscount && (
+              <div className="inline-flex items-center gap-1 bg-green-50 border border-green-200 rounded-md px-2 py-1 w-fit">
+                <span className="text-green-700 text-sm font-semibold">
+                  You Save ₹{Math.round(savingsAmount).toLocaleString("en-IN")}
                 </span>
-                <Badge className="bg-green-500 hover:bg-green-600 text-xs px-1.5 py-0">
-                  {product.discount_percentage}% OFF
-                </Badge>
-              </>
+                <span className="text-green-600 text-xs">
+                  ({product.discount_percentage}% off)
+                </span>
+              </div>
             )}
           </div>
 
@@ -253,13 +344,63 @@ export default async function ProductDetailPage({
         </div>
       </div>
 
-      {/* Reviews Section */}
-      <div className="mt-10 pt-6 border-t">
+      {/* Frequently Bought Together */}
+      <FrequentlyBoughtTogether
+        productId={product.id}
+        currentProduct={{
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url,
+          stock: product.stock,
+        }}
+      />
+
+      {/* Reviews Section with Verified Badge */}
+      <div className="mt-12 pt-8 border-t">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Customer Reviews
+          </h2>
+          <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            <BadgeCheck className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">Verified Purchases</span>
+          </div>
+        </div>
         <LazyProductReviews
           productId={product.id}
           userEmail={user?.email || null}
         />
       </div>
+
+      {/* Q&A Section */}
+      <ProductQA productId={product.id} />
+
+      {/* Similar Products */}
+      <SimilarProducts
+        productId={product.id}
+        collectionId={product.collection_id}
+      />
+
+      {/* Recently Viewed */}
+      <div className="mt-12 border-t">
+        <RecentlyViewedProducts />
+      </div>
+
+      {/* Sticky Add to Cart for Mobile */}
+      <StickyAddToCart
+        product={{
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url,
+          stock: product.stock,
+        }}
+        disabled={product.is_out_of_stock || product.stock <= 0}
+      />
+
+      {/* Bottom padding for sticky cart on mobile */}
+      <div className="h-16 md:hidden" />
     </main>
   );
 }

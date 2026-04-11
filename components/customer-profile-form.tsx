@@ -23,6 +23,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomerStore } from "@/hooks/use-customer";
 
 type Customer = {
   id?: string;
@@ -51,6 +52,7 @@ export function CustomerProfileForm({
   initialCustomer,
 }: CustomerProfileFormProps) {
   const { toast } = useToast();
+  const updateCustomer = useCustomerStore((state) => state.updateCustomer);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(!initialCustomer);
   const [customer, setCustomer] = useState<Customer>({
@@ -85,6 +87,14 @@ export function CustomerProfileForm({
       if (!response.ok) {
         throw new Error("Failed to save customer profile");
       }
+
+      const savedCustomer = await response.json();
+
+      // Update the cache with new customer data
+      updateCustomer({
+        ...savedCustomer,
+        user_id: user.id,
+      });
 
       toast({
         title: "Profile saved",

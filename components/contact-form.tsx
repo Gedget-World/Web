@@ -6,15 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, User, CheckCircle2, AlertCircle } from "lucide-react";
-
-type Customer = {
-  id?: string;
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  phone_verified: boolean;
-};
+import { useCustomer } from "@/hooks/use-customer";
 
 interface ContactFormProps {
   user: {
@@ -24,73 +16,85 @@ interface ContactFormProps {
 }
 
 export default function ContactForm({ user }: ContactFormProps) {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const {
+    customer,
+    isHydrated,
+    fetchCustomerData,
+    saveCustomer,
+    isCacheValid,
+  } = useCustomer(user.id);
+
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [tempData, setTempData] = useState({
     first_name: "",
     last_name: "",
     phone: "",
   });
 
+  // Fetch customer data on mount (uses cache if valid)
   useEffect(() => {
-    fetchCustomer();
-  }, [user.id]);
+    if (!isHydrated) return;
 
-  const fetchCustomer = async () => {
-    try {
-      const response = await fetch(`/api/customers?user_id=${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data) {
-          setCustomer(data);
-          setTempData({
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            phone: data.phone || "",
-          });
-        }
+    const loadCustomer = async () => {
+      setIsLoading(true);
+
+      // Use cache if valid
+      if (isCacheValid() && customer?.user_id === user.id) {
+        setTempData({
+          first_name: customer.first_name || "",
+          last_name: customer.last_name || "",
+          phone: customer.phone || "",
+        });
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching customer:", error);
-    } finally {
+
+      // Fetch from API
+      const { customer: fetchedCustomer } = await fetchCustomerData();
+      if (fetchedCustomer) {
+        setTempData({
+          first_name: fetchedCustomer.first_name || "",
+          last_name: fetchedCustomer.last_name || "",
+          phone: fetchedCustomer.phone || "",
+        });
+      }
       setIsLoading(false);
+    };
+
+    loadCustomer();
+  }, [isHydrated, user.id]);
+
+  // Sync tempData when customer changes (from cache)
+  useEffect(() => {
+    if (customer && !isEditing) {
+      setTempData({
+        first_name: customer.first_name || "",
+        last_name: customer.last_name || "",
+        phone: customer.phone || "",
+      });
     }
-  };
+  }, [customer, isEditing]);
 
   const handleSave = async () => {
-    try {
-      const url = customer ? `/api/customers/${customer.id}` : "/api/customers";
-      const method = customer ? "PUT" : "POST";
+    setIsSaving(true);
+    const result = await saveCustomer({
+      ...tempData,
+      email: user.email,
+    });
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          email: user.email,
-          ...tempData,
-        }),
-      });
-
-      if (response.ok) {
-        const updatedCustomer = await response.json();
-        setCustomer(updatedCustomer);
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error("Error saving customer:", error);
+    if (result) {
+      setIsEditing(false);
     }
+    setIsSaving(false);
   };
 
   const handlePhoneVerification = () => {
-    // Placeholder for phone verification
     alert("Phone verification feature coming soon!");
   };
 
-  if (isLoading) {
+  if (!isHydrated || isLoading) {
     return (
       <div className="space-y-4">
         <div className="grid gap-2">

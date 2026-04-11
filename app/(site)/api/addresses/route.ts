@@ -20,18 +20,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get customer_id from customers table
-    const { data: customer } = await supabase
+    // Get customer_id from customers table, create if doesn't exist
+    let { data: customer } = await supabase
       .from("customers")
       .select("id")
       .eq("user_id", user_id)
       .single();
 
+    // If customer doesn't exist, create one
     if (!customer) {
-      return NextResponse.json(
-        { error: "Customer not found" },
-        { status: 404 }
-      );
+      const { data: newCustomer, error: createError } = await supabase
+        .from("customers")
+        .insert({
+          user_id: user_id,
+          first_name: address.full_name?.split(" ")[0] || null,
+          last_name: address.full_name?.split(" ").slice(1).join(" ") || null,
+        })
+        .select("id")
+        .single();
+
+      if (createError) {
+        console.error("Error creating customer:", createError);
+        return NextResponse.json(
+          { error: "Failed to create customer" },
+          { status: 500 },
+        );
+      }
+      customer = newCustomer;
     }
 
     // Check if address already exists
@@ -94,7 +109,7 @@ export async function POST(request: NextRequest) {
     console.error("Error saving address:", error);
     return NextResponse.json(
       { error: "Failed to save address" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

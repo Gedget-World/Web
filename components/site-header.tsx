@@ -52,6 +52,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useCustomerStore } from "@/hooks/use-customer";
 
 type Collection = {
   name: string;
@@ -127,6 +128,8 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
+    // Clear cached customer data
+    useCustomerStore.getState().clearCache();
     await supabase.auth.signOut();
     setIsLoggingOut(false);
     setMobileMenuOpen(false);

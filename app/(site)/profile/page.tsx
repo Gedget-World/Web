@@ -1,16 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { User, Mail, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { CustomerProfileForm } from "@/components/customer-profile-form";
-import Link from "next/link";
+import { ProfileClient } from "@/components/profile-client";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -30,99 +20,108 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .single();
 
-  // Get user's order count
-  const { count: orderCount } = await supabase
+  // Get user's orders with items
+  const { data: orders, count: orderCount } = await supabase
     .from("orders")
+    .select(
+      `
+      id,
+      created_at,
+      total,
+      status,
+      order_items (
+        quantity,
+        price,
+        product:products (
+          name,
+          image_url
+        )
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  // Get user's default address (only storing single address)
+  const { data: address } = await supabase
+    .from("addresses")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  // Get wishlist items (if table exists)
+  let wishlistItems: any[] = [];
+  try {
+    const { data } = await supabase
+      .from("wishlist")
+      .select(
+        `
+        id,
+        product:products (
+          id,
+          name,
+          price,
+          image_url,
+          slug
+        )
+      `,
+      )
+      .eq("user_id", user.id)
+      .limit(4);
+    wishlistItems = data || [];
+  } catch {
+    // Wishlist table may not exist
+  }
+
+  // Get review count
+  const { count: reviewCount } = await supabase
+    .from("reviews")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  // Calculate total spent
+  const totalSpent =
+    orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
+
+  // Get pending review count (delivered orders without reviews)
+  let pendingReviewCount = 0;
+  try {
+    const { data: deliveredOrders } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "delivered");
+
+    if (deliveredOrders) {
+      const { count } = await supabase
+        .from("reviews")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      pendingReviewCount = Math.max(0, deliveredOrders.length - (count || 0));
+    }
+  } catch {
+    // Reviews table may not exist
+  }
+
   return (
-    <div className="container max-w-4xl py-12 px-4 md:px-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">My Profile</h1>
-        <p className="text-slate-600">
-          Manage your account information and view your order history
-        </p>
-      </div>
-
-      <div className="grid gap-6">
-        {/* Customer Profile Form */}
-        <CustomerProfileForm 
-          user={{
-            id: user.id,
-            email: user.email || ""
-          }} 
-          initialCustomer={customer} 
-        />
-
-        {/* Account Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>Your account details</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                <User className="h-5 w-5 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">User ID</p>
-                <p className="text-sm text-slate-900 font-mono">
-                  {user.id.slice(0, 8)}...
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                <Mail className="h-5 w-5 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">Email</p>
-                <p className="text-sm text-slate-900">{user.email}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                <Calendar className="h-5 w-5 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Member Since
-                </p>
-                <p className="text-sm text-slate-900">
-                  {new Date(user.created_at).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Order History */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order History</CardTitle>
-            <CardDescription>View and track your orders</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {orderCount || 0}
-                </p>
-                <p className="text-sm text-slate-600">Total Orders</p>
-              </div>
-              <Button asChild>
-                <Link href="/orders">View All Orders</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <ProfileClient
+      user={{
+        id: user.id,
+        email: user.email || "",
+        created_at: user.created_at,
+        email_confirmed_at: user.email_confirmed_at,
+      }}
+      customer={customer}
+      orders={orders || []}
+      orderCount={orderCount || 0}
+      address={address || null}
+      wishlistItems={wishlistItems}
+      reviewCount={reviewCount || 0}
+      totalSpent={totalSpent}
+      pendingReviewCount={pendingReviewCount}
+    />
   );
 }
