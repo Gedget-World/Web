@@ -76,62 +76,54 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Check current session first
+    // IMPORTANT: Capture recovery state IMMEDIATELY before Supabase clears the hash
+    // Supabase clears the hash after processing, so we must check it first
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const isRecoveryLink =
+      hashParams.get("type") === "recovery" && hashParams.has("access_token");
+
+    // If this is a recovery link, authorize immediately
+    if (isRecoveryLink) {
+      setIsAuthorized(true);
+      setIsCheckingAuth(false);
+      return; // No need for further checks
+    }
+
+    // Check current session for non-recovery access attempts
     const checkSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // If there's a session with a user, they might be in recovery mode
-      // The hash fragment from email link triggers PASSWORD_RECOVERY event
+      // No session and no recovery link - redirect to forgot password
       if (!session) {
-        // No session at all - redirect to forgot password
         router.push("/auth/forgot-password");
         return;
       }
 
-      // Listen for auth state changes
+      // Listen for auth state changes (in case PASSWORD_RECOVERY fires)
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event) => {
         if (event === "PASSWORD_RECOVERY") {
+          // This event confirms it's a password recovery flow
           setIsAuthorized(true);
           setIsCheckingAuth(false);
-        } else if (event === "SIGNED_IN") {
-          // User signed in normally, not through recovery
-          // Check if they have recovery token in URL hash
-          const hashParams = new URLSearchParams(
-            window.location.hash.substring(1),
-          );
-          if (hashParams.get("type") === "recovery") {
-            setIsAuthorized(true);
-            setIsCheckingAuth(false);
-          } else {
-            router.push("/");
-          }
         }
+        // Don't handle SIGNED_IN here - let the recovery flow continue
       });
 
-      // Check URL hash for recovery token
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const type = hashParams.get("type");
-      const accessToken = hashParams.get("access_token");
-
-      if (type === "recovery" && accessToken) {
-        setIsAuthorized(true);
-        setIsCheckingAuth(false);
-      } else if (session) {
-        // Give a short delay for PASSWORD_RECOVERY event to fire
-        setTimeout(() => {
-          if (!isAuthorized) {
-            setIsCheckingAuth(false);
+      // Give time for PASSWORD_RECOVERY event to fire
+      setTimeout(() => {
+        setIsCheckingAuth((checking) => {
+          if (checking) {
+            // Still checking = no PASSWORD_RECOVERY event fired
+            // User is trying to access directly without valid recovery link
             router.push("/auth/forgot-password");
           }
-        }, 2000);
-      } else {
-        setIsCheckingAuth(false);
-        router.push("/auth/forgot-password");
-      }
+          return checking;
+        });
+      }, 2000);
 
       return () => {
         subscription.unsubscribe();
@@ -139,7 +131,7 @@ export default function ResetPasswordPage() {
     };
 
     checkSession();
-  }, [router, isAuthorized]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
