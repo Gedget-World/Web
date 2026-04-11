@@ -365,10 +365,10 @@ export function GlobalSearch() {
                 </h3>
                 <div className="space-y-1">
                   {history.slice(0, 5).map((query) => (
-                    <button
+                    <div
                       key={query}
                       onClick={() => handleHistoryClick(query)}
-                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors text-left group cursor-pointer"
                     >
                       <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
                       <span className="text-sm flex-1">{query}</span>
@@ -381,7 +381,7 @@ export function GlobalSearch() {
                       >
                         Remove
                       </button>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -416,7 +416,7 @@ export function GlobalSearch() {
                           {product.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          ${product.price.toFixed(2)}
+                          ₹{product.price.toFixed(2)}
                         </p>
                       </div>
                     </button>
@@ -431,30 +431,6 @@ export function GlobalSearch() {
                 Start typing to search products...
               </div>
             )}
-          </div>
-
-          {/* Footer */}
-          <div className="border-t px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded border bg-muted text-[10px]">
-                  ↑↓
-                </kbd>
-                Navigate
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded border bg-muted text-[10px]">
-                  ↵
-                </kbd>
-                Select
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded border bg-muted text-[10px]">
-                  esc
-                </kbd>
-                Close
-              </span>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       `,
       )
       .eq("is_active", true)
-      .order("name", { ascending: true });
+      .order("display_order", { ascending: true });
 
     if (error) {
       console.error("Collections API error:", error);

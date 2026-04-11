@@ -11,6 +11,19 @@ import {
   X,
   LogIn,
   Loader2,
+  ShoppingBag,
+  Truck,
+  Phone,
+  Heart,
+  ChevronRight,
+  Sparkles,
+  Gift,
+  Headphones,
+  Smartphone,
+  Watch,
+  Laptop,
+  Zap,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CartButton } from "@/components/cart-button";
@@ -34,10 +47,24 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Collection = {
   name: string;
   slug: string;
+};
+
+// Collection icons mapping
+const collectionIcons: Record<string, React.ElementType> = {
+  phones: Smartphone,
+  audio: Headphones,
+  watches: Watch,
+  laptops: Laptop,
+  accessories: Gift,
 };
 
 export function SiteHeader() {
@@ -47,6 +74,9 @@ export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [guestMenuOpen, setGuestMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -89,7 +119,7 @@ export function SiteHeader() {
         .from("collections")
         .select("name, slug")
         .eq("is_active", true)
-        .order("name", { ascending: true });
+        .order("display_order", { ascending: true });
       setCollections(data || []);
     };
     fetchCollections();
@@ -104,193 +134,498 @@ export function SiteHeader() {
     router.refresh();
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
-      <div className="container flex h-14 md:h-16 items-center px-4 md:px-8">
-        {/* Mobile Menu Button */}
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="mr-2">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col">
-            <SheetHeader className="p-4 border-b shrink-0">
-              <SheetTitle className="text-left text-xl font-bold">
-                Gadgets Kabila
-              </SheetTitle>
-            </SheetHeader>
-
-            {/* Collections List */}
-            <div className="flex-1 overflow-y-auto py-4">
-              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Collections
-              </h3>
-              <div className="space-y-1">
-                {collections.map((collection) => (
-                  <Link
-                    key={collection.slug}
-                    href={`/products?collection=${collection.slug}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    {collection.name}
-                  </Link>
-                ))}
+    <header className="sticky top-0 z-50 w-full">
+      {/* Announcement Bar */}
+      {showAnnouncement && (
+        <div className="bg-linear-to-r from-primary via-primary/90 to-primary relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
+          <div className="container relative flex items-center justify-center gap-2 px-4 py-2 text-xs md:text-sm">
+            <div className="flex items-center gap-6 text-white">
+              <div className="hidden sm:flex items-center gap-2">
+                <Truck className="w-4 h-4" />
+                <span>Free Shipping on All Over India</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span className="font-medium">
+                  Up-to 10% off on pre-paid orders
+                </span>
+              </div>
+              {/* <div className="hidden md:flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <span>Support: 1800-123-4567</span>
+              </div> */}
             </div>
-
-            {/* User Section */}
-            <div className="border-t p-4 space-y-2 shrink-0 bg-white">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : user ? (
-                <>
-                  <div className="px-2 py-2 mb-2">
-                    <p className="text-sm font-medium text-slate-900">
-                      {user.user_metadata?.full_name ||
-                        user.email?.split("@")[0] ||
-                        "User"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                  <Link
-                    href="/profile"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-accent rounded-md transition-colors"
-                  >
-                    <UserCircle className="h-4 w-4" />
-                    Profile
-                  </Link>
-                  <Link
-                    href="/orders"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-accent rounded-md transition-colors"
-                  >
-                    <Package className="h-4 w-4" />
-                    Orders
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="flex items-center gap-2 w-full px-2 py-2 text-sm hover:bg-accent rounded-md transition-colors text-red-600 disabled:opacity-50"
-                  >
-                    {isLoggingOut ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <LogOut className="h-4 w-4" />
-                    )}
-                    {isLoggingOut ? "Logging out..." : "Logout"}
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/auth/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 transition-colors"
-                >
-                  <User className="h-4 w-4" />
-                  Login
-                </Link>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2 shrink-0">
-          <span className="text-xl md:text-2xl font-bold text-slate-900">
-            Gadgets Kabila
-          </span>
-        </Link>
-
-        {/* Desktop Search */}
-        <div className="hidden md:flex flex-1 justify-center px-4">
-          <div className="w-full max-w-md">
-            <GlobalSearch />
+            <button
+              onClick={() => setShowAnnouncement(false)}
+              className="absolute right-4 text-white/70 hover:text-white transition-colors"
+              aria-label="Close announcement"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Right Side Icons */}
-        <div className="flex items-center gap-1 md:gap-2 ml-auto">
-          {/* Mobile Search Icon */}
-          <div className="md:hidden">
-            <GlobalSearch />
-          </div>
-
-          <CartButton />
-
-          {/* Desktop User Menu */}
-          <div className="hidden md:block">
-            {isLoading ? (
-              <Button variant="ghost" size="icon" disabled>
-                <Loader2 className="h-5 w-5 animate-spin" />
+      {/* Main Header */}
+      <div className="border-b bg-white">
+        <div className="container flex h-14 md:h-16 items-center px-4 md:px-8">
+          {/* Mobile Menu Button */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon" className="mr-2">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Menu</span>
               </Button>
-            ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Account menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-2 border-b mb-1">
-                    <p className="text-sm font-medium text-slate-900 truncate">
-                      {user.user_metadata?.full_name ||
-                        user.email?.split("@")[0] ||
-                        "User"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </p>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0 flex flex-col">
+              <SheetHeader className="p-4 border-b shrink-0 bg-linear-to-r from-primary to-primary/80">
+                <SheetTitle className="text-left flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
+                    <ShoppingBag className="w-5 h-5 text-primary" />
                   </div>
-                  <DropdownMenuItem asChild>
+                  <span className="text-xl font-bold text-white">
+                    Gadgets Kabila
+                  </span>
+                </SheetTitle>
+              </SheetHeader>
+
+              {/* User Welcome (if logged in) */}
+              {user && (
+                <div className="p-4 bg-gray-50 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {getGreeting()},
+                      </p>
+                      <p className="font-semibold text-gray-900">
+                        {user.user_metadata?.full_name ||
+                          user.email?.split("@")[0] ||
+                          "User"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Links */}
+              <div className="p-4 border-b">
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/deals"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 p-3 bg-red-50 rounded-xl text-red-600 hover:bg-red-100 transition-colors"
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span className="text-sm font-medium">Deals</span>
+                  </Link>
+                  <Link
+                    href="/products?sort=newest"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl text-emerald-600 hover:bg-emerald-100 transition-colors"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    <span className="text-sm font-medium">New</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Collections List */}
+              <div className="flex-1 overflow-y-auto py-4">
+                <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Shop by Category
+                </h3>
+                <div className="space-y-1">
+                  {collections.map((collection) => {
+                    const IconComponent =
+                      collectionIcons[collection.slug.toLowerCase()] || Gift;
+                    return (
+                      <Link
+                        key={collection.slug}
+                        href={`/products?collection=${collection.slug}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-between px-4 py-3 hover:bg-accent transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                            <IconComponent className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
+                          </div>
+                          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                            {collection.name}
+                          </span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* User Section */}
+              <div className="border-t p-4 space-y-2 shrink-0 bg-white">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : user ? (
+                  <div className="space-y-1">
                     <Link
                       href="/profile"
-                      className="flex items-center cursor-pointer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-accent rounded-lg transition-colors"
                     >
-                      <UserCircle className="mr-2 h-4 w-4" />
-                      Profile
+                      <UserCircle className="h-5 w-5 text-gray-500" />
+                      <span>My Profile</span>
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link
                       href="/orders"
-                      className="flex items-center cursor-pointer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-accent rounded-lg transition-colors"
                     >
-                      <Package className="mr-2 h-4 w-4" />
-                      Orders
+                      <Package className="h-5 w-5 text-gray-500" />
+                      <span>My Orders</span>
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="cursor-pointer"
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-sm hover:bg-red-50 rounded-lg transition-colors text-red-600 disabled:opacity-50"
+                    >
+                      {isLoggingOut ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <LogOut className="h-5 w-5" />
+                      )}
+                      {isLoggingOut ? "Logging out..." : "Logout"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      <LogIn className="h-5 w-5" />
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/auth/sign-up"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      Create Account
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 md:w-9 md:h-9 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+              <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 text-white" />
+            </div>
+            <span className="text-lg md:text-xl font-bold text-slate-900">
+              Gadgets Kabila
+            </span>
+          </Link>
+
+          {/* Desktop Search */}
+          <div className="hidden md:flex flex-1 justify-center px-4">
+            <div className="w-full max-w-md">
+              <GlobalSearch />
+            </div>
+          </div>
+
+          {/* Right Side Icons */}
+          <div className="flex items-center gap-1 md:gap-2 ml-auto">
+            {/* Mobile Search Icon */}
+            <div className="md:hidden">
+              <GlobalSearch />
+            </div>
+
+            {/* Wishlist (Desktop) */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/wishlist" className="hidden md:flex">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative hover:bg-pink-50"
                   >
-                    {isLoggingOut ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <LogOut className="mr-2 h-4 w-4" />
-                    )}
-                    {isLoggingOut ? "Logging out..." : "Logout"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/auth/login">
-                  <LogIn className="h-5 w-5" />
-                  <span className="sr-only">Login</span>
+                    <Heart className="h-5 w-5 text-gray-600 hover:text-pink-500 transition-colors" />
+                    <span className="sr-only">Wishlist</span>
+                  </Button>
                 </Link>
-              </Button>
-            )}
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Wishlist</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <CartButton />
+
+            {/* Desktop User Menu */}
+            <div className="hidden md:block">
+              {isLoading ? (
+                <Button variant="ghost" size="icon" disabled>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </Button>
+              ) : user ? (
+                <DropdownMenu
+                  open={userMenuOpen}
+                  onOpenChange={setUserMenuOpen}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-2 px-3 hover:bg-primary/5"
+                      onMouseEnter={() => setUserMenuOpen(true)}
+                      onMouseLeave={() => {
+                        setTimeout(() => {
+                          const content = document.querySelector(
+                            "[data-radix-popper-content-wrapper]",
+                          );
+                          if (!content?.matches(":hover")) {
+                            setUserMenuOpen(false);
+                          }
+                        }, 100);
+                      }}
+                    >
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="hidden lg:block text-left">
+                        <p className="text-xs text-muted-foreground leading-none">
+                          {getGreeting()}
+                        </p>
+                        <p className="text-sm font-medium text-gray-900 leading-tight">
+                          {user.user_metadata?.full_name?.split(" ")[0] ||
+                            user.email?.split("@")[0] ||
+                            "User"}
+                        </p>
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56"
+                    onMouseEnter={() => setUserMenuOpen(true)}
+                    onMouseLeave={() => setUserMenuOpen(false)}
+                  >
+                    <div className="px-3 py-3 border-b mb-1 bg-gray-50 -mx-1 -mt-1 rounded-t-md">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {user.user_metadata?.full_name ||
+                          user.email?.split("@")[0] ||
+                          "User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/profile"
+                        className="flex items-center cursor-pointer py-2"
+                      >
+                        <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/orders"
+                        className="flex items-center cursor-pointer py-2"
+                      >
+                        <Package className="mr-3 h-4 w-4 text-gray-500" />
+                        My Orders
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/wishlist"
+                        className="flex items-center cursor-pointer py-2"
+                      >
+                        <Heart className="mr-3 h-4 w-4 text-gray-500" />
+                        Wishlist
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/orders"
+                        className="flex items-center cursor-pointer py-2"
+                      >
+                        <Truck className="mr-3 h-4 w-4 text-gray-500" />
+                        Track Order
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/contact-us"
+                        className="flex items-center cursor-pointer py-2"
+                      >
+                        <Phone className="mr-3 h-4 w-4 text-gray-500" />
+                        Contact Us
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/help"
+                        className="flex items-center cursor-pointer py-2"
+                      >
+                        <HelpCircle className="mr-3 h-4 w-4 text-gray-500" />
+                        Help Center
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 py-2"
+                    >
+                      {isLoggingOut ? (
+                        <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogOut className="mr-3 h-4 w-4" />
+                      )}
+                      {isLoggingOut ? "Logging out..." : "Logout"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  {/* Desktop Guest Menu */}
+                  <DropdownMenu
+                    open={guestMenuOpen}
+                    onOpenChange={setGuestMenuOpen}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="hidden md:flex items-center gap-2 px-3 hover:bg-primary/5"
+                        onMouseEnter={() => setGuestMenuOpen(true)}
+                        onMouseLeave={() => {
+                          setTimeout(() => {
+                            const content = document.querySelector(
+                              "[data-radix-popper-content-wrapper]",
+                            );
+                            if (!content?.matches(":hover")) {
+                              setGuestMenuOpen(false);
+                            }
+                          }, 100);
+                        }}
+                      >
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <div className="hidden lg:block text-left">
+                          <p className="text-xs text-muted-foreground leading-none">
+                            Welcome
+                          </p>
+                          <p className="text-sm font-medium text-gray-900 leading-tight">
+                            Sign In / Register
+                          </p>
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-56"
+                      onMouseEnter={() => setGuestMenuOpen(true)}
+                      onMouseLeave={() => setGuestMenuOpen(false)}
+                    >
+                      <div className="px-3 py-3 border-b mb-1 bg-gray-50 -mx-1 -mt-1 rounded-t-md">
+                        <p className="text-sm font-semibold text-slate-900">
+                          Welcome to Gadgets Kabila
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Sign in to access your account
+                        </p>
+                      </div>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/auth/login"
+                          className="flex items-center cursor-pointer py-2"
+                        >
+                          <LogIn className="mr-3 h-4 w-4 text-gray-500" />
+                          Sign In
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/auth/sign-up"
+                          className="flex items-center cursor-pointer py-2"
+                        >
+                          <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
+                          Create Account
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/track-order"
+                          className="flex items-center cursor-pointer py-2"
+                        >
+                          <Truck className="mr-3 h-4 w-4 text-gray-500" />
+                          Track Order
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/contact-us"
+                          className="flex items-center cursor-pointer py-2"
+                        >
+                          <Phone className="mr-3 h-4 w-4 text-gray-500" />
+                          Contact Us
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/help"
+                          className="flex items-center cursor-pointer py-2"
+                        >
+                          <HelpCircle className="mr-3 h-4 w-4 text-gray-500" />
+                          Help Center
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Mobile Login Icon */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        asChild
+                        className="md:hidden"
+                      >
+                        <Link href="/auth/login">
+                          <LogIn className="h-5 w-5" />
+                          <span className="sr-only">Login</span>
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Sign In</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

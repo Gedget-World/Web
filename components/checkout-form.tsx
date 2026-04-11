@@ -71,6 +71,23 @@ export function CheckoutForm({ user }: { user: User }) {
     console.log("Shipping Info:", shippingInfo);
   }, [shippingInfo]);
 
+  // COD price limits
+  const COD_MIN_AMOUNT = 599;
+  const COD_MAX_AMOUNT = 10000;
+
+  // Check if COD is available
+  const isCodAvailable =
+    appliedCoupon === null &&
+    subtotal >= COD_MIN_AMOUNT &&
+    subtotal <= COD_MAX_AMOUNT;
+
+  // Switch to online payment if COD becomes unavailable
+  useEffect(() => {
+    if (!isCodAvailable && paymentMethod === "cod") {
+      setPaymentMethod("online");
+    }
+  }, [isCodAvailable, paymentMethod]);
+
   useEffect(() => {
     // Fetch customer info and existing address
     const fetchCustomerData = async () => {
@@ -450,13 +467,21 @@ export function CheckoutForm({ user }: { user: User }) {
                         value="cod"
                         checked={paymentMethod === "cod"}
                         onChange={(e) => setPaymentMethod("cod")}
-                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={!isCodAvailable}
+                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                       />
                       <Label
                         htmlFor="cod"
-                        className="text-sm font-normal cursor-pointer"
+                        className={`text-sm font-normal cursor-pointer ${
+                          !isCodAvailable ? "text-gray-400" : ""
+                        }`}
                       >
                         Cash on Delivery
+                        {!isCodAvailable && (
+                          <span className="text-xs text-amber-600 ml-2">
+                            (Not available)
+                          </span>
+                        )}
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -476,6 +501,18 @@ export function CheckoutForm({ user }: { user: User }) {
                         Online Payment
                       </Label>
                     </div>
+                  </div>
+
+                  {/* COD Information */}
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-800">
+                      <span className="font-semibold">
+                        Cash on Delivery (COD):
+                      </span>{" "}
+                      Available only for orders between ₹{COD_MIN_AMOUNT} and ₹
+                      {COD_MAX_AMOUNT.toLocaleString()} without any coupon
+                      applied.
+                    </p>
                   </div>
                 </div>
 

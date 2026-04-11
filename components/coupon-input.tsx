@@ -51,9 +51,9 @@ export function CouponInput({ subtotal }: CouponInputProps) {
       // Check minimum purchase amount
       if (subtotal < coupon.min_purchase_amount) {
         setError(
-          `Minimum purchase of $${coupon.min_purchase_amount.toFixed(
-            2
-          )} required`
+          `Minimum purchase of ₹${coupon.min_purchase_amount.toFixed(
+            2,
+          )} required`,
         );
         setLoading(false);
         return;
@@ -101,7 +101,7 @@ export function CouponInput({ subtotal }: CouponInputProps) {
             <p className="text-xs text-green-700">
               {appliedCoupon.discount_type === "percentage"
                 ? `${appliedCoupon.discount_value}% off`
-                : `$${appliedCoupon.discount_value} off`}
+                : `₹${appliedCoupon.discount_value} off`}
             </p>
           </div>
         </div>

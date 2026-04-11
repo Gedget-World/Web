@@ -356,7 +356,7 @@ export default function CreateCollectionPage() {
     };
 
     if (isEditMode) {
-      // Update existing collection
+      // Update existing collection (display_order stays the same)
       const { error } = await supabase
         .from("collections")
         .update(collectionData)
@@ -370,10 +370,20 @@ export default function CreateCollectionPage() {
       }
       alert("Collection updated successfully!");
     } else {
-      // Create new collection
+      // Get the max display_order to add new collection at the end
+      const { data: maxOrderData } = await supabase
+        .from("collections")
+        .select("display_order")
+        .order("display_order", { ascending: false })
+        .limit(1)
+        .single();
+
+      const nextDisplayOrder = (maxOrderData?.display_order || 0) + 1;
+
+      // Create new collection with display_order
       const { data, error } = await supabase
         .from("collections")
-        .insert([collectionData])
+        .insert([{ ...collectionData, display_order: nextDisplayOrder }])
         .select();
 
       if (error) {

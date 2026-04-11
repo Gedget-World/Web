@@ -200,6 +200,15 @@ export default function CartPage() {
                 <CouponInput subtotal={subtotal} />
               </div>
 
+              {/* COD Information */}
+              <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">Cash on Delivery (COD):</span>{" "}
+                  Available only for orders minimum ₹599 without any coupon
+                  applied.
+                </p>
+              </div>
+
               <Button asChild size="lg" className="w-full mb-3">
                 <Link href="/checkout">
                   <ShoppingBag /> Proceed to Checkout <ArrowRight />

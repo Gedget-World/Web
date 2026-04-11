@@ -31,8 +31,8 @@ interface Collection {
   description: string | null;
   image_url: string | null;
   is_active: boolean;
-  parent_id: string | null;
-  parent?: { name: string } | null;
+  display_order: number;
+  products: { count: number }[];
 }
 
 export default function DataTable() {
@@ -49,8 +49,9 @@ export default function DataTable() {
       setLoading(true);
       const query = supabase
         .from("collections")
-        .select("*, parent:parent_id(name)")
+        .select("*, products(count)")
         .ilike("name", `%${search}%`)
+        .order("display_order", { ascending: true })
         .range(page * limit, page * limit + limit - 1);
       const { data, error } = await query;
       if (!error && data) {
@@ -77,10 +78,10 @@ export default function DataTable() {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[60px]">#</TableHead>
             <TableHead>Name</TableHead>
-            <TableHead>Parent</TableHead>
+            <TableHead>Products</TableHead>
             <TableHead>Slug</TableHead>
-            <TableHead>Description</TableHead>
             <TableHead>Active</TableHead>
             <TableHead>Action</TableHead>
           </TableRow>
@@ -101,6 +102,9 @@ export default function DataTable() {
           ) : (
             data.map((row) => (
               <TableRow key={row.id}>
+                <TableCell className="text-gray-500 font-medium">
+                  {row.display_order}
+                </TableCell>
                 <TableCell className="flex flex-row align-middle items-center">
                   {row.image_url && (
                     <div className="mr-2 mt-1 rounded-sm overflow-hidden">
@@ -122,16 +126,11 @@ export default function DataTable() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {row.parent ? (
-                    <Badge variant="outline" className="font-normal">
-                      {row.parent.name}
-                    </Badge>
-                  ) : (
-                    <span className="text-gray-400 text-sm">—</span>
-                  )}
+                  <Badge variant="secondary" className="font-normal">
+                    {row.products?.[0]?.count || 0}
+                  </Badge>
                 </TableCell>
                 <TableCell>{row.slug}</TableCell>
-                <TableCell>{row.description}</TableCell>
                 <TableCell>
                   {row.is_active ? (
                     <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
