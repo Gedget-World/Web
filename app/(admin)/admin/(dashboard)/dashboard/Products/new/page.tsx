@@ -316,16 +316,14 @@ export default function CreateProductPage() {
       alert("Please add at least one product specification.");
       res = false;
     } else {
-      // Check if any specification has empty title or description
-      const hasEmptySpec = productSpecifications.some(
-        (spec) => spec.title.trim() === "" || spec.description.trim() === "",
+      // Check if any specification has empty title
+      const hasEmptyTitle = productSpecifications.some(
+        (spec) => spec.title.trim() === "",
       );
 
-      if (hasEmptySpec) {
+      if (hasEmptyTitle) {
         setProductSpecificationsValidationError(true);
-        alert(
-          "Please fill in all product specification fields (title and description).",
-        );
+        alert("Please fill in the title for all product specifications.");
         res = false;
       } else {
         setProductSpecificationsValidationError(false);
