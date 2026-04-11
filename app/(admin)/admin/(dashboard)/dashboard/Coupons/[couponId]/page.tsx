@@ -149,12 +149,17 @@ export default function CouponDetailsPage() {
     if (!coupon) return;
     setToggling(true);
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("coupons")
       .update({ is_active: !coupon.is_active })
-      .eq("id", coupon.id);
+      .eq("id", coupon.id)
+      .select();
 
-    if (!error) {
+    if (error) {
+      console.error("Error toggling coupon status:", error);
+      alert(`Failed to update coupon: ${error.message}`);
+    } else {
+      console.log("Coupon updated:", data);
       setCoupon((prev) =>
         prev ? { ...prev, is_active: !prev.is_active } : null,
       );
