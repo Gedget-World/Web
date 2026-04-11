@@ -145,7 +145,7 @@ export function FrequentlyBoughtTogether({
                 This
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-1 text-center line-clamp-1 max-w-[80px]">
+            <p className="text-xs text-slate-600 mt-1 text-center line-clamp-1 max-w-20">
               {currentProduct.name}
             </p>
           </div>
@@ -176,7 +176,7 @@ export function FrequentlyBoughtTogether({
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-slate-600 mt-1 text-center line-clamp-1 max-w-[80px]">
+                <p className="text-xs text-slate-600 mt-1 text-center line-clamp-1 max-w-20">
                   {product.name}
                 </p>
                 <p className="text-xs font-semibold text-slate-900">
