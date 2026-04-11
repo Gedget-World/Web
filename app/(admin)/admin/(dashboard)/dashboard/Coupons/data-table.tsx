@@ -265,8 +265,8 @@ export function DataTable() {
                     </TableCell>
                     <TableCell>
                       {coupon.usage_limit
-                        ? `${coupon.used_count} / ${coupon.usage_limit}`
-                        : `${coupon.used_count} / ∞`}
+                        ? `${coupon.used_count ?? 0} / ${coupon.usage_limit}`
+                        : `${coupon.used_count ?? 0} / ∞`}
                     </TableCell>
                     <TableCell>{formatDate(coupon.valid_from)}</TableCell>
                     <TableCell>{formatDate(coupon.valid_until)}</TableCell>

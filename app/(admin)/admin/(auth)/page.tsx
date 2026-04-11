@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAdminSession, type AdminSession } from "@/hooks/use-admin-session";
+import { triggerNavigationProgress } from "@/components/navigation-progress";
 
 function AdminLoginContent() {
   const [email, setEmail] = useState("");
@@ -58,6 +59,7 @@ function AdminLoginContent() {
         // Validate session with server before redirecting
         const isValid = await validateSession();
         if (isValid) {
+          triggerNavigationProgress();
           router.push("/admin/dashboard");
         }
         // If not valid, session is cleared by validateSession, user stays on login
@@ -107,6 +109,7 @@ function AdminLoginContent() {
         }
 
         // Redirect to dashboard
+        triggerNavigationProgress();
         router.push("/admin/dashboard");
       }
 

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminSession } from "@/hooks/use-admin-session";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { triggerNavigationProgress } from "@/components/navigation-progress";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -15,12 +16,14 @@ export default function VerifyPage() {
   useEffect(() => {
     // Redirect if not logged in
     if (!isLoading && !admin) {
+      triggerNavigationProgress();
       router.push("/admin");
       return;
     }
 
     // If admin is verified, redirect to dashboard
     if (!isLoading && admin?.is_verified) {
+      triggerNavigationProgress();
       router.push("/admin/dashboard");
     }
   }, [admin, isLoading, router]);
@@ -39,6 +42,7 @@ export default function VerifyPage() {
         const data = await res.json();
 
         if (data.admin?.is_verified) {
+          triggerNavigationProgress();
           router.push("/admin/dashboard");
         }
       }

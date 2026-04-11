@@ -1,5 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
+import { NavigationProgressWrapper } from "@/components/navigation-progress-wrapper";
 
 export const metadata: Metadata = {
   title: "Admin Login - Gadgets Kabila",
@@ -11,5 +12,10 @@ export default function AdminAuthLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <>{children}</>;
+  return (
+    <>
+      <NavigationProgressWrapper />
+      {children}
+    </>
+  );
 }

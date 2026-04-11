@@ -24,9 +24,20 @@ export function useAdminSession() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  // Helper to clear session from storage
+  const clearSessionStorage = () => {
+    try {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_DATA_KEY);
+      setAdmin(null);
+    } catch (error) {
+      console.error("Error clearing admin session:", error);
+    }
+  };
+
   // Load session from storage on mount
   useEffect(() => {
-    const loadSession = () => {
+    const loadSession = async () => {
       try {
         const sessionData = localStorage.getItem(ADMIN_SESSION_KEY);
         if (sessionData) {
@@ -34,7 +45,23 @@ export function useAdminSession() {
 
           // Check if session has expired
           if (new Date(parsed.session_expires_at) < new Date()) {
-            clearSession();
+            // Delete expired session from database
+            if (parsed.session_token) {
+              try {
+                await fetch("/api/adminDeleteSession", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    session_token: parsed.session_token,
+                  }),
+                });
+              } catch (error) {
+                console.error("Error deleting expired session:", error);
+              }
+            }
+            clearSessionStorage();
             return;
           }
 
@@ -42,7 +69,7 @@ export function useAdminSession() {
         }
       } catch (error) {
         console.error("Error loading admin session:", error);
-        clearSession();
+        clearSessionStorage();
       } finally {
         setIsLoading(false);
       }

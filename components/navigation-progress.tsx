@@ -3,6 +3,13 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+// Global event for triggering navigation progress
+export const triggerNavigationProgress = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("startNavigationProgress"));
+  }
+};
+
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -46,6 +53,21 @@ export function NavigationProgress() {
     // Complete progress when route changes
     completeProgress();
   }, [pathname, searchParams, completeProgress]);
+
+  // Listen for custom navigation progress event (for router.push)
+  useEffect(() => {
+    const handleStartProgress = () => {
+      startProgress();
+    };
+
+    window.addEventListener("startNavigationProgress", handleStartProgress);
+    return () => {
+      window.removeEventListener(
+        "startNavigationProgress",
+        handleStartProgress,
+      );
+    };
+  }, [startProgress]);
 
   // Intercept link clicks to start progress
   useEffect(() => {

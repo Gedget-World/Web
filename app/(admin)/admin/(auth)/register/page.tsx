@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import { useAdminSession } from "@/hooks/use-admin-session";
+import { triggerNavigationProgress } from "@/components/navigation-progress";
 
 // Password strength checker
 function getPasswordStrength(password: string): {
@@ -67,6 +68,7 @@ function AdminRegisterContent() {
       if (admin && isAllowed) {
         const isValid = await validateSession();
         if (isValid) {
+          triggerNavigationProgress();
           router.push("/admin/dashboard");
         }
       }
@@ -127,6 +129,7 @@ function AdminRegisterContent() {
 
       if (data.status === 201) {
         sessionStorage.setItem("admin", JSON.stringify(data.data));
+        triggerNavigationProgress();
         router.push("/admin/verify");
       }
       if (data.status === 400) {

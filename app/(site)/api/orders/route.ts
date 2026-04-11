@@ -147,6 +147,33 @@ export async function POST(request: Request) {
       }
     }
 
+    // Increment coupon used_count if a coupon was applied
+    if (coupon_code) {
+      const { error: couponError } = await supabase.rpc(
+        "increment_coupon_usage",
+        {
+          coupon_code_param: coupon_code,
+        },
+      );
+
+      if (couponError) {
+        console.error("[DEBUG] Coupon usage increment error:", couponError);
+        // Fallback: direct update if RPC doesn't exist
+        const { data: coupon } = await supabase
+          .from("coupons")
+          .select("id, used_count")
+          .eq("code", coupon_code)
+          .single();
+
+        if (coupon) {
+          await supabase
+            .from("coupons")
+            .update({ used_count: (coupon.used_count || 0) + 1 })
+            .eq("id", coupon.id);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       orderId: order.id,
