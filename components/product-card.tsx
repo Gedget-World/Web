@@ -83,17 +83,6 @@ export function ProductCard({ product }: { product: Product }) {
                 Sold Out
               </Badge>
             )}
-            {hasDiscount && !isOutOfStock && (
-              <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5 font-bold">
-                -{product.discount_percentage}%
-              </Badge>
-            )}
-            {product.is_new_arrival && (
-              <Badge className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 font-semibold uppercase flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                New
-              </Badge>
-            )}
             {product.is_featured && !product.is_new_arrival && (
               <Badge className="bg-amber-500 text-white text-[10px] px-2 py-0.5 font-semibold uppercase flex items-center gap-1">
                 <Zap className="w-3 h-3" />
@@ -145,6 +134,11 @@ export function ProductCard({ product }: { product: Product }) {
               {originalPrice && (
                 <span className="text-xs text-gray-400 line-through">
                   ₹{originalPrice.toLocaleString("en-IN")}
+                </span>
+              )}
+              {hasDiscount && (
+                <span className="text-[10px] font-bold text-red-600">
+                  -{product.discount_percentage}%
                 </span>
               )}
             </div>
