@@ -228,7 +228,7 @@ export function HomePageSections({
         <ProductsList
           products={featuredProducts}
           heading="Featured Products"
-          exploreLink="#"
+          exploreLink="/products?featured=true"
         />
       </LazySection>
 
@@ -237,7 +237,7 @@ export function HomePageSections({
         <ProductsList
           products={arrivalProducts}
           heading="New Arrivals"
-          exploreLink="#"
+          exploreLink="/products?newArrival=true"
         />
       </LazySection>
 

@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { ProductCard } from "./product-card";
 import { Button } from "./ui/button";
 
@@ -34,10 +35,16 @@ export default function ProductsList({
         <h4 className="font-semibold text-2xl text-slate-900 mb-2">
           {heading}
         </h4>
-        <Button variant="outline" className="cursor-pointer" size="sm" asChild>
-          <a href={exploreLink}>
-            Explore <ArrowRight />
-          </a>
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="group border-primary/30 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all duration-300"
+        >
+          <Link href={exploreLink}>
+            Explore
+            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
+          </Link>
         </Button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-4">

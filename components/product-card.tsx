@@ -5,18 +5,11 @@ import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  ShoppingCart,
-  Star,
-  Heart,
-  Eye,
-  Check,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+import { ShoppingCart, Star, Eye, Check, Sparkles, Zap } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useState } from "react";
 import { Spinner } from "./ui/spinner";
+import { WishlistButton } from "@/components/wishlist-button";
 
 type Product = {
   id: string;
@@ -37,7 +30,6 @@ type Product = {
 export function ProductCard({ product }: { product: Product }) {
   const { addItem, getItemQuantity } = useCart();
   const [added, setAdded] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const cartQuantity = getItemQuantity(product.id);
@@ -65,12 +57,6 @@ export function ProductCard({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 1500);
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-  };
-
   return (
     <Card className="group overflow-hidden p-0 border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-300 bg-white rounded-xl">
       <Link href={`/products/${product.slug}`}>
@@ -93,24 +79,24 @@ export function ProductCard({ product }: { product: Product }) {
           {/* Badges Container */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5">
             {isOutOfStock && (
-              <Badge className="bg-gray-900/90 text-white text-[10px] px-2 py-0.5 font-medium">
-                Out of Stock
+              <Badge className="bg-slate-900 text-white text-[10px] px-2 py-0.5 font-semibold uppercase">
+                Sold Out
               </Badge>
             )}
             {hasDiscount && !isOutOfStock && (
-              <Badge className="bg-linear-to-r from-red-500 to-pink-500 text-white text-[10px] px-2.5 py-1 font-bold shadow-lg shadow-red-500/30">
-                {product.discount_percentage}% OFF
+              <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5 font-bold">
+                -{product.discount_percentage}%
               </Badge>
             )}
             {product.is_new_arrival && (
-              <Badge className="bg-linear-to-r from-emerald-500 to-teal-500 text-white text-[10px] px-2 py-0.5 font-medium flex items-center gap-0.5 shadow-lg shadow-emerald-500/30">
-                <Sparkles className="w-2.5 h-2.5" />
+              <Badge className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 font-semibold uppercase flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
                 New
               </Badge>
             )}
             {product.is_featured && !product.is_new_arrival && (
-              <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white text-[10px] px-2 py-0.5 font-medium flex items-center gap-0.5 shadow-lg shadow-amber-500/30">
-                <Zap className="w-2.5 h-2.5" />
+              <Badge className="bg-amber-500 text-white text-[10px] px-2 py-0.5 font-semibold uppercase flex items-center gap-1">
+                <Zap className="w-3 h-3" />
                 Hot
               </Badge>
             )}
@@ -118,43 +104,8 @@ export function ProductCard({ product }: { product: Product }) {
 
           {/* Quick Actions - Wishlist */}
           <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Button
-              variant="secondary"
-              size="icon"
-              className={`h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md hover:bg-white transition-all ${
-                isWishlisted ? "text-red-500" : "text-gray-600"
-              }`}
-              onClick={handleWishlist}
-            >
-              <Heart
-                className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`}
-              />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md hover:bg-white text-gray-600"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
+            <WishlistButton productId={product.id} />
           </div>
-
-          {/* Max Stock Warning */}
-          {isAtMaxStock && !isOutOfStock && (
-            <div className="absolute bottom-2 left-2 right-2 bg-amber-500/95 text-white font-medium text-xs px-2 py-1.5 rounded-md text-center backdrop-blur-sm">
-              Max {product.stock} in cart
-            </div>
-          )}
-
-          {/* Low Stock Warning */}
-          {!isOutOfStock &&
-            !isAtMaxStock &&
-            product.stock > 0 &&
-            product.stock <= 5 && (
-              <div className="absolute bottom-2 left-2 bg-orange-100 text-orange-700 font-medium text-[10px] px-2 py-1 rounded-md">
-                Only {product.stock} left!
-              </div>
-            )}
         </div>
 
         {/* Content */}

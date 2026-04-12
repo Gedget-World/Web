@@ -52,7 +52,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { useCustomerStore } from "@/hooks/use-customer";
+import { useWishlistStore } from "@/hooks/use-wishlist";
 
 type Collection = {
   name: string;
@@ -73,6 +75,7 @@ export function SiteHeader() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const wishlistCount = useWishlistStore((state) => state.items.length);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
@@ -180,7 +183,7 @@ export function SiteHeader() {
 
       {/* Main Header */}
       <div className="border-b bg-white">
-        <div className="container flex h-14 md:h-16 items-center px-4 md:px-8">
+        <div className="container mx-auto flex h-14 md:h-16 items-center px-4 md:px-8">
           {/* Mobile Menu Button */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild className="md:hidden">
@@ -369,12 +372,20 @@ export function SiteHeader() {
                     className="relative hover:bg-pink-50"
                   >
                     <Heart className="h-5 w-5 text-gray-600 hover:text-pink-500 transition-colors" />
+                    {wishlistCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold"
+                      >
+                        {wishlistCount > 99 ? "99+" : wishlistCount}
+                      </Badge>
+                    )}
                     <span className="sr-only">Wishlist</span>
                   </Button>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>Wishlist</p>
+                <p>Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ""}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -463,6 +474,14 @@ export function SiteHeader() {
                       >
                         <Heart className="mr-3 h-4 w-4 text-gray-500" />
                         Wishlist
+                        {wishlistCount > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto text-xs"
+                          >
+                            {wishlistCount}
+                          </Badge>
+                        )}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

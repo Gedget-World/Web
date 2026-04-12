@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Heart,
@@ -10,6 +10,7 @@ import {
   Twitter,
   Check,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,33 +19,73 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useWishlist, useWishlistStore } from "@/hooks/use-wishlist";
 
 interface ProductActionsProps {
+  productId: string;
   productName: string;
   productSlug: string;
 }
 
 export function ProductActions({
+  productId,
   productName,
   productSlug,
 }: ProductActionsProps) {
+  const { toggleItem } = useWishlist();
+  const { isInWishlist, isHydrated } = useWishlistStore();
+  const [isToggling, setIsToggling] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
+  // Sync with store after hydration
+  useEffect(() => {
+    if (isHydrated) {
+      setIsWishlisted(isInWishlist(productId));
+    }
+  }, [isHydrated, isInWishlist, productId]);
+
+  // Subscribe to store changes
+  useEffect(() => {
+    const unsubscribe = useWishlistStore.subscribe((state) => {
+      setIsWishlisted(state.isInWishlist(productId));
+    });
+    return unsubscribe;
+  }, [productId]);
 
   const productUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/products/${productSlug}`
       : `/products/${productSlug}`;
 
-  const handleWishlist = () => {
+  const handleWishlist = async () => {
+    if (isToggling) return;
+
+    setIsToggling(true);
+    const wasWishlisted = isWishlisted;
+    // Optimistic update
     setIsWishlisted(!isWishlisted);
-    toast({
-      title: isWishlisted ? "Removed from Wishlist" : "Added to Wishlist",
-      description: isWishlisted
-        ? `${productName} has been removed from your wishlist`
-        : `${productName} has been added to your wishlist`,
-    });
+
+    try {
+      await toggleItem(productId);
+      toast({
+        title: wasWishlisted ? "Removed from Wishlist" : "Added to Wishlist",
+        description: wasWishlisted
+          ? `${productName} has been removed from your wishlist`
+          : `${productName} has been added to your wishlist`,
+      });
+    } catch (error) {
+      // Revert on error
+      setIsWishlisted(wasWishlisted);
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist",
+        variant: "destructive",
+      });
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   const handleCopyLink = async () => {
@@ -87,13 +128,18 @@ export function ProductActions({
         variant="outline"
         size="icon"
         onClick={handleWishlist}
+        disabled={isToggling}
         className={`h-9 w-9 rounded-full transition-all ${
           isWishlisted
             ? "bg-red-50 border-red-200 text-red-500 hover:bg-red-100"
             : "hover:bg-gray-100"
         }`}
       >
-        <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
+        {isToggling ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
+        )}
       </Button>
 
       {/* Share Button */}

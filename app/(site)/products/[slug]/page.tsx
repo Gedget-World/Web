@@ -188,6 +188,7 @@ export default async function ProductDetailPage({
               {product.name}
             </h1>
             <ProductActions
+              productId={product.id}
               productName={product.name}
               productSlug={product.slug}
             />
