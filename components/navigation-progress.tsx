@@ -10,6 +10,9 @@ export const triggerNavigationProgress = () => {
   }
 };
 
+// Maximum time before force-completing progress (prevents stuck state)
+const MAX_PROGRESS_DURATION = 8000;
+
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -17,29 +20,18 @@ export function NavigationProgress() {
   const [isVisible, setIsVisible] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const maxTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isNavigatingRef = useRef(false);
 
-  const startProgress = useCallback(() => {
-    // Clear any existing intervals
+  const clearAllTimers = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-    setIsVisible(true);
-    setProgress(0);
-
-    // Simulate progress
-    let currentProgress = 0;
-    intervalRef.current = setInterval(() => {
-      currentProgress += Math.random() * 15;
-      if (currentProgress >= 90) {
-        currentProgress = 90;
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      }
-      setProgress(currentProgress);
-    }, 100);
+    if (maxTimeoutRef.current) clearTimeout(maxTimeoutRef.current);
   }, []);
 
   const completeProgress = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    clearAllTimers();
+    isNavigatingRef.current = false;
 
     setProgress(100);
 
@@ -47,16 +39,46 @@ export function NavigationProgress() {
       setIsVisible(false);
       setProgress(0);
     }, 300);
-  }, []);
+  }, [clearAllTimers]);
+
+  const startProgress = useCallback(() => {
+    // Prevent multiple starts
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+
+    clearAllTimers();
+
+    setIsVisible(true);
+    setProgress(0);
+
+    // Simulate progress
+    let currentProgress = 0;
+    intervalRef.current = setInterval(() => {
+      currentProgress += Math.random() * 12;
+      if (currentProgress >= 90) {
+        currentProgress = 90;
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      }
+      setProgress(currentProgress);
+    }, 150);
+
+    // Force complete after max duration to prevent stuck state
+    maxTimeoutRef.current = setTimeout(() => {
+      completeProgress();
+    }, MAX_PROGRESS_DURATION);
+  }, [clearAllTimers, completeProgress]);
 
   useEffect(() => {
-    // Complete progress when route changes
-    completeProgress();
+    // Complete progress when route changes (only if we were navigating)
+    if (isNavigatingRef.current) {
+      completeProgress();
+    }
   }, [pathname, searchParams, completeProgress]);
 
   // Listen for custom navigation progress event (for router.push)
   useEffect(() => {
     const handleStartProgress = () => {
+      isNavigatingRef.current = false; // Reset so startProgress can run
       startProgress();
     };
 
@@ -83,9 +105,22 @@ export function NavigationProgress() {
           href?.startsWith("mailto") ||
           href?.startsWith("tel");
         const isSamePageAnchor = href?.startsWith("#");
-        const isCurrentPage = href === pathname;
+        const isDownload = anchor.hasAttribute("download");
 
-        if (href && !isExternal && !isSamePageAnchor && !isCurrentPage) {
+        // Check if it's the current page (including search params)
+        const currentUrl =
+          pathname +
+          (searchParams.toString() ? `?${searchParams.toString()}` : "");
+        const isCurrentPage = href === pathname || href === currentUrl;
+
+        if (
+          href &&
+          !isExternal &&
+          !isSamePageAnchor &&
+          !isCurrentPage &&
+          !isDownload
+        ) {
+          isNavigatingRef.current = false; // Reset so startProgress can run
           startProgress();
         }
       }
@@ -93,15 +128,14 @@ export function NavigationProgress() {
 
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
-  }, [pathname, startProgress]);
+  }, [pathname, searchParams, startProgress]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      clearAllTimers();
     };
-  }, []);
+  }, [clearAllTimers]);
 
   if (!isVisible) return null;
 
