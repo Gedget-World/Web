@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -20,7 +20,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
-import { MoreHorizontalIcon } from "lucide-react";
+import { MoreHorizontalIcon, RefreshCw } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -40,86 +40,122 @@ export default function DataTable() {
       processing: 0,
     },
   );
+  const [refreshCooldown, setRefreshCooldown] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const limit = 10;
   const supabase = createClient();
 
-  useEffect(() => {
-    const fetchCounts = async () => {
-      const [pendingResult, processingResult] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "pending"),
-        supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "processing"),
+  const fetchData = useCallback(async () => {
+    let query = supabase.from("orders").select("*, order_items(id)");
+
+    if (statusFilter === "all") {
+      query = query.in("status", [
+        "pending",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
       ]);
-      setCounts({
-        pending: pendingResult.count || 0,
-        processing: processingResult.count || 0,
-      });
-    };
-    fetchCounts();
-  }, [supabase, data]);
+    } else {
+      query = query.eq("status", statusFilter);
+    }
+
+    query = query.range(page * limit, page * limit + limit - 1);
+
+    const { data, error } = await query;
+    console.log("Fetched data:", data);
+    if (!error && data) setData(data);
+  }, [supabase, page, statusFilter]);
+
+  const fetchCounts = useCallback(async () => {
+    const [pendingResult, processingResult] = await Promise.all([
+      supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "processing"),
+    ]);
+    setCounts({
+      pending: pendingResult.count || 0,
+      processing: processingResult.count || 0,
+    });
+  }, [supabase]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setRefreshCooldown(5);
+    await Promise.all([fetchData(), fetchCounts()]);
+    setIsRefreshing(false);
+  };
+
+  // Cooldown timer
+  useEffect(() => {
+    if (refreshCooldown > 0) {
+      const timer = setTimeout(() => {
+        setRefreshCooldown((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshCooldown]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      let query = supabase.from("orders").select("*, order_items(id)");
+    fetchCounts();
+  }, [fetchCounts, data]);
 
-      if (statusFilter === "all") {
-        query = query.in("status", [
-          "pending",
-          "processing",
-          "shipped",
-          "delivered",
-          "cancelled",
-        ]);
-      } else {
-        query = query.eq("status", statusFilter);
-      }
-
-      query = query.range(page * limit, page * limit + limit - 1);
-
-      const { data, error } = await query;
-      console.log("Fetched data:", data);
-      if (!error && data) setData(data);
-    };
+  useEffect(() => {
     fetchData();
-  }, [supabase, page, statusFilter]);
+  }, [fetchData]);
 
   return (
     <div className="space-y-4 border border-gray-300 p-4 rounded-lg">
-      <Tabs
-        value={statusFilter}
-        onValueChange={(value) => {
-          setStatusFilter(value);
-          setPage(0);
-        }}
-      >
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending{" "}
-            {counts.pending > 0 && (
-              <span className="ml-1 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {counts.pending}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="processing">
-            Processing{" "}
-            {counts.processing > 0 && (
-              <span className="ml-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {counts.processing}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="shipped">Shipped</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between gap-4">
+        <Tabs
+          value={statusFilter}
+          onValueChange={(value) => {
+            setStatusFilter(value);
+            setPage(0);
+          }}
+        >
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending{" "}
+              {counts.pending > 0 && (
+                <span className="ml-1 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {counts.pending}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="processing">
+              Processing{" "}
+              {counts.processing > 0 && (
+                <span className="ml-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {counts.processing}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="shipped">Shipped</TabsTrigger>
+            <TabsTrigger value="delivered">Delivered</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshCooldown > 0 || isRefreshing}
+          className="shrink-0"
+        >
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          {refreshCooldown > 0 ? `Refresh (${refreshCooldown}s)` : "Refresh"}
+        </Button>
+      </div>
 
       <Table>
         <TableHeader>

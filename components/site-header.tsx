@@ -160,12 +160,12 @@ export function SiteHeader() {
             <div className="flex items-center gap-6 text-white">
               <div className="hidden sm:flex items-center gap-2">
                 <Truck className="w-4 h-4" />
-                <span>Free Shipping on All Over India</span>
+                <span>Free Shipping All Over India</span>
               </div>
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
                 <span className="font-medium">
-                  Up-to 10% off on pre-paid orders
+                  Up-To 10% Off On Pre-Paid Orders
                 </span>
               </div>
               {/* <div className="hidden md:flex items-center gap-2">
@@ -494,15 +494,6 @@ export function SiteHeader() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link
-                        href="/orders"
-                        className="flex items-center cursor-pointer py-2"
-                      >
-                        <Truck className="mr-3 h-4 w-4 text-gray-500" />
-                        Track Order
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
                         href="/contact-us"
                         className="flex items-center cursor-pointer py-2"
                       >
@@ -565,7 +556,7 @@ export function SiteHeader() {
                             Welcome
                           </p>
                           <p className="text-sm font-medium text-gray-900 leading-tight">
-                            Sign In / Register
+                            Sign In / Sign Up
                           </p>
                         </div>
                       </Button>
@@ -603,15 +594,6 @@ export function SiteHeader() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/track-order"
-                          className="flex items-center cursor-pointer py-2"
-                        >
-                          <Truck className="mr-3 h-4 w-4 text-gray-500" />
-                          Track Order
-                        </Link>
-                      </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link
                           href="/contact-us"

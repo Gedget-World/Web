@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -29,6 +29,9 @@ import {
   ShieldCheck,
   ShieldX,
   MessageSquare,
+  RefreshCw,
+  Filter,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +39,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Review {
   id: string;
@@ -69,43 +79,107 @@ export default function ReviewsPage() {
   const [viewingCustomer, setViewingCustomer] = useState<CustomerInfo | null>(
     null,
   );
+  const [refreshCooldown, setRefreshCooldown] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Filters
+  const [ratingFilter, setRatingFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [approvalFilter, setApprovalFilter] = useState<string>("all");
+
   const limit = 10;
   const supabase = createClient();
 
-  useEffect(() => {
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("reviews")
-        .select("id", { count: "exact", head: true });
-      setTotalCount(count || 0);
-    };
-    fetchCount();
-  }, [supabase]);
+  const fetchCount = useCallback(async () => {
+    let query = supabase
+      .from("reviews")
+      .select("id", { count: "exact", head: true });
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("reviews")
-        .select(
-          `
-          *,
-          products (
-            name,
-            slug
-          )
-        `,
+    if (ratingFilter !== "all") {
+      query = query.eq("rating", parseInt(ratingFilter));
+    }
+    if (statusFilter !== "all") {
+      query = query.eq("is_active", statusFilter === "active");
+    }
+    if (approvalFilter !== "all") {
+      query = query.eq("is_approved", approvalFilter === "approved");
+    }
+
+    const { count } = await query;
+    setTotalCount(count || 0);
+  }, [supabase, ratingFilter, statusFilter, approvalFilter]);
+
+  const fetchReviews = useCallback(async () => {
+    setLoading(true);
+    let query = supabase
+      .from("reviews")
+      .select(
+        `
+        *,
+        products (
+          name,
+          slug
         )
-        .order("created_at", { ascending: false })
-        .range(page * limit, page * limit + limit - 1);
+      `,
+      )
+      .order("created_at", { ascending: false });
 
-      if (!error && data) {
-        setReviews(data);
-      }
-      setLoading(false);
-    };
+    if (ratingFilter !== "all") {
+      query = query.eq("rating", parseInt(ratingFilter));
+    }
+    if (statusFilter !== "all") {
+      query = query.eq("is_active", statusFilter === "active");
+    }
+    if (approvalFilter !== "all") {
+      query = query.eq("is_approved", approvalFilter === "approved");
+    }
+
+    query = query.range(page * limit, page * limit + limit - 1);
+
+    const { data, error } = await query;
+
+    if (!error && data) {
+      setReviews(data);
+    }
+    setLoading(false);
+  }, [supabase, page, ratingFilter, statusFilter, approvalFilter]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setRefreshCooldown(5);
+    await Promise.all([fetchReviews(), fetchCount()]);
+    setIsRefreshing(false);
+  };
+
+  const clearFilters = () => {
+    setRatingFilter("all");
+    setStatusFilter("all");
+    setApprovalFilter("all");
+    setPage(0);
+  };
+
+  const hasActiveFilters =
+    ratingFilter !== "all" ||
+    statusFilter !== "all" ||
+    approvalFilter !== "all";
+
+  // Cooldown timer
+  useEffect(() => {
+    if (refreshCooldown > 0) {
+      const timer = setTimeout(() => {
+        setRefreshCooldown((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshCooldown]);
+
+  useEffect(() => {
+    fetchCount();
+  }, [fetchCount]);
+
+  useEffect(() => {
     fetchReviews();
-  }, [supabase, page]);
+  }, [fetchReviews]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -205,9 +279,100 @@ export default function ReviewsPage() {
       </div>
 
       <div className="space-y-4 border border-gray-300 p-4 rounded-lg">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Filters:</span>
+          </div>
+
+          <Select
+            value={ratingFilter}
+            onValueChange={(value) => {
+              setRatingFilter(value);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-[130px] h-9">
+              <SelectValue placeholder="Rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Ratings</SelectItem>
+              <SelectItem value="5">5 Stars</SelectItem>
+              <SelectItem value="4">4 Stars</SelectItem>
+              <SelectItem value="3">3 Stars</SelectItem>
+              <SelectItem value="2">2 Stars</SelectItem>
+              <SelectItem value="1">1 Star</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-[120px] h-9">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="hidden">Hidden</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={approvalFilter}
+            onValueChange={(value) => {
+              setApprovalFilter(value);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-[130px] h-9">
+              <SelectValue placeholder="Approval" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Approval</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
+
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshCooldown > 0 || isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {refreshCooldown > 0
+                ? `Refresh (${refreshCooldown}s)`
+                : "Refresh"}
+            </Button>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            Total Reviews: <span className="font-semibold">{totalCount}</span>
+            {hasActiveFilters ? "Filtered" : "Total"} Reviews:{" "}
+            <span className="font-semibold">{totalCount}</span>
           </p>
         </div>
 
