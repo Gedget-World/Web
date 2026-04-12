@@ -257,9 +257,9 @@ export function HomePageSections({
       </LazySection>
 
       {/* Newsletter */}
-      <LazySection fallback={<SectionSkeleton height="350px" />}>
+      {/* <LazySection fallback={<SectionSkeleton height="350px" />}>
         <NewsletterSection />
-      </LazySection>
+      </LazySection> */}
 
       {/* FAQ */}
       <LazySection fallback={<SectionSkeleton height="400px" />}>

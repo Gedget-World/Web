@@ -1,331 +1,186 @@
+import Link from "next/link";
+import Image from "next/image";
+import BASE_LOGO from "@/content/assets/logo/base-logo.png";
+import { BrandName } from "@/components/brand-name";
+
 export default function Footer() {
   return (
-    <>
-      {/* asd */}
-      {/* ========== FOOTER ========== */}
-      <footer className="mt-auto w-full max-w-8xl py-10 bg-gray-100 px-4 sm:px-6 lg:px-8 mx-auto">
+    <footer className="mt-auto w-full bg-gray-100">
+      <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
-          <div className="col-span-full hidden lg:col-span-1 lg:block">
-            <a
-              className="flex-none font-semibold text-xl text-black focus:outline-hidden focus:opacity-80 dark:text-white"
-              href="#"
-              aria-label="Brand"
-            >
-              Gadgets Kabila
-            </a>
-            <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-neutral-400">
-              © 2026 Gadgets Kabila.
+          {/* Brand Column */}
+          <div className="col-span-full lg:col-span-1">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src={BASE_LOGO} alt="Logo" width={40} height={40} />
+              <BrandName size="md" />
+            </Link>
+            <p className="mt-3 text-sm text-gray-600">
+              Your trusted destination for premium gadgets and electronics.
             </p>
           </div>
-          {/* End Col */}
 
+          {/* Shop */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">
-              Product
+            <h4 className="text-xs font-semibold text-gray-900 uppercase">
+              Shop
             </h4>
-
             <div className="mt-3 grid space-y-3 text-sm">
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Pricing
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Changelog
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Docs
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Download
-                </a>
-              </p>
+              <Link
+                href="/products"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                All Products
+              </Link>
+              <Link href="/deals" className="text-gray-600 hover:text-gray-800">
+                Deals
+              </Link>
+              <Link
+                href="/products?sort=newest"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                New Arrivals
+              </Link>
+              <Link
+                href="/products?featured=true"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Best Sellers
+              </Link>
             </div>
           </div>
-          {/* End Col */}
 
+          {/* Customer Service */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">
+            <h4 className="text-xs font-semibold text-gray-900 uppercase">
+              Customer Service
+            </h4>
+            <div className="mt-3 grid space-y-3 text-sm">
+              <Link
+                href="/contact-us"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Contact Us
+              </Link>
+              <Link
+                href="/orders"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Track Order
+              </Link>
+              <Link
+                href="/policies/shipping"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Shipping Info
+              </Link>
+              <Link
+                href="/policies/returns"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Returns & Refunds
+              </Link>
+            </div>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-900 uppercase">
               Company
             </h4>
-
             <div className="mt-3 grid space-y-3 text-sm">
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  About us
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Blog
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Careers
-                </a>{" "}
-                <span className="inline text-blue-600 dark:text-blue-500">
-                  — We're hiring
-                </span>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Customers
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Newsroom
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Sitemap
-                </a>
-              </p>
+              <Link
+                href="/about-us"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                About Us
+              </Link>
+              <Link href="/help" className="text-gray-600 hover:text-gray-800">
+                Help Center
+              </Link>
             </div>
           </div>
-          {/* End Col */}
 
+          {/* Legal */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">
-              Resources
+            <h4 className="text-xs font-semibold text-gray-900 uppercase">
+              Legal
             </h4>
-
             <div className="mt-3 grid space-y-3 text-sm">
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Community
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Help & Support
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  eBook
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  What's New
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Status
-                </a>
-              </p>
+              <Link
+                href="/policies/terms"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Terms of Service
+              </Link>
+              <Link
+                href="/policies/privacy"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/policies/refund"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Refund Policy
+              </Link>
             </div>
-          </div>
-          {/* End Col */}
-
-          <div>
-            <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">
-              Developers
-            </h4>
-
-            <div className="mt-3 grid space-y-3 text-sm">
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Api
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Status
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  GitHub
-                </a>{" "}
-                <span className="inline text-blue-600 dark:text-blue-500">
-                  — New
-                </span>
-              </p>
-            </div>
-
-            <h4 className="mt-7 text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">
-              Industries
-            </h4>
-
-            <div className="mt-3 grid space-y-3 text-sm">
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Financial Services
-                </a>
-              </p>
-              <p>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Education
-                </a>
-              </p>
-            </div>
-          </div>
-          {/* End Col */}
-        </div>
-        {/* End Grid */}
-
-        <div className="pt-5 mt-5 border-t border-gray-200 dark:border-neutral-700">
-          <div className="sm:flex sm:justify-between sm:items-center">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="space-x-4 text-sm">
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Terms
-                </a>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Privacy
-                </a>
-                <a
-                  className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  Status
-                </a>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-between items-center gap-3">
-              <div className="mt-3 sm:hidden">
-                <a
-                  className="flex-none font-semibold text-xl text-black focus:outline-hidden focus:opacity-80 dark:text-white"
-                  href="#"
-                  aria-label="Brand"
-                >
-                  Brand
-                </a>
-                <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-neutral-400">
-                  © 2025 Preline Labs.
-                </p>
-              </div>
-
-              {/* Social Brands */}
-              <div className="space-x-4">
-                <a
-                  className="inline-block text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-500 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  <svg
-                    className="shrink-0 size-4"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z" />
-                  </svg>
-                </a>
-                <a
-                  className="inline-block text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-500 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  <svg
-                    className="shrink-0 size-4"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-                  </svg>
-                </a>
-                <a
-                  className="inline-block text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-500 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-                  href="#"
-                >
-                  <svg
-                    className="shrink-0 size-4"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M3.362 10.11c0 .926-.756 1.681-1.681 1.681S0 11.036 0 10.111C0 9.186.756 8.43 1.68 8.43h1.682v1.68zm.846 0c0-.924.756-1.68 1.681-1.68s1.681.756 1.681 1.68v4.21c0 .924-.756 1.68-1.68 1.68a1.685 1.685 0 0 1-1.682-1.68v-4.21zM5.89 3.362c-.926 0-1.682-.756-1.682-1.681S4.964 0 5.89 0s1.68.756 1.68 1.68v1.682H5.89zm0 .846c.924 0 1.68.756 1.68 1.681S6.814 7.57 5.89 7.57H1.68C.757 7.57 0 6.814 0 5.89c0-.926.756-1.682 1.68-1.682h4.21zm6.749 1.682c0-.926.755-1.682 1.68-1.682.925 0 1.681.756 1.681 1.681s-.756 1.681-1.68 1.681h-1.681V5.89zm-.848 0c0 .924-.755 1.68-1.68 1.68A1.685 1.685 0 0 1 8.43 5.89V1.68C8.43.757 9.186 0 10.11 0c.926 0 1.681.756 1.681 1.68v4.21zm-1.681 6.748c.926 0 1.682.756 1.682 1.681S11.036 16 10.11 16s-1.681-.756-1.681-1.68v-1.682h1.68zm0-.847c-.924 0-1.68-.755-1.68-1.68 0-.925.756-1.681 1.68-1.681h4.21c.924 0 1.68.756 1.68 1.68 0 .926-.756 1.681-1.68 1.681h-4.21z" />
-                  </svg>
-                </a>
-              </div>
-              {/* End Social Brands */}
-            </div>
-            {/* End Col */}
           </div>
         </div>
-      </footer>
-      {/* ========== END FOOTER ========== */}
-    </>
+
+        {/* Bottom Bar */}
+        <div className="pt-5 mt-5 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <p className="text-sm text-gray-600">
+              © {new Date().getFullYear()} Gadgets Kabila. All rights reserved.
+            </p>
+
+            {/* Social Links */}
+            <div className="flex items-center gap-4">
+              <a
+                href="#"
+                className="text-gray-500 hover:text-gray-800 transition-colors"
+                aria-label="Instagram"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="text-gray-500 hover:text-gray-800 transition-colors"
+                aria-label="Facebook"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="text-gray-500 hover:text-gray-800 transition-colors"
+                aria-label="Twitter"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }

@@ -55,6 +55,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useCustomerStore } from "@/hooks/use-customer";
 import { useWishlistStore } from "@/hooks/use-wishlist";
+import Image from "next/image";
+import BASE_LOGO from "@/content/assets/logo/base-logo.png";
+import { BrandName } from "@/components/brand-name";
 
 type Collection = {
   name: string;
@@ -193,14 +196,12 @@ export function SiteHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 p-0 flex flex-col">
-              <SheetHeader className="p-4 border-b shrink-0 bg-linear-to-r from-primary to-primary/80">
+              <SheetHeader className="p-4 border-b shrink-0 bg-white">
                 <SheetTitle className="text-left flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
-                    <ShoppingBag className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center">
+                    <Image src={BASE_LOGO} alt="Logo" width={40} height={40} />
                   </div>
-                  <span className="text-xl font-bold text-white">
-                    Gadgets Kabila
-                  </span>
+                  <BrandName size="md" />
                 </SheetTitle>
               </SheetHeader>
 
@@ -340,11 +341,17 @@ export function SiteHeader() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 md:w-9 md:h-9 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-              <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 text-white" />
+            <div className="w-8 h-8 md:w-14 md:h-14 rounded-lg flex items-center justify-center">
+              <Image
+                src={BASE_LOGO}
+                alt="Logo"
+                width={48}
+                height={48}
+                className="w-8 h-8 md:w-12 md:h-12"
+              />
             </div>
-            <span className="text-lg md:text-xl font-bold text-slate-900">
-              Gadgets Kabila
+            <span className="hidden md:inline">
+              <BrandName size="lg" />
             </span>
           </Link>
 
