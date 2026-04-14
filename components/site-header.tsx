@@ -341,13 +341,13 @@ export function SiteHeader() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 md:w-14 md:h-14 rounded-lg flex items-center justify-center">
+            <div className="w-11 h-11 md:w-14 md:h-14 rounded-lg flex items-center justify-center">
               <Image
                 src={BASE_LOGO}
                 alt="Logo"
                 width={48}
                 height={48}
-                className="w-8 h-8 md:w-12 md:h-12"
+                className="w-11 h-11 md:w-12 md:h-12"
               />
             </div>
             <span className="hidden md:inline">
@@ -363,11 +363,35 @@ export function SiteHeader() {
           </div>
 
           {/* Right Side Icons */}
-          <div className="flex items-center gap-1 md:gap-2 ml-auto">
+          <div className="flex items-center gap-2 md:gap-2 ml-auto">
             {/* Mobile Search Icon */}
             <div className="md:hidden">
               <GlobalSearch />
             </div>
+
+            {/* Wishlist (Mobile) */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/wishlist" className="md:hidden">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative hover:bg-pink-50"
+                  >
+                    <Heart className="h-5 w-5 text-gray-600 hover:text-pink-500 transition-colors" />
+                    {wishlistCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">
+                        {wishlistCount > 99 ? "99+" : wishlistCount}
+                      </span>
+                    )}
+                    <span className="sr-only">Wishlist</span>
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ""}</p>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Wishlist (Desktop) */}
             <Tooltip>
@@ -380,12 +404,9 @@ export function SiteHeader() {
                   >
                     <Heart className="h-5 w-5 text-gray-600 hover:text-pink-500 transition-colors" />
                     {wishlistCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold"
-                      >
+                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">
                         {wishlistCount > 99 ? "99+" : wishlistCount}
-                      </Badge>
+                      </span>
                     )}
                     <span className="sr-only">Wishlist</span>
                   </Button>
@@ -637,6 +658,25 @@ export function SiteHeader() {
                 </>
               )}
             </div>
+
+            {/* Mobile User Avatar (when logged in) */}
+            {!isLoading && user && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/profile" className="md:hidden ml-2">
+                    <Button variant="ghost" size="icon" className="relative">
+                      <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="sr-only">Profile</span>
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>My Profile</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
       </div>

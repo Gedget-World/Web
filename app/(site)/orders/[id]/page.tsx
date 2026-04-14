@@ -5,8 +5,9 @@ import { OrderDetailClient } from "@/components/order-detail-client";
 export default async function OrderDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const {
@@ -34,7 +35,7 @@ export default async function OrderDetailPage({
       )
     `,
     )
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 

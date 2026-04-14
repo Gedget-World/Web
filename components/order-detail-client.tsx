@@ -490,17 +490,23 @@ export function OrderDetailClient({
 
                 {/* Mobile Vertical Timeline */}
                 <div className="md:hidden">
-                  <div className="relative pl-8">
-                    {/* Vertical line */}
-                    <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200" />
+                  <div className="relative pl-10">
+                    {/* Vertical line background */}
+                    <div className="absolute left-3.5 top-4 bottom-4 w-[3px] bg-slate-200 rounded-full" />
+                    {/* Animated Progress line */}
                     <div
-                      className={`absolute left-3 top-0 w-0.5 bg-linear-to-b ${getStatusColor(order.status)} transition-all duration-1000`}
+                      className={`absolute left-3.5 top-4 w-[3px] bg-linear-to-b ${getStatusColor(order.status)} rounded-full transition-all duration-1000 ease-out`}
                       style={{
-                        height: `${((currentIndex + 1) / statusOrder.length) * 100}%`,
+                        height:
+                          currentIndex === 0
+                            ? "1.5rem"
+                            : currentIndex === statusOrder.length - 1
+                              ? "calc(100% - 2rem)"
+                              : `calc(${(currentIndex / (statusOrder.length - 1)) * 100}% - 1rem + 1.5rem)`,
                       }}
-                    />
+                    ></div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       {statusOrder.map((step, index) => {
                         const isCompleted = index <= currentIndex;
                         const isCurrent = index === currentIndex;
@@ -511,41 +517,91 @@ export function OrderDetailClient({
                         return (
                           <div
                             key={step}
-                            className="relative flex items-start gap-4"
+                            className={`relative flex items-start gap-4 transition-all duration-300 ${
+                              isCurrent ? "scale-[1.02]" : ""
+                            }`}
                           >
+                            {/* Step Circle */}
                             <div
-                              className={`absolute left-0 -translate-x-1/2 flex h-6 w-6 items-center justify-center rounded-full transition-all ${
+                              className={`absolute left-0 top-1 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 shadow-sm ${
                                 isCompleted
-                                  ? `bg-linear-to-r ${getStatusColor(step)} text-white`
-                                  : "bg-slate-200 text-slate-400"
-                              } ${isCurrent ? "ring-2 ring-offset-2 ring-green-400" : ""}`}
+                                  ? `bg-linear-to-br ${getStatusColor(step)} text-white shadow-md`
+                                  : "bg-white border-2 border-slate-200 text-slate-400"
+                              }`}
                             >
                               {isCompleted ? (
-                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                getStatusIcon(step)
                               ) : (
-                                <div className="h-2 w-2 rounded-full bg-current" />
+                                <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
                               )}
                             </div>
-                            <div className="flex-1 min-w-0 pt-0.5">
+
+                            {/* Step Content */}
+                            <div
+                              className={`flex-1 min-w-0 p-3 ml-5 rounded-xl transition-all duration-300 ${
+                                isCurrent
+                                  ? "bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 shadow-sm"
+                                  : isCompleted
+                                    ? "bg-slate-50/80"
+                                    : "bg-transparent"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <p
+                                  className={`font-semibold text-sm ${
+                                    isCurrent
+                                      ? "text-green-700"
+                                      : isCompleted
+                                        ? "text-slate-900"
+                                        : "text-slate-400"
+                                  }`}
+                                >
+                                  {step.charAt(0).toUpperCase() + step.slice(1)}
+                                </p>
+                                {isCurrent && (
+                                  <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 animate-pulse">
+                                    Current
+                                  </Badge>
+                                )}
+                                {isCompleted && !isCurrent && (
+                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                )}
+                              </div>
+
+                              {/* Step Description */}
                               <p
-                                className={`font-medium text-sm ${
-                                  isCompleted
-                                    ? "text-slate-900"
-                                    : "text-slate-400"
-                                }`}
+                                className={`text-xs mt-0.5 ${isCompleted ? "text-slate-500" : "text-slate-400"}`}
                               >
-                                {step.charAt(0).toUpperCase() + step.slice(1)}
+                                {step === "pending" &&
+                                  "Order received & being reviewed"}
+                                {step === "processing" &&
+                                  "Preparing your order"}
+                                {step === "shipped" && "On the way to you"}
+                                {step === "delivered" &&
+                                  "Successfully delivered"}
                               </p>
+
+                              {/* Timestamp */}
                               {stepHistory && (
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                  {new Date(
-                                    stepHistory.created_at,
-                                  ).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                <div className="flex items-center gap-1.5 mt-2">
+                                  <Clock3 className="h-3 w-3 text-slate-400" />
+                                  <p className="text-[11px] text-slate-500 font-medium">
+                                    {new Date(
+                                      stepHistory.created_at,
+                                    ).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Pending indicator */}
+                              {!isCompleted && (
+                                <p className="text-[11px] text-slate-400 mt-1.5 italic">
+                                  Waiting...
                                 </p>
                               )}
                             </div>
@@ -554,6 +610,51 @@ export function OrderDetailClient({
                       })}
                     </div>
                   </div>
+
+                  {/* Estimated Delivery Card for Mobile */}
+                  {estimatedDelivery &&
+                    order.status !== "cancelled" &&
+                    order.status !== "delivered" && (
+                      <div className="mt-5 p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                            <Truck className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-blue-600 font-medium">
+                              Estimated Delivery
+                            </p>
+                            <p className="text-sm font-bold text-blue-900">
+                              {estimatedDelivery.toLocaleDateString("en-US", {
+                                weekday: "long",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                          <Clock3 className="h-5 w-5 text-blue-400 shrink-0" />
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Delivered Success Card for Mobile */}
+                  {order.status === "delivered" && (
+                    <div className="mt-5 p-4 bg-linear-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                          <PartyPopper className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-green-800">
+                            Order Delivered! 🎉
+                          </p>
+                          <p className="text-xs text-green-600">
+                            Thank you for shopping with us
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1108,10 +1209,8 @@ export function OrderDetailClient({
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
-
       </div>
 
       <style jsx global>{`

@@ -183,7 +183,7 @@ export default async function ProductDetailPage({
           </div>
 
           {/* Product Title and Actions */}
-          <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex flex-col gap-2 mb-2">
             <h1 className="text-lg md:text-xl font-bold text-slate-900">
               {product.name}
             </h1>

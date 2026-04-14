@@ -284,36 +284,36 @@ export function CheckoutForm({ user }: { user: User }) {
   }
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-3 sm:space-y-4">
       {/* Security Banner */}
-      <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-linear-to-r from-green-50 to-emerald-50 rounded-full w-fit mx-auto">
-        <Lock className="h-3 w-3 text-green-600" />
-        <span className="text-[11px] font-medium text-green-700">
+      <div className="flex items-center justify-center gap-1 sm:gap-1.5 py-1 px-2 sm:px-3 bg-linear-to-r from-green-50 to-emerald-50 rounded-full w-fit mx-auto">
+        <Lock className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-600" />
+        <span className="text-[10px] sm:text-[11px] font-medium text-green-700">
           SSL Secured
         </span>
       </div>
 
       {/* Enhanced Progress Steps */}
-      <div className="flex justify-center items-center gap-2 md:gap-4 mb-6">
+      <div className="flex justify-center items-center gap-1 sm:gap-2 md:gap-4 mb-4 md:mb-6 px-2">
         {/* Step 1 - Contact */}
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
           <div
-            className={`rounded-full font-semibold text-xs w-10 h-10 flex items-center justify-center transition-all ${
+            className={`rounded-full font-semibold text-xs w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all ${
               tab === "contact"
-                ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                ? "bg-blue-600 text-white ring-2 sm:ring-4 ring-blue-100"
                 : tab === "shipping" || tab === "payment"
                   ? "bg-green-500 text-white"
                   : "bg-gray-200 text-gray-500"
             }`}
           >
             {tab === "shipping" || tab === "payment" ? (
-              <Check className="h-5 w-5" />
+              <Check className="h-4 w-4 sm:h-5 sm:w-5" />
             ) : (
-              <Package className="h-4 w-4" />
+              <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             )}
           </div>
           <span
-            className={`text-xs font-medium ${
+            className={`text-[10px] sm:text-xs font-medium ${
               tab === "contact" ? "text-blue-600" : "text-slate-600"
             }`}
           >
@@ -322,7 +322,7 @@ export function CheckoutForm({ user }: { user: User }) {
         </div>
 
         <div
-          className={`h-0.5 w-8 md:w-16 rounded-full transition-all ${
+          className={`h-0.5 w-6 sm:w-8 md:w-16 rounded-full transition-all ${
             tab === "shipping" || tab === "payment"
               ? "bg-green-500"
               : "bg-gray-200"
@@ -330,24 +330,24 @@ export function CheckoutForm({ user }: { user: User }) {
         />
 
         {/* Step 2 - Shipping */}
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
           <div
-            className={`rounded-full font-semibold text-xs w-10 h-10 flex items-center justify-center transition-all ${
+            className={`rounded-full font-semibold text-xs w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all ${
               tab === "shipping"
-                ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                ? "bg-blue-600 text-white ring-2 sm:ring-4 ring-blue-100"
                 : tab === "payment"
                   ? "bg-green-500 text-white"
                   : "bg-gray-200 text-gray-500"
             }`}
           >
             {tab === "payment" ? (
-              <Check className="h-5 w-5" />
+              <Check className="h-4 w-4 sm:h-5 sm:w-5" />
             ) : (
-              <Truck className="h-4 w-4" />
+              <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             )}
           </div>
           <span
-            className={`text-xs font-medium ${
+            className={`text-[10px] sm:text-xs font-medium ${
               tab === "shipping" ? "text-blue-600" : "text-slate-600"
             }`}
           >
@@ -356,24 +356,24 @@ export function CheckoutForm({ user }: { user: User }) {
         </div>
 
         <div
-          className={`h-0.5 w-8 md:w-16 rounded-full transition-all ${
+          className={`h-0.5 w-6 sm:w-8 md:w-16 rounded-full transition-all ${
             tab === "payment" ? "bg-green-500" : "bg-gray-200"
           }`}
         />
 
         {/* Step 3 - Payment */}
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
           <div
-            className={`rounded-full font-semibold text-xs w-10 h-10 flex items-center justify-center transition-all ${
+            className={`rounded-full font-semibold text-xs w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all ${
               tab === "payment"
-                ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                ? "bg-blue-600 text-white ring-2 sm:ring-4 ring-blue-100"
                 : "bg-gray-200 text-gray-500"
             }`}
           >
-            <CreditCard className="h-4 w-4" />
+            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
           <span
-            className={`text-xs font-medium ${
+            className={`text-[10px] sm:text-xs font-medium ${
               tab === "payment" ? "text-blue-600" : "text-slate-600"
             }`}
           >
@@ -381,29 +381,36 @@ export function CheckoutForm({ user }: { user: User }) {
           </span>
         </div>
       </div>
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {tab === "contact" && (
             <Card className="shadow-none">
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="px-4 py-3 sm:p-6 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">
                   <div className="flex items-center">
-                    <Package />{" "}
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5" />{" "}
                     <span className="ml-2">Contact Information</span>
                   </div>
                 </CardTitle>
-                <p className="text-slate-600 text-sm">
+                <p className="text-slate-600 text-xs sm:text-sm">
                   We'll use this to send you order updates and receipts.
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
                 <ContactForm user={{ id: user.id, email: user.email || "" }} />
 
-                <div className="flex justify-between">
-                  <Button disabled variant={"outline"} className="mt-4">
-                    <ArrowLeft /> Back
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
+                  <Button
+                    disabled
+                    variant={"outline"}
+                    className="order-2 sm:order-1"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Back
                   </Button>
-                  <Button onClick={() => setTab("shipping")} className="mt-4">
+                  <Button
+                    onClick={() => setTab("shipping")}
+                    className="order-1 sm:order-2"
+                  >
                     Continue
                   </Button>
                 </div>
@@ -413,19 +420,48 @@ export function CheckoutForm({ user }: { user: User }) {
 
           {tab === "shipping" && (
             <Card className="shadow-none">
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="px-4 py-3 sm:p-6 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">
                   <div className="flex items-center">
-                    <Truck /> <span className="ml-2">Shipping Information</span>
+                    <Truck className="h-4 w-4 sm:h-5 sm:w-5" />{" "}
+                    <span className="ml-2">Shipping Information</span>
                   </div>
                 </CardTitle>
+                <p className="text-slate-600 text-xs sm:text-sm">
+                  Enter your delivery address for fast & secure shipping.
+                </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+              <CardContent className="space-y-3 sm:space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
+                {/* Free Shipping Badge */}
+                <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-green-50 border border-green-200 rounded-lg">
+                  <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] sm:text-xs font-semibold text-green-700">
+                      Free Shipping on this order!
+                    </p>
+                    <p className="text-[9px] sm:text-[10px] text-green-600">
+                      Estimated delivery: {deliveryDateStr}
+                    </p>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-700 text-[9px] sm:text-[10px] shrink-0"
+                  >
+                    FREE
+                  </Badge>
+                </div>
+
+                <div className="grid gap-1.5 sm:gap-2">
+                  <Label
+                    htmlFor="fullName"
+                    className="text-sm flex items-center gap-1"
+                  >
+                    Full Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="fullName"
                     required
+                    placeholder="Enter your full name"
                     value={shippingInfo.fullName}
                     onChange={(e) =>
                       setShippingInfo({
@@ -435,11 +471,17 @@ export function CheckoutForm({ user }: { user: User }) {
                     }
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="address_line1">Address 1</Label>
+                <div className="grid gap-1.5 sm:gap-2">
+                  <Label
+                    htmlFor="address_line1"
+                    className="text-sm flex items-center gap-1"
+                  >
+                    Street Address <span className="text-red-500">*</span>
+                  </Label>
                   <Textarea
                     id="address_line1"
                     required
+                    placeholder="House/Flat No., Building, Street, Area"
                     value={shippingInfo.address_line1}
                     onChange={(e) =>
                       setShippingInfo({
@@ -447,12 +489,19 @@ export function CheckoutForm({ user }: { user: User }) {
                         address_line1: e.target.value,
                       })
                     }
+                    className="min-h-20 text-sm"
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="address_line2">Address 2</Label>
+                <div className="grid gap-1.5 sm:gap-2">
+                  <Label htmlFor="address_line2" className="text-sm">
+                    Landmark / Additional Info{" "}
+                    <span className="text-[10px] sm:text-xs text-slate-400">
+                      (Optional)
+                    </span>
+                  </Label>
                   <Textarea
                     id="address_line2"
+                    placeholder="Near landmark, additional directions..."
                     value={shippingInfo.address_line2}
                     onChange={(e) =>
                       setShippingInfo({
@@ -460,14 +509,21 @@ export function CheckoutForm({ user }: { user: User }) {
                         address_line2: e.target.value,
                       })
                     }
+                    className="min-h-[60px] text-sm"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="city">City</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid gap-1.5 sm:gap-2">
+                    <Label
+                      htmlFor="city"
+                      className="text-sm flex items-center gap-1"
+                    >
+                      City <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="city"
                       required
+                      placeholder="Enter city"
                       value={shippingInfo.city}
                       onChange={(e) =>
                         setShippingInfo({
@@ -477,11 +533,17 @@ export function CheckoutForm({ user }: { user: User }) {
                       }
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="postal_code">ZIP Code</Label>
+                  <div className="grid gap-1.5 sm:gap-2">
+                    <Label
+                      htmlFor="postal_code"
+                      className="text-sm flex items-center gap-1"
+                    >
+                      PIN Code <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="postal_code"
                       required
+                      placeholder="6-digit PIN code"
                       value={shippingInfo.postal_code}
                       onChange={(e) =>
                         setShippingInfo({
@@ -492,12 +554,18 @@ export function CheckoutForm({ user }: { user: User }) {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="state">State</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid gap-1.5 sm:gap-2">
+                    <Label
+                      htmlFor="state"
+                      className="text-sm flex items-center gap-1"
+                    >
+                      State <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="state"
                       required
+                      placeholder="Enter state"
                       value={shippingInfo.state}
                       onChange={(e) =>
                         setShippingInfo({
@@ -507,11 +575,17 @@ export function CheckoutForm({ user }: { user: User }) {
                       }
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="country">Country</Label>
+                  <div className="grid gap-1.5 sm:gap-2">
+                    <Label
+                      htmlFor="country"
+                      className="text-sm flex items-center gap-1"
+                    >
+                      Country <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="country"
                       required
+                      placeholder="Enter country"
                       value={shippingInfo.country}
                       onChange={(e) =>
                         setShippingInfo({
@@ -523,13 +597,19 @@ export function CheckoutForm({ user }: { user: User }) {
                   </div>
                 </div>
 
-                <div className="flex justify-between">
+                {/* Secure Address Info */}
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-slate-500 pt-1">
+                  <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span>Your address is securely stored and never shared.</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2">
                   <Button
                     variant={"outline"}
                     onClick={() => setTab("contact")}
-                    className="mt-4"
+                    className="order-2 sm:order-1"
                   >
-                    <ArrowLeft /> Back
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Back
                   </Button>
                   <Button
                     onClick={async () => {
@@ -570,7 +650,7 @@ export function CheckoutForm({ user }: { user: User }) {
                         setIsLoading(false);
                       }
                     }}
-                    className="mt-4"
+                    className="order-1 sm:order-2"
                     disabled={isLoading}
                   >
                     {isLoading ? "Saving..." : "Continue"}
@@ -582,26 +662,26 @@ export function CheckoutForm({ user }: { user: User }) {
 
           {tab === "payment" && (
             <Card className="shadow-none">
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="px-4 py-3 sm:p-6 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">
                   <div className="flex items-center">
-                    <CreditCard />{" "}
+                    <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />{" "}
                     <span className="ml-2">Payment Information</span>
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4">
+              <CardContent className="space-y-3 sm:space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
+                <div className="grid gap-3 sm:gap-4">
                   <Label className="text-sm font-medium">Payment Method</Label>
 
                   {/* Payment Method Cards */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {/* COD Option */}
                     <button
                       type="button"
                       onClick={() => isCodAvailable && setPaymentMethod("cod")}
                       disabled={!isCodAvailable}
-                      className={`relative p-4 rounded-lg border-2 transition-all text-left ${
+                      className={`relative p-3 sm:p-4 rounded-lg border-2 transition-all text-left ${
                         paymentMethod === "cod" && isCodAvailable
                           ? "border-blue-500 bg-blue-50"
                           : isCodAvailable
@@ -610,23 +690,25 @@ export function CheckoutForm({ user }: { user: User }) {
                       }`}
                     >
                       {paymentMethod === "cod" && isCodAvailable && (
-                        <div className="absolute top-2 right-2">
-                          <Check className="h-4 w-4 text-blue-600" />
+                        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
+                          <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                         </div>
                       )}
                       <Banknote
-                        className={`h-6 w-6 mb-2 ${
+                        className={`h-5 w-5 sm:h-6 sm:w-6 mb-1.5 sm:mb-2 ${
                           isCodAvailable ? "text-green-600" : "text-gray-400"
                         }`}
                       />
-                      <p className="text-sm font-medium">Cash on Delivery</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs sm:text-sm font-medium">
+                        Cash on Delivery
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block">
                         Pay when you receive
                       </p>
                       {!isCodAvailable && (
                         <Badge
                           variant="outline"
-                          className="mt-2 text-[10px] text-amber-600 border-amber-200"
+                          className="mt-1.5 sm:mt-2 text-[9px] sm:text-[10px] text-amber-600 border-amber-200"
                         >
                           Not available
                         </Badge>
@@ -637,47 +719,51 @@ export function CheckoutForm({ user }: { user: User }) {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("online")}
-                      className={`relative p-4 rounded-lg border-2 transition-all text-left ${
+                      className={`relative p-3 sm:p-4 rounded-lg border-2 transition-all text-left ${
                         paymentMethod === "online"
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       {paymentMethod === "online" && (
-                        <div className="absolute top-2 right-2">
-                          <Check className="h-4 w-4 text-blue-600" />
+                        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
+                          <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                         </div>
                       )}
-                      <CreditCard className="h-6 w-6 mb-2 text-blue-600" />
-                      <p className="text-sm font-medium">Online Payment</p>
-                      <p className="text-xs text-slate-500">
+                      <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 mb-1.5 sm:mb-2 text-blue-600" />
+                      <p className="text-xs sm:text-sm font-medium">
+                        Online Payment
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block">
                         Cards, UPI, Net Banking
                       </p>
                     </button>
                   </div>
 
                   {/* Payment Icons */}
-                  <div className="flex items-center gap-2 py-2">
-                    <span className="text-xs text-slate-500">We accept:</span>
-                    <div className="flex gap-1.5">
-                      <span className="text-[10px] font-semibold px-2 py-1 bg-slate-100 rounded">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 py-2">
+                    <span className="text-[10px] sm:text-xs text-slate-500">
+                      We accept:
+                    </span>
+                    <div className="flex flex-wrap gap-1 sm:gap-1.5">
+                      <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 rounded">
                         VISA
                       </span>
-                      <span className="text-[10px] font-semibold px-2 py-1 bg-slate-100 rounded">
+                      <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 rounded">
                         Mastercard
                       </span>
-                      <span className="text-[10px] font-semibold px-2 py-1 bg-slate-100 rounded">
+                      <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 rounded">
                         UPI
                       </span>
-                      <span className="text-[10px] font-semibold px-2 py-1 bg-slate-100 rounded">
+                      <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 rounded">
                         RuPay
                       </span>
                     </div>
                   </div>
 
                   {/* COD Information */}
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs text-amber-800">
+                  <div className="p-2.5 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-[10px] sm:text-xs text-amber-800">
                       <span className="font-semibold">
                         Cash on Delivery (COD):
                       </span>{" "}
@@ -691,7 +777,9 @@ export function CheckoutForm({ user }: { user: User }) {
                 {paymentMethod === "online" && (
                   <>
                     <div className="grid gap-2">
-                      <Label htmlFor="cardNumber">Card Number</Label>
+                      <Label htmlFor="cardNumber" className="text-sm">
+                        Card Number
+                      </Label>
                       <div className="relative">
                         <Input
                           id="cardNumber"
@@ -704,28 +792,32 @@ export function CheckoutForm({ user }: { user: User }) {
                         {/* Card Brand Detection */}
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
                           {cardNumber.startsWith("4") ? (
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-blue-700 bg-blue-100 px-1 sm:px-1.5 py-0.5 rounded">
                               VISA
                             </span>
                           ) : cardNumber.startsWith("5") ? (
-                            <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-orange-700 bg-orange-100 px-1 sm:px-1.5 py-0.5 rounded">
                               MC
                             </span>
                           ) : cardNumber.startsWith("6") ? (
-                            <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-green-700 bg-green-100 px-1 sm:px-1.5 py-0.5 rounded">
                               RuPay
                             </span>
                           ) : null}
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="expiry">Expiry Date</Label>
+                        <Label htmlFor="expiry" className="text-sm">
+                          Expiry Date
+                        </Label>
                         <Input id="expiry" placeholder="MM/YY" required />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="cvv">CVV</Label>
+                        <Label htmlFor="cvv" className="text-sm">
+                          CVV
+                        </Label>
                         <Input
                           id="cvv"
                           placeholder="123"
@@ -744,8 +836,8 @@ export function CheckoutForm({ user }: { user: User }) {
                   onOpenChange={setOrderReviewOpen}
                 >
                   <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                      <span className="text-sm font-medium">
+                    <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                      <span className="text-xs sm:text-sm font-medium">
                         Review Your Order ({totalItems} items)
                       </span>
                       {orderReviewOpen ? (
@@ -756,21 +848,21 @@ export function CheckoutForm({ user }: { user: User }) {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="p-3 space-y-2 border border-t-0 rounded-b-lg">
+                    <div className="p-2.5 sm:p-3 space-y-2 border border-t-0 rounded-b-lg">
                       {items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-2 text-sm"
+                          className="flex items-center gap-2 text-xs sm:text-sm"
                         >
-                          <Check className="h-3 w-3 text-green-500" />
+                          <Check className="h-3 w-3 text-green-500 shrink-0" />
                           <span className="flex-1 truncate">{item.name}</span>
-                          <span className="text-slate-600">
+                          <span className="text-slate-600 shrink-0">
                             ×{item.quantity}
                           </span>
                         </div>
                       ))}
                       <div className="pt-2 border-t mt-2">
-                        <p className="text-sm font-semibold flex justify-between">
+                        <p className="text-xs sm:text-sm font-semibold flex justify-between">
                           <span>Total:</span>
                           <span>
                             {currencySymbol}
@@ -783,7 +875,7 @@ export function CheckoutForm({ user }: { user: User }) {
                 </Collapsible>
 
                 {/* Terms & Conditions */}
-                <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg">
+                <div className="flex items-start gap-2 p-2.5 sm:p-3 bg-slate-50 rounded-lg">
                   <Checkbox
                     id="terms"
                     checked={termsAccepted}
@@ -794,7 +886,7 @@ export function CheckoutForm({ user }: { user: User }) {
                   />
                   <Label
                     htmlFor="terms"
-                    className="text-xs text-slate-600 cursor-pointer"
+                    className="text-[10px] sm:text-xs text-slate-600 cursor-pointer"
                   >
                     I agree to the{" "}
                     <Link
@@ -813,19 +905,23 @@ export function CheckoutForm({ user }: { user: User }) {
                   </Label>
                 </div>
 
-                <div className="flex justify-between items-center pt-2">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-2">
                   <Button
                     variant={"outline"}
                     onClick={() => setTab("shipping")}
+                    className="order-2 sm:order-1"
                   >
                     <ArrowLeft className="h-4 w-4 mr-1" /> Back
                   </Button>
-                  <form onSubmit={handleSubmit} className="inline">
+                  <form
+                    onSubmit={handleSubmit}
+                    className="inline order-1 sm:order-2"
+                  >
                     <Button
                       type="submit"
                       size="lg"
                       disabled={isLoading || !termsAccepted}
-                      className="min-w-[180px] h-12 text-base font-semibold"
+                      className="w-full sm:w-auto sm:min-w-[180px] h-11 sm:h-12 text-sm sm:text-base font-semibold"
                     >
                       {isLoading ? (
                         <>
@@ -848,30 +944,35 @@ export function CheckoutForm({ user }: { user: User }) {
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="sticky top-20 shadow-none border-slate-200">
-            <CardHeader className="px-4 pt-4 pb-2">
+          <Card className="lg:sticky lg:top-20 shadow-none border-slate-200">
+            <CardHeader className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-sm">Order Summary</CardTitle>
-                  <Badge variant="secondary" className="text-[10px] px-1.5">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <CardTitle className="text-xs sm:text-sm">
+                    Order Summary
+                  </CardTitle>
+                  <Badge
+                    variant="secondary"
+                    className="text-[9px] sm:text-[10px] px-1 sm:px-1.5"
+                  >
                     {totalItems} {totalItems === 1 ? "item" : "items"}
                   </Badge>
                 </div>
                 <Link
                   href="/cart"
-                  className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+                  className="text-[10px] sm:text-xs text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
                 >
-                  <Pencil className="h-3 w-3" />
+                  <Pencil className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   Edit
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 px-4 py-0 pb-4">
+            <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 py-0 pb-3 sm:pb-4">
               {/* Products with hover */}
-              <div className="space-y-3 max-h-48 overflow-y-auto">
+              <div className="space-y-2 sm:space-y-3 max-h-36 sm:max-h-48 overflow-y-auto">
                 {items.map((item) => (
-                  <div key={item.id} className="flex gap-3 group">
-                    <div className="relative w-12 h-12 bg-slate-100 rounded overflow-hidden group-hover:ring-2 ring-blue-200 transition-all">
+                  <div key={item.id} className="flex gap-2 sm:gap-3 group">
+                    <div className="relative w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded overflow-hidden group-hover:ring-2 ring-blue-200 transition-all shrink-0">
                       <Image
                         src={
                           item.image_url ||
@@ -883,20 +984,20 @@ export function CheckoutForm({ user }: { user: User }) {
                         className="object-cover group-hover:scale-110 transition-transform"
                       />
                       {/* Badge showing quantity */}
-                      <span className="absolute -top-1 -right-1 bg-slate-800 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 bg-slate-800 text-white text-[8px] sm:text-[9px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center">
                         {item.quantity}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-slate-900 truncate">
+                      <p className="text-[10px] sm:text-xs font-medium text-slate-900 truncate">
                         {item.name}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-[10px] sm:text-xs text-slate-500">
                         {currencySymbol}
                         {item.price.toLocaleString("en-IN")} each
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-slate-900 shrink-0">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-900 shrink-0">
                       {currencySymbol}
                       {(item.price * item.quantity).toLocaleString("en-IN")}
                     </p>
@@ -905,45 +1006,47 @@ export function CheckoutForm({ user }: { user: User }) {
               </div>
 
               {/* Estimated Delivery */}
-              <div className="flex items-center gap-2 p-2.5 bg-blue-50 rounded-lg">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-slate-900">
+              <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-blue-50 rounded-lg">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] sm:text-xs font-medium text-slate-900">
                     Estimated Delivery
                   </p>
-                  <p className="text-[10px] text-blue-600 font-semibold">
+                  <p className="text-[9px] sm:text-[10px] text-blue-600 font-semibold">
                     {deliveryDateStr}
                   </p>
                 </div>
-                <Clock className="h-3.5 w-3.5 text-blue-500" />
+                <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500 shrink-0" />
               </div>
 
               {/* Price Breakdown */}
-              <div className="border-t pt-3 space-y-2">
-                <div className="flex justify-between text-sm text-slate-600">
+              <div className="border-t pt-2 sm:pt-3 space-y-1.5 sm:space-y-2">
+                <div className="flex justify-between text-xs sm:text-sm text-slate-600">
                   <span>Subtotal</span>
                   <span className="font-medium">
                     {currencySymbol}
                     {subtotal.toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-slate-600">Shipping</span>
                   <span className="text-green-600 font-medium">Free</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600 font-medium bg-green-50 -mx-2 px-2 py-1 rounded">
+                  <div className="flex justify-between text-xs sm:text-sm text-green-600 font-medium bg-green-50 -mx-1.5 sm:-mx-2 px-1.5 sm:px-2 py-1 rounded">
                     <span className="flex items-center gap-1">
-                      <Tag className="h-3 w-3" />
-                      Discount ({appliedCoupon?.code})
+                      <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      <span className="truncate">
+                        Discount ({appliedCoupon?.code})
+                      </span>
                     </span>
-                    <span>
+                    <span className="shrink-0">
                       -{currencySymbol}
                       {discount.toLocaleString("en-IN")}
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t">
+                <div className="flex justify-between text-sm sm:text-base font-bold text-slate-900 pt-1.5 sm:pt-2 border-t">
                   <span>Total</span>
                   <span>
                     {currencySymbol}
@@ -954,8 +1057,8 @@ export function CheckoutForm({ user }: { user: User }) {
 
               {/* Savings Highlight */}
               {discount > 0 && (
-                <div className="bg-green-100 border border-green-200 rounded-lg p-3 text-center">
-                  <p className="text-sm font-semibold text-green-700">
+                <div className="bg-green-100 border border-green-200 rounded-lg p-2 sm:p-3 text-center">
+                  <p className="text-xs sm:text-sm font-semibold text-green-700">
                     You're saving {currencySymbol}
                     {discount.toLocaleString("en-IN")} on this order!
                   </p>
@@ -963,65 +1066,66 @@ export function CheckoutForm({ user }: { user: User }) {
               )}
 
               {/* Order Protection Badge */}
-              <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-lg">
-                <ShieldCheck className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-xs font-medium text-slate-900">
+              <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+                <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs font-medium text-slate-900">
                     Order Protection
                   </p>
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[9px] sm:text-[10px] text-slate-500 truncate">
                     Your order is protected & secure
                   </p>
                 </div>
               </div>
 
               {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t">
-                <div className="flex flex-col items-center text-center p-2">
-                  <Shield className="h-4 w-4 text-green-600 mb-1" />
-                  <span className="text-[10px] text-slate-600">Secure Pay</span>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t">
+                <div className="flex flex-col items-center text-center p-1.5 sm:p-2">
+                  <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 mb-0.5 sm:mb-1" />
+                  <span className="text-[9px] sm:text-[10px] text-slate-600">
+                    Secure Pay
+                  </span>
                 </div>
-                <div className="flex flex-col items-center text-center p-2">
-                  <RotateCcw className="h-4 w-4 text-blue-600 mb-1" />
-                  <span className="text-[10px] text-slate-600">
+                <div className="flex flex-col items-center text-center p-1.5 sm:p-2">
+                  <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 mb-0.5 sm:mb-1" />
+                  <span className="text-[9px] sm:text-[10px] text-slate-600">
                     Easy Return
                   </span>
                 </div>
-                <div className="flex flex-col items-center text-center p-2">
-                  <Truck className="h-4 w-4 text-purple-600 mb-1" />
-                  <span className="text-[10px] text-slate-600">
+                <div className="flex flex-col items-center text-center p-1.5 sm:p-2">
+                  <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 mb-0.5 sm:mb-1" />
+                  <span className="text-[9px] sm:text-[10px] text-slate-600">
                     Free Delivery
                   </span>
                 </div>
               </div>
 
-              {/* Money Back Guarantee */}
-              <div className="text-center p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-[10px] text-amber-700 font-medium">
-                  30-Day Money Back Guarantee
-                </p>
-              </div>
-
               {/* Customer Support */}
-              <div className="flex items-center justify-center gap-4 pt-2 border-t">
+              <div className="flex items-center justify-center gap-3 sm:gap-4 pt-1.5 sm:pt-2 border-t">
                 <div className="flex items-center gap-1 text-slate-600">
-                  <Headphones className="h-3.5 w-3.5" />
-                  <span className="text-[10px]">24/7 Support</span>
+                  <Headphones className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span className="text-[9px] sm:text-[10px]">
+                    24/7 Support
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 text-slate-600">
-                  <Phone className="h-3.5 w-3.5" />
-                  <span className="text-[10px]">1800-XXX-XXXX</span>
+                  <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span className="text-[9px] sm:text-[10px]">
+                    1800-XXX-XXXX
+                  </span>
                 </div>
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-xs sm:text-sm text-red-500">{error}</p>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Recently Viewed Products */}
-      <div className="mt-8 pt-6 border-t">
+      <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
         <RecentlyViewedProducts />
       </div>
     </div>

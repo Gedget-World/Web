@@ -235,45 +235,48 @@ export function ProductsClient() {
     (filters.inStock ? 1 : 0);
 
   // Render filters sidebar content
-  const FilterContent = () => (
-    <div className="space-y-6">
+  const FilterContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+    <div className="space-y-4 sm:space-y-6">
       {/* Collections */}
       <Collapsible defaultOpen>
-        <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
-          Collections
-          <ChevronDown className="h-4 w-4" />
+        <CollapsibleTrigger className="flex items-center justify-between w-full text-xs sm:text-sm font-medium py-1">
+          <span className="flex items-center gap-1.5">
+            <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+            Collections
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="pt-3 space-y-3">
+        <CollapsibleContent className="pt-2 sm:pt-3 space-y-2 sm:space-y-3">
           {/* Collection Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 sm:left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search collections..."
               value={collectionSearchQuery}
               onChange={(e) => setCollectionSearchQuery(e.target.value)}
-              className="pl-8 h-9 text-sm"
+              className="pl-7 sm:pl-8 h-8 sm:h-9 text-xs sm:text-sm"
             />
           </div>
 
           {/* Collections List */}
           {collectionsLoading ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex items-center justify-center py-3 sm:py-4">
+              <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
             </div>
           ) : filteredCollections.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">
+            <p className="text-xs sm:text-sm text-muted-foreground py-2">
               {collectionSearchQuery
                 ? "No collections found"
                 : "No collections available"}
             </p>
           ) : (
             <>
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2 max-h-40 sm:max-h-48 overflow-y-auto">
                 {displayedCollections.map((collection) => (
                   <label
                     key={collection.id}
-                    className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded px-1 py-0.5 -mx-1 transition-colors"
+                    className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors"
                   >
                     <Checkbox
                       checked={selectedCollectionSlug === collection.slug}
@@ -282,9 +285,10 @@ export function ProductsClient() {
                           checked ? collection.slug : undefined,
                         )
                       }
+                      className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                     />
                     <span className="flex-1 truncate">{collection.name}</span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
                       ({collection.count})
                     </span>
                   </label>
@@ -297,7 +301,7 @@ export function ProductsClient() {
                   variant="ghost"
                   size="sm"
                   onClick={loadMoreCollections}
-                  className="w-full text-xs h-8"
+                  className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
                 >
                   Load More (
                   {filteredCollections.length - visibleCollectionsCount}{" "}
@@ -311,15 +315,18 @@ export function ProductsClient() {
 
       {/* Price Range */}
       <Collapsible defaultOpen>
-        <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
-          Price Range
-          <ChevronDown className="h-4 w-4" />
+        <CollapsibleTrigger className="flex items-center justify-between w-full text-xs sm:text-sm font-medium py-1">
+          <span className="flex items-center gap-1.5">
+            <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+            Price Range
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2 space-y-2">
+        <CollapsibleContent className="pt-2 space-y-1 sm:space-y-2">
           {PRICE_RANGES.map((range) => (
             <label
               key={range.label}
-              className="flex items-center gap-2 text-sm cursor-pointer"
+              className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors"
             >
               <Checkbox
                 checked={
@@ -331,10 +338,11 @@ export function ProductsClient() {
                     ? handlePriceRange(range.min, range.max)
                     : handlePriceRange(null, null)
                 }
+                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
               />
-              <span>{range.label}</span>
+              <span className="flex-1">{range.label}</span>
               {facets?.priceRanges.find((f) => f.value === range.label) && (
-                <span className="text-muted-foreground ml-auto">
+                <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
                   (
                   {
                     facets.priceRanges.find((f) => f.value === range.label)
@@ -350,46 +358,52 @@ export function ProductsClient() {
 
       {/* Other Filters */}
       <Collapsible defaultOpen>
-        <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
-          Other Filters
-          <ChevronDown className="h-4 w-4" />
+        <CollapsibleTrigger className="flex items-center justify-between w-full text-xs sm:text-sm font-medium py-1">
+          <span className="flex items-center gap-1.5">
+            <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+            Other Filters
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2 space-y-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <CollapsibleContent className="pt-2 space-y-1 sm:space-y-2">
+          <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
             <Checkbox
               checked={filters.inStock === true}
               onCheckedChange={(checked) =>
                 updateFilter("inStock", checked ? true : undefined)
               }
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
             />
             <span>In Stock Only</span>
           </label>
 
           {facets?.isFeatured && (
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
               <Checkbox
                 checked={filters.isFeatured === true}
                 onCheckedChange={(checked) =>
                   updateFilter("isFeatured", checked ? true : undefined)
                 }
+                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
               />
-              <span>Featured</span>
-              <span className="text-muted-foreground ml-auto">
+              <span className="flex-1">Featured</span>
+              <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
                 ({facets.isFeatured.count})
               </span>
             </label>
           )}
 
           {facets?.isNewArrival && (
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
               <Checkbox
                 checked={filters.isNewArrival === true}
                 onCheckedChange={(checked) =>
                   updateFilter("isNewArrival", checked ? true : undefined)
                 }
+                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
               />
-              <span>New Arrivals</span>
-              <span className="text-muted-foreground ml-auto">
+              <span className="flex-1">New Arrivals</span>
+              <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
                 ({facets.isNewArrival.count})
               </span>
             </label>
@@ -402,9 +416,13 @@ export function ProductsClient() {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleClearFilters}
-          className="w-full"
+          onClick={() => {
+            handleClearFilters();
+            if (isMobile) setFiltersOpen(false);
+          }}
+          className="w-full text-xs sm:text-sm h-8 sm:h-9"
         >
+          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
           Clear All Filters
         </Button>
       )}
@@ -413,22 +431,22 @@ export function ProductsClient() {
 
   return (
     <main className="min-h-screen">
-      <div className="py-6 md:py-10 px-4 md:px-8 max-w-7xl mx-auto">
+      <div className="py-4 sm:py-6 md:py-10 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 overflow-x-auto">
           <Link
             href="/"
-            className="hover:text-foreground transition-colors flex items-center gap-1"
+            className="hover:text-foreground transition-colors flex items-center gap-1 shrink-0"
           >
-            <Home className="w-3.5 h-3.5" />
-            Home
+            <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">Home</span>
           </Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground font-medium">Products</span>
+          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+          <span className="text-foreground font-medium shrink-0">Products</span>
           {selectedCollectionSlug && allCollections.length > 0 && (
             <>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-foreground font-medium">
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+              <span className="text-foreground font-medium truncate max-w-[120px] sm:max-w-none">
                 {
                   allCollections.find((c) => c.slug === selectedCollectionSlug)
                     ?.name
@@ -439,14 +457,14 @@ export function ProductsClient() {
         </nav>
 
         {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Package className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground line-clamp-1">
                   {query
                     ? `Results for "${query}"`
                     : selectedCollectionSlug && allCollections.length > 0
@@ -457,8 +475,8 @@ export function ProductsClient() {
                 </h1>
               </div>
               {results && (
-                <p className="text-muted-foreground flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
+                  <Tag className="w-3 h-3 sm:w-4 sm:h-4" />
                   Showing {results.items.length} of {totalCount}{" "}
                   {totalCount === 1 ? "product" : "products"}
                 </p>
@@ -466,10 +484,10 @@ export function ProductsClient() {
             </div>
 
             {/* Quick Filter Badges */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <Badge
                 variant={filters.isNewArrival ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10 transition-colors"
+                className="cursor-pointer hover:bg-primary/10 transition-colors text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1"
                 onClick={() =>
                   updateFilter(
                     "isNewArrival",
@@ -477,12 +495,12 @@ export function ProductsClient() {
                   )
                 }
               >
-                <Sparkles className="w-3 h-3 mr-1" />
+                <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                 New Arrivals
               </Badge>
               <Badge
                 variant={filters.inStock ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10 transition-colors"
+                className="cursor-pointer hover:bg-primary/10 transition-colors text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1"
                 onClick={() =>
                   updateFilter("inStock", filters.inStock ? undefined : true)
                 }
@@ -494,32 +512,50 @@ export function ProductsClient() {
         </div>
 
         {/* Search and Sort Bar */}
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             {/* Sort & Filter Controls */}
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-between sm:justify-end">
               {/* Mobile Filter Button */}
               <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="lg:hidden">
-                    <Filter className="h-4 w-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="lg:hidden h-8 sm:h-9 text-xs sm:text-sm px-2.5 sm:px-3"
+                  >
+                    <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                     Filters
                     {activeFilterCount > 0 && (
-                      <Badge variant="secondary" className="ml-2">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs px-1.5 h-4 sm:h-5"
+                      >
                         {activeFilterCount}
                       </Badge>
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <Filter className="w-5 h-5" />
+                <SheetContent
+                  side="left"
+                  className="w-full sm:w-80 px-4 sm:px-6"
+                >
+                  <SheetHeader className="pb-3 sm:pb-4 border-b">
+                    <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
                       Filters
+                      {activeFilterCount > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto text-[10px] sm:text-xs"
+                        >
+                          {activeFilterCount} active
+                        </Badge>
+                      )}
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6">
-                    <FilterContent />
+                  <div className="mt-4 sm:mt-6 overflow-y-auto max-h-[calc(100vh-100px)] pb-6">
+                    <FilterContent isMobile={true} />
                   </div>
                 </SheetContent>
               </Sheet>
@@ -557,16 +593,26 @@ export function ProductsClient() {
                 value={sortBy}
                 onValueChange={(value) => setSortBy(value as SearchSortBy)}
               >
-                <SelectTrigger className="w-[180px]">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectTrigger className="w-[130px] sm:w-[180px] h-8 sm:h-9 text-xs sm:text-sm">
+                  <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="relevance">Relevance</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                  <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                  <SelectItem value="popularity">Popularity</SelectItem>
+                  <SelectItem value="relevance" className="text-xs sm:text-sm">
+                    Relevance
+                  </SelectItem>
+                  <SelectItem value="newest" className="text-xs sm:text-sm">
+                    Newest
+                  </SelectItem>
+                  <SelectItem value="price_asc" className="text-xs sm:text-sm">
+                    Price: Low to High
+                  </SelectItem>
+                  <SelectItem value="price_desc" className="text-xs sm:text-sm">
+                    Price: High to Low
+                  </SelectItem>
+                  <SelectItem value="popularity" className="text-xs sm:text-sm">
+                    Popularity
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -574,44 +620,57 @@ export function ProductsClient() {
 
           {/* Active Filters */}
           {activeFilterCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Active filters:
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="text-[10px] sm:text-sm text-muted-foreground">
+                Active:
               </span>
               {query && (
-                <Badge variant="secondary" className="gap-1 pl-2">
-                  <Search className="w-3 h-3" />
-                  {query}
+                <Badge
+                  variant="secondary"
+                  className="gap-0.5 sm:gap-1 pl-1.5 sm:pl-2 text-[10px] sm:text-xs h-6 sm:h-7"
+                >
+                  <Search className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <span className="max-w-[60px] sm:max-w-none truncate">
+                    {query}
+                  </span>
                   <button
                     onClick={() => {
                       setSearchInput("");
                       setQuery("");
                     }}
-                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-gray-200 rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </Badge>
               )}
               {selectedCollectionSlug && allCollections.length > 0 && (
-                <Badge variant="secondary" className="gap-1 pl-2">
-                  <Package className="w-3 h-3" />
-                  {
-                    allCollections.find(
-                      (c) => c.slug === selectedCollectionSlug,
-                    )?.name
-                  }
+                <Badge
+                  variant="secondary"
+                  className="gap-0.5 sm:gap-1 pl-1.5 sm:pl-2 text-[10px] sm:text-xs h-6 sm:h-7"
+                >
+                  <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <span className="max-w-[60px] sm:max-w-none truncate">
+                    {
+                      allCollections.find(
+                        (c) => c.slug === selectedCollectionSlug,
+                      )?.name
+                    }
+                  </span>
                   <button
                     onClick={() => setSelectedCollectionSlug(undefined)}
-                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-gray-200 rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </Badge>
               )}
               {(filters.minPrice || filters.maxPrice) && (
-                <Badge variant="secondary" className="gap-1 pl-2">
-                  <Tag className="w-3 h-3" />
+                <Badge
+                  variant="secondary"
+                  className="gap-0.5 sm:gap-1 pl-1.5 sm:pl-2 text-[10px] sm:text-xs h-6 sm:h-7"
+                >
+                  <Tag className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   {filters.minPrice && filters.maxPrice
                     ? `₹${filters.minPrice} - ₹${filters.maxPrice}`
                     : filters.minPrice
@@ -619,43 +678,52 @@ export function ProductsClient() {
                       : `Under ₹${filters.maxPrice}`}
                   <button
                     onClick={() => handlePriceRange(null, null)}
-                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-gray-200 rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </Badge>
               )}
               {filters.inStock && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge
+                  variant="secondary"
+                  className="gap-0.5 sm:gap-1 text-[10px] sm:text-xs h-6 sm:h-7"
+                >
                   In Stock
                   <button
                     onClick={() => updateFilter("inStock", undefined)}
-                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-gray-200 rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </Badge>
               )}
               {filters.isFeatured && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge
+                  variant="secondary"
+                  className="gap-0.5 sm:gap-1 text-[10px] sm:text-xs h-6 sm:h-7"
+                >
                   Featured
                   <button
                     onClick={() => updateFilter("isFeatured", undefined)}
-                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-gray-200 rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </Badge>
               )}
               {filters.isNewArrival && (
-                <Badge variant="secondary" className="gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  New Arrivals
+                <Badge
+                  variant="secondary"
+                  className="gap-0.5 sm:gap-1 text-[10px] sm:text-xs h-6 sm:h-7"
+                >
+                  <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  New
                   <button
                     onClick={() => updateFilter("isNewArrival", undefined)}
-                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-gray-200 rounded-full p-0.5"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </Badge>
               )}
@@ -663,7 +731,7 @@ export function ProductsClient() {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearFilters}
-                className="text-xs h-7 text-muted-foreground hover:text-foreground"
+                className="text-[10px] sm:text-xs h-6 sm:h-7 px-1.5 sm:px-2 text-muted-foreground hover:text-foreground"
               >
                 Clear all
               </Button>
@@ -671,27 +739,27 @@ export function ProductsClient() {
           )}
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex gap-4 sm:gap-6 lg:gap-8">
           {/* Desktop Sidebar Filters */}
-          <aside className="hidden lg:block w-64 shrink-0">
+          <aside className="hidden lg:block w-60 xl:w-64 shrink-0">
             <div className="sticky top-24 bg-card rounded-xl border shadow-sm overflow-hidden">
-              <div className="bg-gray-50 px-5 py-4 border-b">
+              <div className="bg-gray-50 px-4 py-3 border-b">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold flex items-center gap-2">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
                     <Filter className="w-4 h-4" />
                     Filters
                   </h2>
                   {activeFilterCount > 0 && (
-                    <Badge variant="secondary" className="rounded-full">
+                    <Badge variant="secondary" className="rounded-full text-xs">
                       {activeFilterCount}
                     </Badge>
                   )}
                 </div>
               </div>
-              <div className="p-5">
+              <div className="p-4">
                 {facetsLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
                 ) : (
                   <FilterContent />
@@ -703,37 +771,51 @@ export function ProductsClient() {
           {/* Results Grid */}
           <div className="flex-1">
             {loading && !results ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">Loading products...</p>
+              <div className="flex flex-col items-center justify-center py-10 sm:py-16">
+                <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-primary mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Loading products...
+                </p>
               </div>
             ) : error ? (
-              <div className="text-center py-16 bg-red-50 rounded-xl border border-red-100">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <X className="w-8 h-8 text-red-500" />
+              <div className="text-center py-10 sm:py-16 bg-red-50 rounded-xl border border-red-100 px-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <X className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
                 </div>
-                <p className="text-red-600 font-medium mb-2">
+                <p className="text-sm sm:text-base text-red-600 font-medium mb-1.5 sm:mb-2">
                   Something went wrong
                 </p>
-                <p className="text-red-500 text-sm mb-4">{error}</p>
-                <Button onClick={() => setQuery(query)} variant="outline">
+                <p className="text-xs sm:text-sm text-red-500 mb-3 sm:mb-4">
+                  {error}
+                </p>
+                <Button
+                  onClick={() => setQuery(query)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
                   Try Again
                 </Button>
               </div>
             ) : results?.items.length === 0 ? (
-              <div className="text-center py-16 bg-gray-50 rounded-xl border">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-10 h-10 text-gray-400" />
+              <div className="text-center py-10 sm:py-16 bg-gray-50 rounded-xl border px-4">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Package className="w-7 h-7 sm:w-10 sm:h-10 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1.5 sm:mb-2">
                   No products found
                 </h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 max-w-md mx-auto">
                   We couldn't find any products matching your criteria. Try
                   adjusting your filters or search terms.
                 </p>
                 {activeFilterCount > 0 && (
-                  <Button onClick={handleClearFilters} variant="outline">
+                  <Button
+                    onClick={handleClearFilters}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs sm:text-sm"
+                  >
                     Clear All Filters
                   </Button>
                 )}
@@ -770,23 +852,23 @@ export function ProductsClient() {
 
                 {/* Load More */}
                 {hasMore && (
-                  <div className="flex justify-center mt-10">
+                  <div className="flex justify-center mt-6 sm:mt-10">
                     <Button
                       onClick={loadMore}
                       disabled={loading}
                       variant="outline"
-                      size="lg"
-                      className="min-w-[200px]"
+                      size="default"
+                      className="min-w-40 sm:min-w-[200px] h-9 sm:h-10 text-xs sm:text-sm"
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" />
                           Loading...
                         </>
                       ) : (
                         <>
                           Load More Products
-                          <ChevronDown className="ml-2 h-4 w-4" />
+                          <ChevronDown className="ml-1.5 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </>
                       )}
                     </Button>
@@ -795,8 +877,8 @@ export function ProductsClient() {
 
                 {/* Results Summary */}
                 {!hasMore && results && results.items.length > 0 && (
-                  <div className="text-center mt-10 py-6 border-t">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="text-center mt-6 sm:mt-10 py-4 sm:py-6 border-t">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       You've viewed all {totalCount} products
                     </p>
                   </div>

@@ -122,7 +122,7 @@ export function ProductActions({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 ml-auto">
       {/* Wishlist Button */}
       <Button
         variant="outline"
