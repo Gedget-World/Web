@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   TriangleAlert,
   Check,
@@ -30,6 +31,62 @@ import { FrequentlyBoughtTogether } from "@/components/frequently-bought-togethe
 import { ProductQA } from "@/components/product-qa";
 import { StickyAddToCart } from "@/components/sticky-add-to-cart";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: product } = await supabase
+    .from("products")
+    .select(
+      "name, description, price, image_url, discount_percentage, specifications, collections(name)",
+    )
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
+
+  if (!product) {
+    return { title: "Product Not Found" };
+  }
+
+  const collectionName = (product.collections as any)?.name || "Gadgets";
+  const specs =
+    (product.specifications as { title: string; description: string }[]) || [];
+  const specKeywords = specs.map((s) => s.description).filter(Boolean);
+  const keywords = [
+    product.name,
+    collectionName,
+    "gadgets kabila",
+    `buy ${product.name}`,
+    `${product.name} price`,
+    `${product.name} online`,
+    `${collectionName} gadgets`,
+    "gadgets",
+    "electronics",
+    "buy online India",
+    ...specKeywords,
+  ];
+
+  return {
+    title: product.name,
+    description:
+      product.description?.slice(0, 160) ||
+      `Buy ${product.name} at best price from Gadgets Kabila.`,
+    keywords,
+    openGraph: {
+      title: `${product.name} | Gadgets Kabila`,
+      description:
+        product.description?.slice(0, 160) ||
+        `Buy ${product.name} at best price from Gadgets Kabila.`,
+      images: product.image_url ? [{ url: product.image_url }] : [],
+      type: "website",
+    },
+  };
+}
 
 export default async function ProductDetailPage({
   params,
