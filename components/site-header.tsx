@@ -34,13 +34,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -81,9 +74,6 @@ export function SiteHeader() {
   const wishlistCount = useWishlistStore((state) => state.items.length);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showAnnouncement, setShowAnnouncement] = useState(true);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [guestMenuOpen, setGuestMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -153,36 +143,27 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Announcement Bar */}
-      {showAnnouncement && (
-        <div className="bg-linear-to-r from-primary via-primary/90 to-primary relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
-          <div className="container relative flex items-center justify-center gap-2 px-4 py-2 text-xs md:text-sm">
-            <div className="flex items-center gap-6 text-white">
-              <div className="hidden sm:flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                <span>Free Shipping All Over India</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                <span className="font-medium">
-                  Up-To 10% Off On Pre-Paid Orders
-                </span>
-              </div>
-              {/* <div className="hidden md:flex items-center gap-2">
+      <div className="bg-linear-to-r from-primary via-primary/90 to-primary relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
+        <div className="container relative flex items-center justify-center gap-2 px-4 py-2 text-xs md:text-sm">
+          <div className="flex items-center gap-6 text-white">
+            <div className="hidden sm:flex items-center gap-2">
+              <Truck className="w-4 h-4" />
+              <span>Free Shipping All Over India</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span className="font-medium">
+                Up-To 10% Off On Pre-Paid Orders
+              </span>
+            </div>
+            {/* <div className="hidden md:flex items-center gap-2">
                 <Phone className="w-4 h-4" />
                 <span>Support: 1800-123-4567</span>
               </div> */}
-            </div>
-            <button
-              onClick={() => setShowAnnouncement(false)}
-              className="absolute right-4 text-white/70 hover:text-white transition-colors"
-              aria-label="Close announcement"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Main Header */}
       <div className="border-b bg-white">
@@ -426,47 +407,28 @@ export function SiteHeader() {
                   <Loader2 className="h-5 w-5 animate-spin" />
                 </Button>
               ) : user ? (
-                <DropdownMenu
-                  open={userMenuOpen}
-                  onOpenChange={setUserMenuOpen}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2 px-3 hover:bg-primary/5"
-                      onMouseEnter={() => setUserMenuOpen(true)}
-                      onMouseLeave={() => {
-                        setTimeout(() => {
-                          const content = document.querySelector(
-                            "[data-radix-popper-content-wrapper]",
-                          );
-                          if (!content?.matches(":hover")) {
-                            setUserMenuOpen(false);
-                          }
-                        }, 100);
-                      }}
-                    >
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="hidden lg:block text-left">
-                        <p className="text-xs text-muted-foreground leading-none">
-                          {getGreeting()}
-                        </p>
-                        <p className="text-sm font-medium text-gray-900 leading-tight">
-                          {user.user_metadata?.full_name?.split(" ")[0] ||
-                            user.email?.split("@")[0] ||
-                            "User"}
-                        </p>
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56"
-                    onMouseEnter={() => setUserMenuOpen(true)}
-                    onMouseLeave={() => setUserMenuOpen(false)}
+                <div className="relative group/usermenu">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 px-3 hover:bg-primary/5"
                   >
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="hidden lg:block text-left">
+                      <p className="text-xs text-muted-foreground leading-none">
+                        {getGreeting()}
+                      </p>
+                      <p className="text-sm font-medium text-gray-900 leading-tight">
+                        {user.user_metadata?.full_name?.split(" ")[0] ||
+                          user.email?.split("@")[0] ||
+                          "User"}
+                      </p>
+                    </div>
+                  </Button>
+                  {/* Invisible bridge to prevent gap */}
+                  <div className="absolute right-0 top-full h-2 w-56 hidden group-hover/usermenu:block" />
+                  <div className="absolute right-0 top-[calc(100%+0.5rem)] w-56 rounded-md border bg-popover p-1 shadow-md opacity-0 invisible translate-y-1 group-hover/usermenu:opacity-100 group-hover/usermenu:visible group-hover/usermenu:translate-y-0 transition-all duration-150 z-50">
                     <div className="px-3 py-3 border-b mb-1 bg-gray-50 -mx-1 -mt-1 rounded-t-md">
                       <p className="text-sm font-semibold text-slate-900 truncate">
                         {user.user_metadata?.full_name ||
@@ -477,65 +439,52 @@ export function SiteHeader() {
                         {user.email}
                       </p>
                     </div>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/profile"
-                        className="flex items-center cursor-pointer py-2"
-                      >
-                        <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
-                        My Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/orders"
-                        className="flex items-center cursor-pointer py-2"
-                      >
-                        <Package className="mr-3 h-4 w-4 text-gray-500" />
-                        My Orders
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/wishlist"
-                        className="flex items-center cursor-pointer py-2"
-                      >
-                        <Heart className="mr-3 h-4 w-4 text-gray-500" />
-                        Wishlist
-                        {wishlistCount > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="ml-auto text-xs"
-                          >
-                            {wishlistCount}
-                          </Badge>
-                        )}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/contact-us"
-                        className="flex items-center cursor-pointer py-2"
-                      >
-                        <Phone className="mr-3 h-4 w-4 text-gray-500" />
-                        Contact Us
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/help"
-                        className="flex items-center cursor-pointer py-2"
-                      >
-                        <HelpCircle className="mr-3 h-4 w-4 text-gray-500" />
-                        Help Center
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
+                    <Link
+                      href="/profile"
+                      className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                    >
+                      <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
+                      My Profile
+                    </Link>
+                    <Link
+                      href="/orders"
+                      className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                    >
+                      <Package className="mr-3 h-4 w-4 text-gray-500" />
+                      My Orders
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                    >
+                      <Heart className="mr-3 h-4 w-4 text-gray-500" />
+                      Wishlist
+                      {wishlistCount > 0 && (
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          {wishlistCount}
+                        </Badge>
+                      )}
+                    </Link>
+                    <div className="bg-border -mx-1 my-1 h-px" />
+                    <Link
+                      href="/contact-us"
+                      className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                    >
+                      <Phone className="mr-3 h-4 w-4 text-gray-500" />
+                      Contact Us
+                    </Link>
+                    <Link
+                      href="/help"
+                      className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                    >
+                      <HelpCircle className="mr-3 h-4 w-4 text-gray-500" />
+                      Help Center
+                    </Link>
+                    <div className="bg-border -mx-1 my-1 h-px" />
+                    <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 py-2"
+                      className="flex items-center w-full cursor-pointer py-2 px-2 text-sm rounded-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                     >
                       {isLoggingOut ? (
                         <Loader2 className="mr-3 h-4 w-4 animate-spin" />
@@ -543,51 +492,32 @@ export function SiteHeader() {
                         <LogOut className="mr-3 h-4 w-4" />
                       )}
                       {isLoggingOut ? "Logging out..." : "Logout"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <>
                   {/* Desktop Guest Menu */}
-                  <DropdownMenu
-                    open={guestMenuOpen}
-                    onOpenChange={setGuestMenuOpen}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="hidden md:flex items-center gap-2 px-3 hover:bg-primary/5"
-                        onMouseEnter={() => setGuestMenuOpen(true)}
-                        onMouseLeave={() => {
-                          setTimeout(() => {
-                            const content = document.querySelector(
-                              "[data-radix-popper-content-wrapper]",
-                            );
-                            if (!content?.matches(":hover")) {
-                              setGuestMenuOpen(false);
-                            }
-                          }, 100);
-                        }}
-                      >
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <div className="hidden lg:block text-left">
-                          <p className="text-xs text-muted-foreground leading-none">
-                            Welcome
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 leading-tight">
-                            Sign In / Sign Up
-                          </p>
-                        </div>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-56"
-                      onMouseEnter={() => setGuestMenuOpen(true)}
-                      onMouseLeave={() => setGuestMenuOpen(false)}
+                  <div className="relative group/guestmenu">
+                    <Button
+                      variant="ghost"
+                      className="hidden md:flex items-center gap-2 px-3 hover:bg-primary/5"
                     >
+                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-gray-600" />
+                      </div>
+                      <div className="hidden lg:block text-left">
+                        <p className="text-xs text-muted-foreground leading-none">
+                          Welcome
+                        </p>
+                        <p className="text-sm font-medium text-gray-900 leading-tight">
+                          Sign In / Sign Up
+                        </p>
+                      </div>
+                    </Button>
+                    {/* Invisible bridge to prevent gap */}
+                    <div className="absolute right-0 top-full h-2 w-56 hidden group-hover/guestmenu:block" />
+                    <div className="absolute right-0 top-[calc(100%+0.5rem)] w-56 rounded-md border bg-popover p-1 shadow-md opacity-0 invisible translate-y-1 group-hover/guestmenu:opacity-100 group-hover/guestmenu:visible group-hover/guestmenu:translate-y-0 transition-all duration-150 z-50">
                       <div className="px-3 py-3 border-b mb-1 bg-gray-50 -mx-1 -mt-1 rounded-t-md">
                         <p className="text-sm font-semibold text-slate-900">
                           Welcome to Gadgets Kabila
@@ -596,45 +526,37 @@ export function SiteHeader() {
                           Sign in to access your account
                         </p>
                       </div>
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/auth/login"
-                          className="flex items-center cursor-pointer py-2"
-                        >
-                          <LogIn className="mr-3 h-4 w-4 text-gray-500" />
-                          Sign In
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/auth/sign-up"
-                          className="flex items-center cursor-pointer py-2"
-                        >
-                          <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
-                          Create Account
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/contact-us"
-                          className="flex items-center cursor-pointer py-2"
-                        >
-                          <Phone className="mr-3 h-4 w-4 text-gray-500" />
-                          Contact Us
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/help"
-                          className="flex items-center cursor-pointer py-2"
-                        >
-                          <HelpCircle className="mr-3 h-4 w-4 text-gray-500" />
-                          Help Center
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <Link
+                        href="/auth/login"
+                        className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                      >
+                        <LogIn className="mr-3 h-4 w-4 text-gray-500" />
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/auth/sign-up"
+                        className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                      >
+                        <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
+                        Create Account
+                      </Link>
+                      <div className="bg-border -mx-1 my-1 h-px" />
+                      <Link
+                        href="/contact-us"
+                        className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                      >
+                        <Phone className="mr-3 h-4 w-4 text-gray-500" />
+                        Contact Us
+                      </Link>
+                      <Link
+                        href="/help"
+                        className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
+                      >
+                        <HelpCircle className="mr-3 h-4 w-4 text-gray-500" />
+                        Help Center
+                      </Link>
+                    </div>
+                  </div>
 
                   {/* Mobile Login Icon */}
                   <Tooltip>
