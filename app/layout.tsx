@@ -11,7 +11,13 @@ const roboto = Roboto({
 
 export const metadata: Metadata = {
   title: "Gadgets Kabila",
-  description: "Your Ultimate Tech Destination",
+  description:
+    "Discover the latest in tech at Gadgets Kabila. From daily life to smart home devices to gifts for your special ones, you have all under one roof. We offer a wide range of gadgets to enhance your lifestyle.",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

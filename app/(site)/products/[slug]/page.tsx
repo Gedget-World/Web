@@ -16,6 +16,7 @@ import {
   Star,
   BadgeCheck,
   Users,
+  Video,
 } from "lucide-react";
 import { LazyProductReviews } from "@/components/lazy-product-reviews";
 import ProductImagesSection from "@/components/product-images-section";
@@ -287,18 +288,16 @@ export default async function ProductDetailPage({
               <Truck className="h-4 w-4 text-blue-600 shrink-0" />
               <div>
                 <p className="text-xs font-medium text-slate-900">
-                  Free Delivery
+                  Free Shipping All Over India
                 </p>
-                <p className="text-[10px] text-slate-500">Orders above ₹500</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-lg">
-              <RotateCcw className="h-4 w-4 text-blue-600 shrink-0" />
+              <Video className="h-4 w-4 text-blue-600 shrink-0" />
               <div>
                 <p className="text-xs font-medium text-slate-900">
-                  Easy Returns
+                  Experience This Product Over Video Call With Us.
                 </p>
-                <p className="text-[10px] text-slate-500">30 day policy</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-lg">
@@ -314,10 +313,7 @@ export default async function ProductDetailPage({
               <CreditCard className="h-4 w-4 text-blue-600 shrink-0" />
               <div>
                 <p className="text-xs font-medium text-slate-900">
-                  Multiple Options
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  Cards, UPI, Net Banking
+                  Cash On Delivery Available On Order Value of ₹599 and above.
                 </p>
               </div>
             </div>
@@ -375,7 +371,7 @@ export default async function ProductDetailPage({
       </div>
 
       {/* Q&A Section */}
-      <ProductQA productId={product.id} />
+      {/* <ProductQA productId={product.id} /> */}
 
       {/* Similar Products */}
       <SimilarProducts

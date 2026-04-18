@@ -78,6 +78,11 @@ export function ProductCard({ product }: { product: Product }) {
 
           {/* Badges Container */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+            {hasDiscount && (
+              <Badge className="bg-red-600 text-white text-[10px] px-2 py-0.5 font-bold uppercase">
+                -{product.discount_percentage}%
+              </Badge>
+            )}
             {isOutOfStock && (
               <Badge className="bg-slate-900 text-white text-[10px] px-2 py-0.5 font-semibold uppercase">
                 Sold Out
@@ -92,7 +97,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
 
           {/* Quick Actions - Wishlist */}
-          <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5">
             <WishlistButton productId={product.id} />
           </div>
         </div>
@@ -134,11 +139,6 @@ export function ProductCard({ product }: { product: Product }) {
               {originalPrice && (
                 <span className="text-xs text-gray-400 line-through">
                   ₹{originalPrice.toLocaleString("en-IN")}
-                </span>
-              )}
-              {hasDiscount && (
-                <span className="text-[10px] font-bold text-red-600">
-                  -{product.discount_percentage}%
                 </span>
               )}
             </div>

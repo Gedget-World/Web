@@ -507,9 +507,20 @@ export default function ProductDetailsPage({
                           </label>
                           <Switch
                             checked={product.is_out_of_stock}
-                            onCheckedChange={(val) =>
-                              handleChange("is_out_of_stock", val)
-                            }
+                            onCheckedChange={async (val) => {
+                              handleChange("is_out_of_stock", val);
+                              const { error } = await supabase
+                                .from("products")
+                                .update({ is_out_of_stock: val })
+                                .eq("id", id);
+                              if (error) {
+                                console.error(
+                                  "Error updating out of stock status:",
+                                  error,
+                                );
+                                handleChange("is_out_of_stock", !val);
+                              }
+                            }}
                             className="cursor-pointer"
                           />
                         </div>
@@ -623,7 +634,7 @@ export default function ProductDetailsPage({
                     type: "text",
                     editable: true,
                   },
-                  { key: "slug", label: "Slug", type: "text", editable: false },
+                  { key: "slug", label: "Slug", type: "text", editable: true },
                   {
                     key: "price",
                     label: "Price ($)",

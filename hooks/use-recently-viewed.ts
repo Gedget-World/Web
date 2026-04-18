@@ -23,7 +23,7 @@ type RecentlyViewedStore = {
   setProducts: (products: RecentlyViewedProduct[]) => void;
 };
 
-const MAX_RECENTLY_VIEWED = 10;
+const MAX_RECENTLY_VIEWED = 5;
 
 export const useRecentlyViewed = create<RecentlyViewedStore>()(
   persist(
