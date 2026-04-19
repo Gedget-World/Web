@@ -75,84 +75,83 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
 
-    // 1. Check for PKCE flow: Supabase redirects with ?code= query parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
+    // Set up auth listener FIRST to catch PASSWORD_RECOVERY from implicit flow
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY") {
+        setIsAuthorized(true);
+        setIsCheckingAuth(false);
+      }
+    });
 
-    if (code) {
-      const exchangeCode = async () => {
+    const initialize = async () => {
+      // Step 1: Handle PKCE code in URL (fallback if redirected here directly)
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code) {
         try {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            console.error("Code exchange error:", error);
-            setIsAuthorized(false);
+          if (!error && !cancelled) {
+            window.history.replaceState({}, "", window.location.pathname);
+            setIsAuthorized(true);
             setIsCheckingAuth(false);
             return;
           }
-          // Clean up the URL to remove the code parameter
-          window.history.replaceState({}, "", window.location.pathname);
-          setIsAuthorized(true);
-          setIsCheckingAuth(false);
-        } catch (err) {
-          console.error("Code exchange failed:", err);
-          setIsAuthorized(false);
-          setIsCheckingAuth(false);
+        } catch {
+          // Code exchange failed, continue to other checks
         }
-      };
-      exchangeCode();
-      return;
-    }
+      }
 
-    // 2. Check for implicit flow: hash fragment with #type=recovery&access_token=...
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const isRecoveryLink =
-      hashParams.get("type") === "recovery" && hashParams.has("access_token");
+      // Step 2: Handle implicit flow hash (#type=recovery&access_token=...)
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        const hashParams = new URLSearchParams(hash);
+        if (
+          hashParams.get("type") === "recovery" &&
+          hashParams.has("access_token")
+        ) {
+          // Supabase client processes hash automatically and fires
+          // PASSWORD_RECOVERY via onAuthStateChange listener above.
+          // Give it time, then redirect if it never fires.
+          setTimeout(() => {
+            if (!cancelled) {
+              setIsCheckingAuth((prev) => {
+                if (prev) router.push("/auth/forgot-password");
+                return prev;
+              });
+            }
+          }, 5000);
+          return;
+        }
+      }
 
-    if (isRecoveryLink) {
-      setIsAuthorized(true);
-      setIsCheckingAuth(false);
-      return;
-    }
-
-    // 3. Check current session for non-recovery access attempts
-    const checkSession = async () => {
+      // Step 3: Check for existing session
+      // (e.g. user arrived here after /auth/callback exchanged the PKCE code)
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // No session and no recovery link - redirect to forgot password
-      if (!session) {
-        router.push("/auth/forgot-password");
+      if (session && !cancelled) {
+        setIsAuthorized(true);
+        setIsCheckingAuth(false);
         return;
       }
 
-      // Listen for auth state changes (in case PASSWORD_RECOVERY fires)
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event) => {
-        if (event === "PASSWORD_RECOVERY") {
-          setIsAuthorized(true);
-          setIsCheckingAuth(false);
-        }
-      });
-
-      // Give time for PASSWORD_RECOVERY event to fire
-      setTimeout(() => {
-        setIsCheckingAuth((checking) => {
-          if (checking) {
-            router.push("/auth/forgot-password");
-          }
-          return checking;
-        });
-      }, 2000);
-
-      return () => {
-        subscription.unsubscribe();
-      };
+      // Step 4: No auth found — redirect to forgot-password
+      if (!cancelled) {
+        router.push("/auth/forgot-password");
+      }
     };
 
-    checkSession();
+    initialize();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
