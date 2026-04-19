@@ -76,20 +76,46 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    // IMPORTANT: Capture recovery state IMMEDIATELY before Supabase clears the hash
-    // Supabase clears the hash after processing, so we must check it first
+    // 1. Check for PKCE flow: Supabase redirects with ?code= query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+
+    if (code) {
+      const exchangeCode = async () => {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("Code exchange error:", error);
+            setIsAuthorized(false);
+            setIsCheckingAuth(false);
+            return;
+          }
+          // Clean up the URL to remove the code parameter
+          window.history.replaceState({}, "", window.location.pathname);
+          setIsAuthorized(true);
+          setIsCheckingAuth(false);
+        } catch (err) {
+          console.error("Code exchange failed:", err);
+          setIsAuthorized(false);
+          setIsCheckingAuth(false);
+        }
+      };
+      exchangeCode();
+      return;
+    }
+
+    // 2. Check for implicit flow: hash fragment with #type=recovery&access_token=...
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const isRecoveryLink =
       hashParams.get("type") === "recovery" && hashParams.has("access_token");
 
-    // If this is a recovery link, authorize immediately
     if (isRecoveryLink) {
       setIsAuthorized(true);
       setIsCheckingAuth(false);
-      return; // No need for further checks
+      return;
     }
 
-    // Check current session for non-recovery access attempts
+    // 3. Check current session for non-recovery access attempts
     const checkSession = async () => {
       const {
         data: { session },
@@ -106,19 +132,15 @@ export default function ResetPasswordPage() {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event) => {
         if (event === "PASSWORD_RECOVERY") {
-          // This event confirms it's a password recovery flow
           setIsAuthorized(true);
           setIsCheckingAuth(false);
         }
-        // Don't handle SIGNED_IN here - let the recovery flow continue
       });
 
       // Give time for PASSWORD_RECOVERY event to fire
       setTimeout(() => {
         setIsCheckingAuth((checking) => {
           if (checking) {
-            // Still checking = no PASSWORD_RECOVERY event fired
-            // User is trying to access directly without valid recovery link
             router.push("/auth/forgot-password");
           }
           return checking;
