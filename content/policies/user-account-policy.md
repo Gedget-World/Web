@@ -1,10 +1,10 @@
 # User Account Policy
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this policy becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-At **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]`, we provide user accounts to enhance your shopping experience, enable order tracking, save preferences, and access exclusive features. This User Account Policy ("Policy") outlines the terms and conditions governing the creation, use, security, and termination of user accounts on our website, mobile applications, and related services (collectively, the "Platform").
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`, we provide user accounts to enhance your shopping experience, enable order tracking, save preferences, and access exclusive features. This User Account Policy ("Policy") outlines the terms and conditions governing the creation, use, security, and termination of user accounts on our website, mobile applications, and related services (collectively, the "Platform").
 
 By creating an account on the Platform, you acknowledge that you have read, understood, and agree to the terms of this Policy. This Policy should be read in conjunction with our Terms & Conditions, Privacy Policy, and other applicable policies.
 
@@ -505,43 +505,19 @@ This Policy is governed by and construed in accordance with the **laws of India*
 - The **Consumer Protection Act, 2019** and the **Consumer Protection (E-Commerce) Rules, 2020**.
 - The **Indian Contract Act, 1872**.
 
-### 17.2 Dispute Resolution
+---
 
-Any disputes arising out of this Policy shall be resolved through:
+## Contact Us
 
-1. **Amicable negotiation** between the parties.
-2. If unresolved, **mediation** by a mutually agreed mediator.
-3. If still unresolved, **arbitration** as per the Arbitration and Conciliation Act, 1996. The arbitration shall be conducted by a sole arbitrator in `⚠️ [UPDATE: Enter your city, e.g., "Bengaluru, Karnataka"]`, India, and the language shall be English.
-4. Alternatively, disputes may be subject to the **exclusive jurisdiction** of the courts in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 18. Grievance Officer
-
-In accordance with the **Information Technology Act, 2000** and rules thereunder, we have appointed a Grievance Officer to address your concerns:
-
-- **Name:** `⚠️ [UPDATE: Enter Grievance Officer's full name]`
-- **Designation:** `⚠️ [UPDATE: Enter designation, e.g., "Grievance Officer"]`
-- **Email:** `⚠️ [UPDATE: Enter grievance officer email, e.g., "grievance@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter grievance officer phone number]`
-- **Address:** `⚠️ [UPDATE: Enter grievance officer/company address]`
-- **Working Hours:** Monday to Saturday, `⚠️ [UPDATE: Enter working hours, e.g., "10:00 AM to 6:00 PM IST"]`
-
-The Grievance Officer shall acknowledge your complaint within **48 hours** and resolve it within **one month** from the date of receipt.
-
----
-
-## 19. Contact Us
-
-For any questions, concerns, or requests regarding your account, please contact us:
-
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **Email:** `⚠️ [UPDATE: Enter your support email, e.g., "support@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter your customer support phone number]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-- **Customer Support Hours:** `⚠️ [UPDATE: Enter support hours, e.g., "Monday to Saturday, 10:00 AM to 6:00 PM IST"]`
-
----
-
-_This Policy was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>

@@ -1,15 +1,16 @@
 import { cn } from "@/lib/utils";
 
 interface BrandNameProps {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
 
 export function BrandName({ size = "md", className }: BrandNameProps) {
   const sizeClasses = {
-    sm: "text-lg",
-    md: "text-xl",
-    lg: "text-2xl",
+    xs: "text-xs sm:text-sm",
+    sm: "text-sm sm:text-base",
+    md: "text-base sm:text-lg",
+    lg: "text-lg sm:text-2xl",
   };
 
   return (

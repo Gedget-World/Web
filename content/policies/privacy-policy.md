@@ -1,5 +1,11 @@
 # Privacy Policy
 
+**Effective Date:** 24-April-2026
+
+**Last Updated:** 24-April-2026
+
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`.
+
 ## Personal Identification Information
 
 We may collect personal identification information from Users in a variety of ways, including, but not limited to, when Users visit our site, register on the site, place an order, fill out a form, respond to a survey, subscribe to the newsletter and in connection with other activities, services, features or resources we make available on our Site. Users may be asked for, as appropriate, name, email address, mailing address, phone number.
@@ -87,3 +93,18 @@ All information gathered on our Website is securely stored within our controlled
 ## Changes to This Privacy Policy
 
 GADGETSKABILA.COM has the discretion to update this privacy policy at any time. When we do, revise the updated date at the bottom of this page. We encourage Users to frequently check this page for any changes to stay informed about how we are helping to protect the personal information we collect. You acknowledge and agree that it is your responsibility to review this privacy policy periodically and become aware of modifications.
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
+
+---
+
+This Statement was last updated on <b>25-April-2026</b>

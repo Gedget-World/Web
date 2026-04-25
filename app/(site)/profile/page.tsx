@@ -81,10 +81,6 @@ export default async function ProfilePage() {
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
-  // Calculate total spent
-  const totalSpent =
-    orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
-
   // Get pending review count (delivered orders without reviews)
   let pendingReviewCount = 0;
   try {
@@ -113,6 +109,9 @@ export default async function ProfilePage() {
         email: user.email || "",
         created_at: user.created_at,
         email_confirmed_at: user.email_confirmed_at,
+        avatar_url:
+          (user.user_metadata?.avatar_url as string | undefined) ||
+          (user.user_metadata?.picture as string | undefined),
       }}
       customer={customer}
       orders={orders || []}
@@ -120,7 +119,6 @@ export default async function ProfilePage() {
       address={address || null}
       wishlistItems={wishlistItems}
       reviewCount={reviewCount || 0}
-      totalSpent={totalSpent}
       pendingReviewCount={pendingReviewCount}
     />
   );

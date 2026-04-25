@@ -1,5 +1,11 @@
 # Terms & Conditions
 
+**Effective Date:** 24-April-2026
+
+**Last Updated:** 24-April-2026
+
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`.
+
 ## These Terms and Conditions May Change
 
 Please read these terms and conditions ("Terms") carefully before accessing or using the Platform (defined hereinafter). These Terms along with the Privacy Policy published on the Platform ("Privacy Policy") and other policies (as may be notified/displayed/published on the Platform) constitutes the contract between the Users of this Platform and the Company (collectively "Agreement"). By use of the Platform, Users agree to be bound by these Agreement as posted on the Platform from time to time.
@@ -131,3 +137,18 @@ You are responsible for duties and taxes outside India. All items entering a for
 You are responsible for maintaining the confidentiality of your account and password information, and you agree to accept responsibility for all activities that occur under your account and password. This website and Trend on the go reserves the right to refuse service, terminate accounts remove or edit content or cancel orders.
 
 By placing an order, you warrant that you are over 18 years of age, and that you are providing GADGETSKABILA.COM with accurate, truthful information and that you have the authority to place the order.
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
+
+---
+
+This Statement was last updated on <b>25-April-2026</b>

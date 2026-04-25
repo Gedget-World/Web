@@ -1,10 +1,10 @@
 # Disclaimer
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this disclaimer becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-The information provided on **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), including our website, mobile applications, and related services (collectively, the "Platform"), is for general informational purposes only.
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), including our website, mobile applications, and related services (collectively, the "Platform"), is for general informational purposes only.
 
 By accessing or using the Platform, you acknowledge that you have read, understood, and agree to the terms of this Disclaimer. This Disclaimer should be read in conjunction with our Terms & Conditions, Privacy Policy, and other applicable policies.
 
@@ -421,21 +421,19 @@ This Disclaimer is governed by and construed in accordance with the **laws of In
 - The **Information Technology Act, 2000** and rules thereunder.
 - The **Sale of Goods Act, 1930**.
 
-Any disputes arising out of this Disclaimer shall be subject to the exclusive jurisdiction of the courts located in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
+---
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 18. Contact Us
-
-If you have any questions, concerns, or feedback regarding this Disclaimer, please contact us:
-
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **Email:** `⚠️ [UPDATE: Enter your support email, e.g., "support@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter your customer support phone number]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-- **Customer Support Hours:** `⚠️ [UPDATE: Enter support hours, e.g., "Monday to Saturday, 10:00 AM to 6:00 PM IST"]`
-
----
-
-_This Disclaimer was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>

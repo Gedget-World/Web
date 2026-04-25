@@ -1,10 +1,10 @@
 # Payment Policy
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this policy becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-At **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]`, we aim to provide a seamless, secure, and transparent payment experience. This Payment Policy ("Policy") outlines the terms and conditions related to payments, transactions, pricing, taxes, and financial matters for orders placed on our website, mobile applications, and related services (collectively, the "Platform").
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`, we aim to provide a seamless, secure, and transparent payment experience. This Payment Policy ("Policy") outlines the terms and conditions related to payments, transactions, pricing, taxes, and financial matters for orders placed on our website, mobile applications, and related services (collectively, the "Platform").
 
 By making a purchase on the Platform, you acknowledge that you have read, understood, and agree to the terms of this Policy. This Policy should be read in conjunction with our Terms & Conditions, Privacy Policy, and Return, Refund & Cancellation Policy.
 
@@ -371,22 +371,19 @@ This Policy is governed by and construed in accordance with the **laws of India*
 - The **Information Technology Act, 2000** and rules thereunder.
 - The **Consumer Protection Act, 2019** and the **Consumer Protection (E-Commerce) Rules, 2020**.
 
-Any disputes arising out of this Policy shall be subject to the exclusive jurisdiction of the courts located in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
+---
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 15. Contact Us
-
-For any questions, concerns, or issues regarding payments, please contact us:
-
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **Email:** `⚠️ [UPDATE: Enter your support/payments email, e.g., "payments@gadgetskabila.com" or "support@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter your customer support phone number]`
-- **WhatsApp:** `⚠️ [UPDATE: Enter WhatsApp number if available, or remove this line]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-- **Customer Support Hours:** `⚠️ [UPDATE: Enter support hours, e.g., "Monday to Saturday, 10:00 AM to 6:00 PM IST"]`
-
----
-
-_This Policy was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>

@@ -1,10 +1,10 @@
 # Cookie Policy
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this policy becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-At **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]`, we use cookies and similar tracking technologies to enhance your browsing experience, analyze website traffic, personalize content, and deliver targeted advertisements. This Cookie Policy ("Policy") explains what cookies are, how we use them, the types of cookies we use, and how you can manage your cookie preferences.
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`, we use cookies and similar tracking technologies to enhance your browsing experience, analyze website traffic, personalize content, and deliver targeted advertisements. This Cookie Policy ("Policy") explains what cookies are, how we use them, the types of cookies we use, and how you can manage your cookie preferences.
 
 This Policy should be read in conjunction with our **Privacy Policy**, which provides detailed information on how we collect, use, and protect your personal data.
 
@@ -344,36 +344,22 @@ We encourage you to review this Policy periodically to stay informed.
 
 If you use our mobile applications:
 
-- We use **SDKs** (Software Development Kits) from third parties that may collect data similar to cookies (device identifiers, usage data, location data).
-- The SDKs we use include: `⚠️ [UPDATE: List SDKs used in your mobile app, e.g., "Google Firebase Analytics, Facebook SDK, Crashlytics, etc." or state "Not applicable — we do not currently have a mobile application."]`
 - You can manage tracking through your device's privacy settings (see Section 7.5).
 - For more details on data collected through our mobile apps, please refer to our **Privacy Policy**.
 
 ---
 
-## 11. Contact Us
+## Contact Us
 
-If you have any questions, concerns, or requests regarding this Cookie Policy or how we use cookies, please contact us:
+For accessibility questions, feedback, or assistance:
 
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **Email:** `⚠️ [UPDATE: Enter your privacy/support email, e.g., "privacy@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter your customer support phone number]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-
-For privacy-related inquiries, you may also contact our Grievance Officer / Data Protection Officer:
-
-- **Name:** `⚠️ [UPDATE: Enter Grievance Officer's name]`
-- **Email:** `⚠️ [UPDATE: Enter grievance officer email]`
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 12. Governing Law
-
-This Cookie Policy is governed by and construed in accordance with the **laws of India**, the **General Data Protection Regulation (GDPR)** (for EU/EEA visitors), the **UK GDPR** (for UK visitors), and the **California Consumer Privacy Act (CCPA)** (for California visitors), as applicable.
-
-Any disputes arising out of this Policy shall be subject to the exclusive jurisdiction of the courts located in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
-
----
-
-_This Cookie Policy was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>

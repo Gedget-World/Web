@@ -1,10 +1,10 @@
 # Grievance Redressal & Contact Information Policy
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this policy becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-At **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), we are committed to providing excellent customer service and resolving your concerns promptly and fairly. This Grievance Redressal & Contact Information Policy ("Policy") outlines how you can reach us, the process for filing complaints, and the mechanisms we have in place to address your grievances.
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), we are committed to providing excellent customer service and resolving your concerns promptly and fairly. This Grievance Redressal & Contact Information Policy ("Policy") outlines how you can reach us, the process for filing complaints, and the mechanisms we have in place to address your grievances.
 
 This Policy is established in compliance with the **Consumer Protection Act, 2019**, the **Consumer Protection (E-Commerce) Rules, 2020**, the **Information Technology Act, 2000**, and the **Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021**.
 
@@ -471,35 +471,19 @@ This Policy is governed by and construed in accordance with the **laws of India*
 - The **Information Technology Act, 2000** and the **Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021**.
 - The **Digital Personal Data Protection (DPDP) Act, 2023**.
 
-Any disputes arising out of this Policy shall be subject to the exclusive jurisdiction of the courts located in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
+---
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 14. Summary Contact Card
-
-For quick reference, here's a summary of all key contacts:
-
-| **Purpose**                | **Email**     | **Phone**     |
-| -------------------------- | ------------- | ------------- |
-| **General Support**        | `⚠️ [UPDATE]` | `⚠️ [UPDATE]` |
-| **Grievance Officer**      | `⚠️ [UPDATE]` | `⚠️ [UPDATE]` |
-| **Escalations**            | `⚠️ [UPDATE]` | —             |
-| **Legal**                  | `⚠️ [UPDATE]` | —             |
-| **Business / Bulk Orders** | `⚠️ [UPDATE]` | `⚠️ [UPDATE]` |
-| **Partnerships**           | `⚠️ [UPDATE]` | —             |
-| **Press / Media**          | `⚠️ [UPDATE]` | —             |
-| **Careers**                | `⚠️ [UPDATE]` | —             |
-
-**Website:** `⚠️ [UPDATE: Enter your website URL]`
-
-**Registered Office:**
-
-```
-⚠️ [UPDATE: Enter complete registered office address]
-```
-
-**Working Hours:** `⚠️ [UPDATE: e.g., "Monday to Saturday, 10:00 AM to 6:00 PM IST"]`
-
----
-
-_This Grievance Redressal & Contact Information Policy was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>

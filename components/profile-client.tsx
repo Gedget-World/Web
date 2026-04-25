@@ -23,7 +23,6 @@ import {
   Package,
   Heart,
   Star,
-  ShoppingBag,
   Truck,
   Clock,
   Check,
@@ -131,6 +130,7 @@ interface ProfileClientProps {
     email: string;
     created_at: string;
     email_confirmed_at?: string;
+    avatar_url?: string;
   };
   customer: Customer | null;
   orders: Order[];
@@ -138,7 +138,6 @@ interface ProfileClientProps {
   address: Address | null;
   wishlistItems: WishlistItem[];
   reviewCount: number;
-  totalSpent: number;
   pendingReviewCount: number;
 }
 
@@ -150,7 +149,6 @@ export function ProfileClient({
   address: initialAddress,
   wishlistItems,
   reviewCount,
-  totalSpent,
   pendingReviewCount,
 }: ProfileClientProps) {
   const { toast } = useToast();
@@ -270,9 +268,6 @@ export function ProfileClient({
     };
   };
 
-  // Loyalty points (mock calculation)
-  const loyaltyPoints = Math.floor(totalSpent * 0.1);
-
   // Order status icon
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -327,9 +322,19 @@ export function ProfileClient({
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-4">
                 {/* Avatar */}
-                <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl md:text-3xl font-bold border-2 border-white/30">
-                  {customer?.first_name?.[0]?.toUpperCase() ||
-                    user.email[0].toUpperCase()}
+                <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl md:text-3xl font-bold border-2 border-white/30 overflow-hidden">
+                  {user.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.avatar_url}
+                      alt="Profile"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    customer?.first_name?.[0]?.toUpperCase() ||
+                    user.email[0].toUpperCase()
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-white/80">{getGreeting()}</p>
@@ -394,62 +399,6 @@ export function ProfileClient({
               Verify Phone
             </Badge>
           ) : null}
-        </div>
-
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <ShoppingBag className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {orderCount}
-                </p>
-                <p className="text-xs text-slate-500">Orders</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center">
-                <Heart className="h-5 w-5 text-pink-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {wishlistItems.length}
-                </p>
-                <p className="text-xs text-slate-500">Wishlist</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <Star className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {reviewCount}
-                </p>
-                <p className="text-xs text-slate-500">Reviews</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                <Gift className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {loyaltyPoints}
-                </p>
-                <p className="text-xs text-slate-500">Points</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -894,7 +843,7 @@ export function ProfileClient({
             )}
 
             {/* Referral Banner */}
-            <Card className="hover:shadow-md transition-all border-slate-200 overflow-hidden">
+            {/* <Card className="hover:shadow-md transition-all border-slate-200 overflow-hidden">
               <div className="bg-linear-to-r from-indigo-500 to-purple-600 p-4 text-white">
                 <div className="flex items-center gap-2 mb-2">
                   <Gift className="h-5 w-5" />
@@ -928,7 +877,7 @@ export function ProfileClient({
                   </Button>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Account Benefits */}
             <Card className="hover:shadow-md transition-all border-slate-200">
@@ -1001,7 +950,7 @@ export function ProfileClient({
                   className="w-full justify-start h-9"
                   asChild
                 >
-                  <Link href="/contact">
+                  <Link href="/contact-us">
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Contact Us
                     <ChevronRight className="h-4 w-4 ml-auto" />
@@ -1012,9 +961,9 @@ export function ProfileClient({
                   className="w-full justify-start h-9"
                   asChild
                 >
-                  <Link href="/faq">
+                  <Link href="/help">
                     <HelpCircle className="h-4 w-4 mr-2" />
-                    FAQ
+                    Help
                     <ChevronRight className="h-4 w-4 ml-auto" />
                   </Link>
                 </Button>
@@ -1023,7 +972,7 @@ export function ProfileClient({
                   className="w-full justify-start h-9"
                   asChild
                 >
-                  <Link href="/policies/shipping">
+                  <Link href="/policies/shipping-and-delivery-policy">
                     <Truck className="h-4 w-4 mr-2" />
                     Shipping Policy
                     <ChevronRight className="h-4 w-4 ml-auto" />

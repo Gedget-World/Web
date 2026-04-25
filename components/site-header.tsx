@@ -191,25 +191,41 @@ export function SiteHeader() {
               </SheetHeader>
 
               {/* User Welcome (if logged in) */}
-              {user && (
-                <div className="p-4 bg-gray-50 border-b">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-primary" />
+              {user &&
+                (() => {
+                  const avatarUrl =
+                    (user.user_metadata?.avatar_url as string | undefined) ||
+                    (user.user_metadata?.picture as string | undefined);
+                  return (
+                    <div className="p-4 bg-gray-50 border-b">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                          {avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={avatarUrl}
+                              alt="Profile"
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-6 h-6 text-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            {getGreeting()},
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {user.user_metadata?.full_name ||
+                              user.email?.split("@")[0] ||
+                              "User"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {getGreeting()},
-                      </p>
-                      <p className="font-semibold text-gray-900">
-                        {user.user_metadata?.full_name ||
-                          user.email?.split("@")[0] ||
-                          "User"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  );
+                })()}
 
               {/* Quick Links */}
               <div className="p-4 border-b">
@@ -335,8 +351,13 @@ export function SiteHeader() {
                 className="w-11 h-11 md:w-12 md:h-12"
               />
             </div>
-            <span className="hidden md:inline">
-              <BrandName size="lg" />
+            <span className="inline">
+              <span className="md:hidden">
+                <BrandName size="xs" />
+              </span>
+              <span className="hidden md:inline">
+                <BrandName size="lg" />
+              </span>
             </span>
           </Link>
 
@@ -416,8 +437,22 @@ export function SiteHeader() {
                     variant="ghost"
                     className="flex items-center gap-2 px-3 hover:bg-primary/5"
                   >
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary" />
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                      {user.user_metadata?.avatar_url ||
+                      user.user_metadata?.picture ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={
+                            (user.user_metadata?.avatar_url as string) ||
+                            (user.user_metadata?.picture as string)
+                          }
+                          alt="Profile"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-4 w-4 text-primary" />
+                      )}
                     </div>
                     <div className="hidden lg:block text-left">
                       <p className="text-xs text-muted-foreground leading-none">
@@ -591,8 +626,22 @@ export function SiteHeader() {
                 <TooltipTrigger asChild>
                   <Link href="/profile" className="md:hidden ml-2">
                     <Button variant="ghost" size="icon" className="relative">
-                      <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30">
-                        <User className="h-4 w-4 text-primary" />
+                      <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30 overflow-hidden">
+                        {user.user_metadata?.avatar_url ||
+                        user.user_metadata?.picture ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={
+                              (user.user_metadata?.avatar_url as string) ||
+                              (user.user_metadata?.picture as string)
+                            }
+                            alt="Profile"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-primary" />
+                        )}
                       </div>
                       <span className="sr-only">Profile</span>
                     </Button>

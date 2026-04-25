@@ -1,10 +1,10 @@
 # Accessibility Statement
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this statement becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-**Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), is committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone and applying the relevant accessibility standards to ensure we provide equal access to all users.
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), is committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone and applying the relevant accessibility standards to ensure we provide equal access to all users.
 
 ---
 
@@ -452,35 +452,17 @@ We are committed to addressing accessibility issues as they are identified and a
 
 ---
 
-## 15. Contact Us
+## Contact Us
 
 For accessibility questions, feedback, or assistance:
 
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **Accessibility Email:** `⚠️ [UPDATE: Enter accessibility email, e.g., "accessibility@gadgetskabila.com"]`
-- **General Support Email:** `⚠️ [UPDATE: Enter support email, e.g., "support@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter customer support phone number]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-- **Support Hours:** `⚠️ [UPDATE: Enter support hours, e.g., "Monday to Saturday, 10:00 AM to 6:00 PM IST"]`
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-_This Accessibility Statement was last updated on `⚠️ [UPDATE: Enter date of last update]`._
-
----
-
-## Appendix: WCAG 2.1 Quick Reference
-
-For transparency, here is a summary of WCAG 2.1 principles we follow:
-
-| **Principle**      | **Description**                                            | **Our Commitment**                                  |
-| ------------------ | ---------------------------------------------------------- | --------------------------------------------------- |
-| **Perceivable**    | Information must be presentable in ways users can perceive | Alt text, captions, contrast, resizable text        |
-| **Operable**       | Interface must be operable by all users                    | Keyboard access, no seizure triggers, navigable     |
-| **Understandable** | Information and UI must be understandable                  | Readable text, predictable behavior, error handling |
-| **Robust**         | Content must work with current and future technologies     | Valid code, assistive tech compatibility            |
-
----
-
-_We are committed to making Gadgets Kabila accessible to everyone. Thank you for helping us improve._
+This Statement was last updated on <b>25-April-2026</b>

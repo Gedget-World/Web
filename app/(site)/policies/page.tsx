@@ -38,72 +38,72 @@ const policies = [
     href: "/policies/shipping-and-delivery-policy",
     icon: Truck,
   },
-  {
-    title: "Payment Policy",
-    description: "Accepted payment methods, security, and billing information.",
-    href: "/policies/payment-policy",
-    icon: CreditCard,
-  },
-  {
-    title: "Cookie Policy",
-    description: "How we use cookies and similar technologies on our website.",
-    href: "/policies/cookies-policy",
-    icon: Cookie,
-  },
-  {
-    title: "User Account Policy",
-    description:
-      "Terms governing user accounts, registration, and account security.",
-    href: "/policies/user-account-policy",
-    icon: User,
-  },
-  {
-    title: "Disclaimer",
-    description:
-      "Important disclaimers about product information and liability.",
-    href: "/policies/disclaimer",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Intellectual Property Policy",
-    description:
-      "Information about copyrights, trademarks, and content ownership.",
-    href: "/policies/intellectual-property-policy",
-    icon: Scale,
-  },
-  {
-    title: "Grievance & Contact Information",
-    description:
-      "How to reach us for complaints, feedback, and grievance redressal.",
-    href: "/policies/contact-information-policy",
-    icon: Phone,
-  },
-  {
-    title: "Pricing & Tax Disclosure",
-    description:
-      "Information about pricing, taxes, and charges on our platform.",
-    href: "/policies/pricing-and-tax-disclosure",
-    icon: Tag,
-  },
-  {
-    title: "Third-Party Services Policy",
-    description:
-      "Information about third-party services we use and liability limitations.",
-    href: "/policies/third-party-services-policy",
-    icon: Building2,
-  },
-  {
-    title: "Marketing & Communication Policy",
-    description: "How we communicate with you and manage your preferences.",
-    href: "/policies/marketing-and-communication-policy",
-    icon: Megaphone,
-  },
-  {
-    title: "Accessibility Statement",
-    description: "Our commitment to making our website accessible to everyone.",
-    href: "/policies/accessibility-statement",
-    icon: Accessibility,
-  },
+  // {?
+  //   title: "Payment Policy",
+  //   description: "Accepted payment methods, security, and billing information.",
+  //   href: "/policies/payment-policy",
+  //   icon: CreditCard,
+  // },
+  // {
+  //   title: "Cookie Policy",
+  //   description: "How we use cookies and similar technologies on our website.",
+  //   href: "/policies/cookies-policy",
+  //   icon: Cookie,
+  // },
+  // {
+  //   title: "User Account Policy",
+  //   description:
+  //     "Terms governing user accounts, registration, and account security.",
+  //   href: "/policies/user-account-policy",
+  //   icon: User,
+  // },
+  // {
+  //   title: "Disclaimer",
+  //   description:
+  //     "Important disclaimers about product information and liability.",
+  //   href: "/policies/disclaimer",
+  //   icon: AlertTriangle,
+  // },
+  // {
+  //   title: "Intellectual Property Policy",
+  //   description:
+  //     "Information about copyrights, trademarks, and content ownership.",
+  //   href: "/policies/intellectual-property-policy",
+  //   icon: Scale,
+  // },
+  // {
+  //   title: "Grievance & Contact Information",
+  //   description:
+  //     "How to reach us for complaints, feedback, and grievance redressal.",
+  //   href: "/policies/contact-information-policy",
+  //   icon: Phone,
+  // },
+  // {
+  //   title: "Pricing & Tax Disclosure",
+  //   description:
+  //     "Information about pricing, taxes, and charges on our platform.",
+  //   href: "/policies/pricing-and-tax-disclosure",
+  //   icon: Tag,
+  // },
+  // {
+  //   title: "Third-Party Services Policy",
+  //   description:
+  //     "Information about third-party services we use and liability limitations.",
+  //   href: "/policies/third-party-services-policy",
+  //   icon: Building2,
+  // },
+  // {
+  //   title: "Marketing & Communication Policy",
+  //   description: "How we communicate with you and manage your preferences.",
+  //   href: "/policies/marketing-and-communication-policy",
+  //   icon: Megaphone,
+  // },
+  // {
+  //   title: "Accessibility Statement",
+  //   description: "Our commitment to making our website accessible to everyone.",
+  //   href: "/policies/accessibility-statement",
+  //   icon: Accessibility,
+  // },
 ];
 
 export default function PoliciesPage() {

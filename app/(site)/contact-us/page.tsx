@@ -39,14 +39,14 @@ export default function ContactUsPage() {
   ]);
 
   const contactEmail = getSetting("contact_email", "support@gadgetkabila.com");
-  const contactPhone = getSetting("contact_phone", "+91 9876543210");
+  const contactPhone = getSetting("contact_phone", "+91 8839978399");
   const storeAddress = getSetting(
     "store_address",
-    "123 Business Avenue, Suite 100",
+    "Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad",
   );
-  const storeCity = getSetting("store_city", "Bengaluru");
-  const storeState = getSetting("store_state", "Karnataka");
-  const storePincode = getSetting("store_pincode", "560001");
+  const storeCity = getSetting("store_city", "Bhopal");
+  const storeState = getSetting("store_state", "Madhya Pradesh");
+  const storePincode = getSetting("store_pincode", "462044");
   const storeCountry = getSetting("store_country", "India");
 
   const [user, setUser] = useState<User | null>(null);
@@ -467,16 +467,6 @@ export default function ContactUsPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
             Frequently Asked Questions?
           </h2>
-          <p className="text-gray-600 mb-6">
-            Check out our{" "}
-            <Link
-              href="/policies/contact-information-policy"
-              className="text-blue-600 hover:underline"
-            >
-              Grievance & Contact Policy
-            </Link>{" "}
-            for more information about how we handle your inquiries.
-          </p>
           <FAQSections />
         </div>
       </div>

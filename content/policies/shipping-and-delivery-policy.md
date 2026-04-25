@@ -1,5 +1,11 @@
 # Shipping, Cancellation, Exchange, Returns and Cash on Delivery
 
+**Effective Date:** 24-April-2026
+
+**Last Updated:** 24-April-2026
+
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`.
+
 ## Cash on Delivery (COD) Policy
 
 - For Cash on Delivery orders, **20% of the final amount** is to be paid in advance for orders **below Rs. 10,000**, and **15% of the final amount** is to be paid in advance for orders **above Rs. 10,000**.
@@ -72,8 +78,17 @@ Refunds for cancelled orders will be processed only through the **same mode of p
 - Cheques will be made as per the **billing name** provided.
 - For non-delivered items, refunds will be processed only on confirmation that the product was not delivered to you and you choose to take a refund and are not interested in any other product.
 
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
+
 ---
 
-_All rights reserved with **GADGETSKABILA.COM**. To stay updated, kindly read the Terms and Conditions from time to time._
-
-For any issues, please **Contact Us**.
+This Statement was last updated on <b>25-April-2026</b>

@@ -56,6 +56,7 @@ function NewAdminContent() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [existingPermissions, setExistingPermissions] = useState<string[]>([]);
+  const [rolePermissions, setRolePermissions] = useState<string[]>([]);
 
   const [emailStatus, setEmailStatus] = useState<
     "checking" | "available" | "taken" | ""
@@ -87,6 +88,37 @@ function NewAdminContent() {
     fetchRolesAndPermissions();
   }, []);
 
+  // Fetch role permissions when role changes
+  useEffect(() => {
+    const fetchRolePermissions = async () => {
+      if (!admin.role_id) {
+        setRolePermissions([]);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/admins/roles/${admin.role_id}/permissions`,
+        );
+        const result = await res.json();
+        if (result.success && result.data) {
+          const rolePermIds = result.data.map((p: Permission) => p.id);
+          setRolePermissions(rolePermIds);
+
+          // Remove direct permissions that are now covered by the role
+          setSelectedPermissions((prev) =>
+            prev.filter((permId) => !rolePermIds.includes(permId)),
+          );
+        } else {
+          setRolePermissions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching role permissions:", error);
+        setRolePermissions([]);
+      }
+    };
+    fetchRolePermissions();
+  }, [admin.role_id]);
+
   // Fetch existing admin data if editing
   useEffect(() => {
     if (adminId) {
@@ -115,6 +147,33 @@ function NewAdminContent() {
               );
               setSelectedPermissions(permIds);
               setExistingPermissions(permIds);
+            }
+
+            // Fetch role permissions if admin has a role assigned
+            if (data.role_id) {
+              try {
+                const rolePermRes = await fetch(
+                  `/api/admins/roles/${data.role_id}/permissions`,
+                );
+                const rolePermResult = await rolePermRes.json();
+                if (rolePermResult.success && rolePermResult.data) {
+                  const rolePermIds = rolePermResult.data.map(
+                    (p: Permission) => p.id,
+                  );
+                  setRolePermissions(rolePermIds);
+
+                  // Remove direct permissions that are already in role permissions
+                  if (result.data.directPermissions) {
+                    const filteredPermIds = result.data.directPermissions
+                      .map((p: any) => p.id)
+                      .filter((id: string) => !rolePermIds.includes(id));
+                    setSelectedPermissions(filteredPermIds);
+                    setExistingPermissions(filteredPermIds);
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching role permissions:", error);
+              }
             }
           }
         } catch (error) {
@@ -450,33 +509,51 @@ function NewAdminContent() {
                 </p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {permissions.map((permission) => (
-                    <div
-                      key={permission.id}
-                      className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <Checkbox
-                        id={permission.id}
-                        checked={selectedPermissions.includes(permission.id)}
-                        onCheckedChange={() =>
-                          handlePermissionToggle(permission.id)
-                        }
-                      />
-                      <div className="space-y-1">
-                        <label
-                          htmlFor={permission.id}
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          {permission.name}
-                        </label>
-                        {permission.description && (
-                          <p className="text-xs text-muted-foreground">
-                            {permission.description}
-                          </p>
-                        )}
+                  {permissions.map((permission) => {
+                    const isFromRole = rolePermissions.includes(permission.id);
+                    const isDirectlySelected = selectedPermissions.includes(
+                      permission.id,
+                    );
+                    const isChecked = isFromRole || isDirectlySelected;
+
+                    return (
+                      <div
+                        key={permission.id}
+                        className={`flex items-start space-x-3 p-3 border rounded-lg transition-colors ${
+                          isFromRole
+                            ? "bg-blue-50 border-blue-200"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <Checkbox
+                          id={permission.id}
+                          checked={isChecked}
+                          disabled={isFromRole}
+                          onCheckedChange={() =>
+                            handlePermissionToggle(permission.id)
+                          }
+                        />
+                        <div className="space-y-1">
+                          <label
+                            htmlFor={permission.id}
+                            className={`text-sm font-medium ${isFromRole ? "text-blue-700" : "cursor-pointer"}`}
+                          >
+                            {permission.name}
+                            {isFromRole && (
+                              <span className="ml-2 text-xs text-blue-500 font-normal">
+                                (from role)
+                              </span>
+                            )}
+                          </label>
+                          {permission.description && (
+                            <p className="text-xs text-muted-foreground">
+                              {permission.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

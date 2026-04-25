@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "./ui/button";
 import { MessageCircleQuestion } from "lucide-react";
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -19,18 +20,18 @@ export default function FAQSections() {
         </div>
         <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4 mt-2 text-left">
           Frequently Asked Questions —{" "}
-          <span className="hidden md:inline">
-            <br />
-          </span>
-          We&apos;re Here to Help
+          <span className="block md:inline">We&apos;re Here to Help</span>
         </h2>
         <p className="mb-3 text-sm md:text-base text-slate-600 text-left">
           Find quick answers to the most common questions about orders,
           payments, delivery, returns, and account management.
         </p>
         <div className="text-left">
-          <Button className="mt-4 md:mt-6 rounded-sm cursor-pointer text-sm w-full sm:w-auto">
-            Contact Support
+          <Button
+            asChild
+            className="mt-4 md:mt-6 rounded-sm cursor-pointer text-sm w-full sm:w-auto"
+          >
+            <Link href="/contact-us">Contact Support</Link>
           </Button>
         </div>
       </div>

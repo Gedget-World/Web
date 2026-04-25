@@ -1,10 +1,10 @@
 # Intellectual Property Policy
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this policy becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-At **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), we take the protection of intellectual property rights seriously—both our own and those of others. This Intellectual Property Policy ("Policy") outlines the ownership, use, and protection of intellectual property on our website, mobile applications, and related services (collectively, the "Platform").
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), we take the protection of intellectual property rights seriously—both our own and those of others. This Intellectual Property Policy ("Policy") outlines the ownership, use, and protection of intellectual property on our website, mobile applications, and related services (collectively, the "Platform").
 
 By accessing or using the Platform, you acknowledge that you have read, understood, and agree to the terms of this Policy. This Policy should be read in conjunction with our Terms & Conditions and other applicable policies.
 
@@ -458,24 +458,19 @@ This Policy is governed by and construed in accordance with the **laws of India*
 - **The Information Technology Act, 2000** and rules thereunder.
 - **The Indian Penal Code, 1860** (for criminal IP offenses).
 
-Any disputes arising out of this Policy shall be subject to the exclusive jurisdiction of the courts located in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
+---
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 15. Contact Us
-
-For any questions, concerns, or requests regarding intellectual property, please contact us:
-
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **General Inquiries:** `⚠️ [UPDATE: Enter your support email]`
-- **Copyright Notices:** `⚠️ [UPDATE: Enter copyright notice email]`
-- **Trademark Notices:** `⚠️ [UPDATE: Enter trademark/legal email]`
-- **Permissions & Licensing:** `⚠️ [UPDATE: Enter permissions email]`
-- **Counterfeit Reports:** `⚠️ [UPDATE: Enter counterfeit reporting email]`
-- **Phone:** `⚠️ [UPDATE: Enter your customer support phone number]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-
----
-
-_This Intellectual Property Policy was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>

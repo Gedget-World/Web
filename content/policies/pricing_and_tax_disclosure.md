@@ -1,10 +1,10 @@
 # Pricing & Tax Disclosure Policy
 
-**Effective Date:** `⚠️ [UPDATE: Enter the date this policy becomes effective]`
+**Effective Date:** 24-April-2026
 
-**Last Updated:** `⚠️ [UPDATE: Enter the date of last update]`
+**Last Updated:** 24-April-2026
 
-At **Gadgets Kabila** (`⚠️ [UPDATE: Enter your website URL]`), operated by `⚠️ [UPDATE: Enter your registered business/company name]` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), we are committed to transparent and fair pricing. This Pricing & Tax Disclosure Policy ("Policy") explains how prices are displayed, what taxes and charges are applicable, and how we handle pricing matters on our website, mobile applications, and related services (collectively, the "Platform").
+At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila` (hereinafter referred to as "Gadgets Kabila," "we," "us," or "our"), we are committed to transparent and fair pricing. This Pricing & Tax Disclosure Policy ("Policy") explains how prices are displayed, what taxes and charges are applicable, and how we handle pricing matters on our website, mobile applications, and related services (collectively, the "Platform").
 
 This Policy is established in compliance with the **Consumer Protection Act, 2019**, the **Consumer Protection (E-Commerce) Rules, 2020**, the **Legal Metrology Act, 2009**, and the **Goods and Services Tax (GST) Act, 2017**.
 
@@ -466,22 +466,19 @@ This Policy is governed by and construed in accordance with the **laws of India*
 - The **Goods and Services Tax Act, 2017** and related rules.
 - The **Legal Metrology Act, 2009** and the **Legal Metrology (Packaged Commodities) Rules, 2011**.
 
-Any disputes arising out of this Policy shall be subject to the exclusive jurisdiction of the courts located in `⚠️ [UPDATE: Enter your city of jurisdiction, e.g., "Bengaluru, Karnataka"]`, India.
+---
+
+## Contact Us
+
+For accessibility questions, feedback, or assistance:
+
+- **Company Name:** Gadgets Kabila
+- **General Support Email:** support@gadgetskabila.com
+- **Phone:** +91 8839978399
+- **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
+- **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
+- **Support Hours:** 24/7 Supports available.
 
 ---
 
-## 16. Contact Us
-
-For any questions, concerns, or clarifications regarding pricing and taxes, please contact us:
-
-- **Company Name:** Gadgets Kabila (`⚠️ [UPDATE: Enter registered entity name if different]`)
-- **Email:** `⚠️ [UPDATE: Enter your support email, e.g., "support@gadgetskabila.com"]`
-- **Phone:** `⚠️ [UPDATE: Enter your customer support phone number]`
-- **Address:** `⚠️ [UPDATE: Enter your full business/registered office address]`
-- **Website:** `⚠️ [UPDATE: Enter your website URL]`
-- **GSTIN:** `⚠️ [UPDATE: Enter your GST Identification Number]`
-- **Customer Support Hours:** `⚠️ [UPDATE: Enter support hours, e.g., "Monday to Saturday, 10:00 AM to 6:00 PM IST"]`
-
----
-
-_This Pricing & Tax Disclosure Policy was last updated on `⚠️ [UPDATE: Enter date of last update]`._
+This Statement was last updated on <b>25-April-2026</b>
