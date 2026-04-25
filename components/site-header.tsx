@@ -145,22 +145,26 @@ export function SiteHeader() {
       {/* Announcement Bar */}
       <div className="bg-linear-to-r from-primary via-primary/90 to-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
-        <div className="container relative flex items-center justify-center gap-2 px-4 py-2 text-xs md:text-sm">
-          <div className="flex items-center gap-6 text-white">
-            <div className="hidden sm:flex items-center gap-2">
-              <Truck className="w-4 h-4" />
-              <span>Free Shipping All Over India</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              <span className="font-medium">
-                Up-To 10% Off On Pre-Paid Orders
+        <div className="container relative flex items-center justify-center gap-2 px-2 py-2 text-[11px] sm:text-xs md:text-sm">
+          <div className="flex items-center gap-3 sm:gap-6 text-white whitespace-nowrap">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>
+                <span className="sm:hidden">Free Shipping</span>
+                <span className="hidden sm:inline">
+                  Free Shipping All Over India
+                </span>
               </span>
             </div>
-            {/* <div className="hidden md:flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>Support: 1800-123-4567</span>
-              </div> */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="font-medium">
+                <span className="sm:hidden">10% Off Pre-Paid</span>
+                <span className="hidden sm:inline">
+                  Up-To 10% Off On Pre-Paid Orders
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -312,7 +316,7 @@ export function SiteHeader() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
                     >
-                      Create Account
+                      Sign Up
                     </Link>
                   </div>
                 )}
@@ -538,7 +542,7 @@ export function SiteHeader() {
                         className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
                       >
                         <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
-                        Create Account
+                        Sign Up
                       </Link>
                       <div className="bg-border -mx-1 my-1 h-px" />
                       <Link
@@ -569,7 +573,7 @@ export function SiteHeader() {
                       >
                         <Link href="/auth/login">
                           <LogIn className="h-5 w-5" />
-                          <span className="sr-only">Login</span>
+                          <span className="sr-only">Sign In</span>
                         </Link>
                       </Button>
                     </TooltipTrigger>

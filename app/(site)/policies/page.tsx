@@ -32,13 +32,7 @@ const policies = [
     icon: Shield,
   },
   {
-    title: "Return, Refund & Cancellation Policy",
-    description: "Guidelines for returns, refunds, and order cancellations.",
-    href: "/policies/return-refund-cancellation-policy",
-    icon: RefreshCw,
-  },
-  {
-    title: "Shipping & Delivery Policy",
+    title: "Shipping, Delivery Policy, Cancellation & Return Policy",
     description:
       "Information about shipping methods, delivery times, and charges.",
     href: "/policies/shipping-and-delivery-policy",

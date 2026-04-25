@@ -9,12 +9,19 @@ export async function GET(request: Request) {
   const errorDescription = requestUrl.searchParams.get("error_description");
   const redirect = requestUrl.searchParams.get("redirect") || "/";
 
+  // If this callback was meant for a password reset flow, send any errors
+  // back to the forgot-password page so the user can request a new link.
+  const isPasswordResetFlow = redirect.startsWith("/auth/reset-password");
+  const errorRedirectTarget = isPasswordResetFlow
+    ? "/auth/forgot-password"
+    : "/auth/login";
+
   // Handle OAuth errors from provider
   if (error) {
     console.error("OAuth error:", error, errorDescription);
     return NextResponse.redirect(
       new URL(
-        `/auth/login?error=${encodeURIComponent(errorDescription || error)}`,
+        `${errorRedirectTarget}?error=${encodeURIComponent(errorDescription || error)}`,
         requestUrl.origin,
       ),
     );
@@ -47,7 +54,7 @@ export async function GET(request: Request) {
       console.error("Code exchange error:", exchangeError);
       return NextResponse.redirect(
         new URL(
-          `/auth/login?error=${encodeURIComponent(exchangeError.message)}`,
+          `${errorRedirectTarget}?error=${encodeURIComponent(exchangeError.message)}`,
           requestUrl.origin,
         ),
       );

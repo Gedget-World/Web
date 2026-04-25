@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import {
   Eye,
@@ -59,7 +59,9 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const passwordStrength = useMemo(
     () => getPasswordStrength(password),
@@ -76,82 +78,124 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
+    let authorizedLocally = false;
+    const cleanupTimers: ReturnType<typeof setTimeout>[] = [];
 
-    // Set up auth listener FIRST to catch PASSWORD_RECOVERY from implicit flow
+    const redirectToForgot = (reason: string) => {
+      if (cancelled || authorizedLocally) return;
+      router.replace(
+        `/auth/forgot-password?error=${encodeURIComponent(reason)}`,
+      );
+    };
+
+    const markAuthorized = async () => {
+      if (cancelled || authorizedLocally) return;
+      authorizedLocally = true;
+      // Check whether the user originally signed in via Google so we can
+      // show them an informational note before they set a password.
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (cancelled) return;
+        const providers =
+          (user?.app_metadata?.providers as string[] | undefined) ??
+          (user?.app_metadata?.provider
+            ? [user.app_metadata.provider as string]
+            : []);
+        if (Array.isArray(providers) && providers.includes("google")) {
+          setIsGoogleUser(true);
+        }
+      } catch {
+        // non-fatal; continue
+      }
+      if (cancelled) return;
+      setIsAuthorized(true);
+      setIsCheckingAuth(false);
+    };
+
+    // Set up auth listener FIRST to catch PASSWORD_RECOVERY (implicit flow
+    // with hash fragments) and SIGNED_IN (PKCE flow via /auth/callback).
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (cancelled) return;
-      if (event === "PASSWORD_RECOVERY") {
-        setIsAuthorized(true);
-        setIsCheckingAuth(false);
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+        void markAuthorized();
       }
     });
 
-    const initialize = async () => {
-      // Step 1: Handle PKCE code in URL (fallback if redirected here directly)
-      const code = new URLSearchParams(window.location.search).get("code");
-      if (code) {
-        try {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (!error && !cancelled) {
-            window.history.replaceState({}, "", window.location.pathname);
-            setIsAuthorized(true);
-            setIsCheckingAuth(false);
-            return;
-          }
-        } catch {
-          // Code exchange failed, continue to other checks
-        }
-      }
-
-      // Step 2: Handle implicit flow hash (#type=recovery&access_token=...)
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        const hashParams = new URLSearchParams(hash);
-        if (
-          hashParams.get("type") === "recovery" &&
-          hashParams.has("access_token")
-        ) {
-          // Supabase client processes hash automatically and fires
-          // PASSWORD_RECOVERY via onAuthStateChange listener above.
-          // Give it time, then redirect if it never fires.
-          setTimeout(() => {
-            if (!cancelled) {
-              setIsCheckingAuth((prev) => {
-                if (prev) router.push("/auth/forgot-password");
-                return prev;
-              });
-            }
-          }, 5000);
-          return;
-        }
-      }
-
-      // Step 3: Check for existing session
-      // (e.g. user arrived here after /auth/callback exchanged the PKCE code)
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session && !cancelled) {
-        setIsAuthorized(true);
-        setIsCheckingAuth(false);
+    const init = async () => {
+      // 1. Surface any error returned from the email link / callback
+      //    (e.g. expired or invalid recovery token).
+      const errParam =
+        searchParams.get("error_description") ||
+        searchParams.get("error") ||
+        null;
+      if (errParam) {
+        redirectToForgot(
+          /expired|invalid/i.test(errParam)
+            ? "Your password reset link has expired. Please request a new one."
+            : errParam,
+        );
         return;
       }
 
-      // Step 4: No auth found — redirect to forgot-password
-      if (!cancelled) {
-        router.push("/auth/forgot-password");
+      // 2. If a `code` query param landed here directly (instead of going
+      //    through /auth/callback), exchange it for a session.
+      const code = searchParams.get("code");
+      if (code) {
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (exchangeError) {
+          redirectToForgot(
+            "Your password reset link has expired or is invalid. Please request a new one.",
+          );
+          return;
+        }
+        await markAuthorized();
+        return;
       }
+
+      // 3. PKCE flow: /auth/callback already exchanged the code, so a
+      //    session should be present. Authorize on existing session.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session) {
+        await markAuthorized();
+        return;
+      }
+
+      // 4. Implicit flow: tokens may still be in the URL hash and
+      //    onAuthStateChange will fire PASSWORD_RECOVERY shortly. Give it a
+      //    short grace period; otherwise treat the link as invalid.
+      const hash = typeof window !== "undefined" ? window.location.hash : "";
+      const looksLikeRecoveryHash =
+        hash.includes("access_token") || hash.includes("type=recovery");
+
+      const timeout = setTimeout(
+        () => {
+          if (cancelled || authorizedLocally) return;
+          redirectToForgot(
+            "Your password reset link is invalid or has expired. Please request a new one.",
+          );
+        },
+        looksLikeRecoveryHash ? 3000 : 800,
+      );
+      cleanupTimers.push(timeout);
     };
 
-    initialize();
+    void init();
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      cleanupTimers.forEach((t) => clearTimeout(t));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,8 +276,8 @@ export default function ResetPasswordPage() {
                 Invalid or Expired Link
               </h3>
               <p className="text-muted-foreground mb-6">
-                This password reset link is invalid or has expired. Please
-                request a new one.
+                This password reset link is invalid or has expired. Redirecting
+                you to request a new one…
               </p>
               <Link href="/auth/forgot-password" className="w-full">
                 <Button className="w-full h-11 bg-violet-600 hover:bg-violet-700">
@@ -367,6 +411,17 @@ export default function ResetPasswordPage() {
               ) : (
                 <form onSubmit={handleSubmit}>
                   <div className="flex flex-col gap-5">
+                    {isGoogleUser && (
+                      <div className="flex items-start gap-2 text-sm text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <Shield className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>
+                          Your account was created with Google. Setting a
+                          password will let you sign in with email &amp;
+                          password too — you can still continue using Google
+                          sign-in.
+                        </span>
+                      </div>
+                    )}
                     <div className="grid gap-2">
                       <Label htmlFor="password">New Password</Label>
                       <div className="relative">

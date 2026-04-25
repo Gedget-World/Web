@@ -58,10 +58,10 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <Card className="group overflow-hidden p-0 border border-gray-100 shadow-sm hover:shadow-lg hover:border-gray-200 transition-all duration-300 bg-white rounded-xl">
+    <Card className="group overflow-hidden p-0 transition-all duration-300 bg-white border-0 shadow-none">
       <Link href={`/products/${product.slug}`}>
         {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-gray-50">
+        <div className="relative aspect-square overflow-hidden bg-white">
           {/* Skeleton loader */}
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse" />
@@ -103,7 +103,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Content */}
-        <CardContent className="p-3 pb-1">
+        <CardContent className="p-0 py-3 pb-1">
           {/* Product Name */}
           <h3 className="font-medium text-sm text-gray-900 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
             {product.name}
@@ -129,7 +129,7 @@ export function ProductCard({ product }: { product: Product }) {
         </CardContent>
 
         {/* Footer */}
-        <CardFooter className="p-3 pt-1 flex items-center justify-between gap-2">
+        <CardFooter className="p-0 py-3 pt-1 flex items-center justify-between gap-2">
           {/* Price */}
           <div className="flex flex-col">
             <div className="flex items-baseline gap-1.5">

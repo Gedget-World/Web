@@ -65,12 +65,12 @@ export function WishlistButton({
   if (variant === "icon") {
     return (
       <Button
-        variant="secondary"
+        variant="outline"
         size="icon"
         onClick={handleToggle}
         disabled={isToggling}
         className={cn(
-          "h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md hover:bg-white transition-all",
+          "h-8 w-8 rounded-full bg-white/80 hover:bg-white transition-all",
           isWishlisted ? "text-red-500" : "text-gray-600",
           className,
         )}

@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Loader2,
   AlertCircle,
@@ -33,6 +34,16 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Surface any error returned from /auth/callback or /auth/reset-password
+  // (e.g. when an emailed reset link has expired).
+  useEffect(() => {
+    const errParam = searchParams.get("error");
+    if (errParam) {
+      setError(errParam);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -37,16 +37,27 @@ export function ProductSpecifications({
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <tbody className="divide-y divide-slate-100">
-          {validSpecs.map((spec, index) => (
-            <tr key={index} className="flex flex-col sm:table-row">
-              <td className="py-1 sm:py-2 font-regular text-slate-900 sm:w-1/3">
-                {spec.title}
-              </td>
-              <td className="pb-1 sm:py-2 text-slate-600">
-                {spec.description}
-              </td>
-            </tr>
-          ))}
+          {validSpecs.map((spec, index) => {
+            const hasDescription =
+              spec.description && spec.description.trim() !== "";
+            return (
+              <tr key={index} className="flex flex-col sm:table-row">
+                <td
+                  className={`py-1 sm:py-2 font-regular text-slate-900 ${
+                    hasDescription ? "sm:w-1/3" : "sm:w-full"
+                  }`}
+                  colSpan={hasDescription ? 1 : 2}
+                >
+                  {spec.title}
+                </td>
+                {hasDescription && (
+                  <td className="pb-1 sm:py-2 text-slate-600">
+                    {spec.description}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

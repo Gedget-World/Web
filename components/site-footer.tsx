@@ -32,9 +32,6 @@ export default function Footer() {
               >
                 All Products
               </Link>
-              <Link href="/deals" className="text-gray-600 hover:text-gray-800">
-                Deals
-              </Link>
               <Link
                 href="/products?sort=newest"
                 className="text-gray-600 hover:text-gray-800"
@@ -69,16 +66,10 @@ export default function Footer() {
                 Track Order
               </Link>
               <Link
-                href="/policies/shipping"
+                href="/policies/shipping-and-delivery-policy"
                 className="text-gray-600 hover:text-gray-800"
               >
-                Shipping Info
-              </Link>
-              <Link
-                href="/policies/returns"
-                className="text-gray-600 hover:text-gray-800"
-              >
-                Returns & Refunds
+                Shipping Info, Returns & Refunds
               </Link>
             </div>
           </div>
@@ -108,22 +99,16 @@ export default function Footer() {
             </h4>
             <div className="mt-3 grid space-y-3 text-sm">
               <Link
-                href="/policies/terms"
+                href="/policies/terms-and-conditions"
                 className="text-gray-600 hover:text-gray-800"
               >
                 Terms of Service
               </Link>
               <Link
-                href="/policies/privacy"
+                href="/policies/privacy-policy"
                 className="text-gray-600 hover:text-gray-800"
               >
                 Privacy Policy
-              </Link>
-              <Link
-                href="/policies/refund"
-                className="text-gray-600 hover:text-gray-800"
-              >
-                Refund Policy
               </Link>
             </div>
           </div>

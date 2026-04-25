@@ -60,6 +60,12 @@ export function CollectionsBar({ collections }: { collections: Collection[] }) {
         className="flex justify-center gap-4 py-1 px-8 overflow-x-auto scrollbar-hide"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
+        <Link
+          href={`/products`}
+          className="text-white font-regular text-sm whitespace-nowrap hover:text-amber-400 transition-colors"
+        >
+          All
+        </Link>
         {collections.map((collection) => (
           <Link
             key={collection.slug}
