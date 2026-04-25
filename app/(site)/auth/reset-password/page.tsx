@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import {
   Eye,
   EyeOff,
@@ -50,6 +50,14 @@ function getPasswordStrength(password: string): {
 }
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordPageInner />
+    </Suspense>
+  );
+}
+
+function ResetPasswordPageInner() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
