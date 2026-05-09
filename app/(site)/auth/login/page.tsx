@@ -107,7 +107,7 @@ export default function LoginPage() {
     {
       icon: Truck,
       title: "Free Shipping",
-      description: "On orders over ₹999",
+      description: "All Over India",
     },
     {
       icon: Shield,
@@ -116,8 +116,8 @@ export default function LoginPage() {
     },
     {
       icon: CreditCard,
-      title: "Easy Returns",
-      description: "7-day return policy",
+      title: "Video call support",
+      description: "Monday - Saturday",
     },
   ];
 

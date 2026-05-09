@@ -113,9 +113,9 @@ function TestimonialsSection() {
         {/* Trust stats */}
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { value: "50K+", label: "Happy Customers" },
-            { value: "10K+", label: "Products Sold" },
-            { value: "4.8★", label: "Average Rating" },
+            { value: "10K+", label: "Happy Customers" },
+            { value: "2K+", label: "Products Sold" },
+            { value: "15+", label: "States Served" },
             { value: "99%", label: "Satisfaction Rate" },
           ].map((stat, index) => (
             <div key={index} className="text-center">
@@ -252,9 +252,9 @@ export function HomePageSections({
       </LazySection>
 
       {/* Featured Section */}
-      <LazySection fallback={<SectionSkeleton height="400px" />}>
+      {/* <LazySection fallback={<SectionSkeleton height="400px" />}>
         <FeaturedSection />
-      </LazySection>
+      </LazySection> */}
 
       {/* Newsletter */}
       {/* <LazySection fallback={<SectionSkeleton height="350px" />}>

@@ -75,6 +75,7 @@ export function ProductsClient() {
     name: string;
     slug: string;
     count: number;
+    image_url?: string | null;
   }
   const [allCollections, setAllCollections] = useState<CollectionItem[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
@@ -93,6 +94,12 @@ export function ProductsClient() {
     const collection = allCollections.find((c) => c.slug === slug);
     return collection?.id;
   };
+
+  const selectedCollection = selectedCollectionSlug
+    ? allCollections.find((c) => c.slug === selectedCollectionSlug)
+    : undefined;
+
+  const selectedCollectionImageUrl = selectedCollection?.image_url?.trim();
 
   // Search hook with initial values from URL
   const {
@@ -447,10 +454,7 @@ export function ProductsClient() {
             <>
               <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
               <span className="text-foreground font-medium truncate max-w-[120px] sm:max-w-none">
-                {
-                  allCollections.find((c) => c.slug === selectedCollectionSlug)
-                    ?.name
-                }
+                {selectedCollection?.name}
               </span>
             </>
           )}
@@ -461,16 +465,27 @@ export function ProductsClient() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
             <div>
               <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
-                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
-                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <div
+                  className={`p-1.5 sm:p-2 ${
+                    selectedCollectionImageUrl ? "" : "bg-primary/10 rounded-lg"
+                  }`}
+                >
+                  {selectedCollectionImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={selectedCollectionImageUrl}
+                      alt={`${selectedCollection?.name || "Collection"} thumbnail`}
+                      className="w-5 h-5 sm:w-8 sm:h-8 object-cover rounded"
+                    />
+                  ) : (
+                    <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  )}
                 </div>
                 <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground line-clamp-1">
                   {query
                     ? `Results for "${query}"`
                     : selectedCollectionSlug && allCollections.length > 0
-                      ? allCollections.find(
-                          (c) => c.slug === selectedCollectionSlug,
-                        )?.name || "All Products"
+                      ? selectedCollection?.name || "All Products"
                       : "All Products"}
                 </h1>
               </div>
@@ -649,13 +664,18 @@ export function ProductsClient() {
                   variant="secondary"
                   className="gap-0.5 sm:gap-1 pl-1.5 sm:pl-2 text-[10px] sm:text-xs h-6 sm:h-7"
                 >
-                  <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  {selectedCollectionImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={selectedCollectionImageUrl}
+                      alt={`${selectedCollection?.name || "Collection"} thumbnail`}
+                      className="w-2.5 h-2.5 sm:w-3 sm:h-3 object-cover rounded"
+                    />
+                  ) : (
+                    <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  )}
                   <span className="max-w-[60px] sm:max-w-none truncate">
-                    {
-                      allCollections.find(
-                        (c) => c.slug === selectedCollectionSlug,
-                      )?.name
-                    }
+                    {selectedCollection?.name}
                   </span>
                   <button
                     onClick={() => setSelectedCollectionSlug(undefined)}

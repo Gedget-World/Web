@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="mt-auto w-full bg-gray-100">
       <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         {/* Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-3 gap-6 mb-10">
           {/* Brand Column */}
           <div className="col-span-full lg:col-span-1">
             <Link href="/" className="flex items-center gap-2">
@@ -20,8 +20,48 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Shop */}
           <div>
+            <div className="mt-3 grid space-y-3 text-sm">
+              <Link
+                href="/about-us"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                About Us
+              </Link>
+              <Link
+                href="/policies/shipping-and-delivery-policy"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Shipping Info, Returns & Refunds
+              </Link>
+              <Link
+                href="/contact-us"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Contact Us
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <div className="mt-3 grid space-y-3 text-sm">
+              <Link
+                href="/policies/terms-and-conditions"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Terms and Conditions
+              </Link>
+              <Link
+                href="/policies/privacy-policy"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Privacy Policy
+              </Link>
+            </div>
+          </div>
+
+          {/* Shop */}
+          {/* <div>
             <h4 className="text-xs font-semibold text-gray-900 uppercase">
               Shop
             </h4>
@@ -45,10 +85,10 @@ export default function Footer() {
                 Best Sellers
               </Link>
             </div>
-          </div>
+          </div> */}
 
           {/* Customer Service */}
-          <div>
+          {/* <div>
             <h4 className="text-xs font-semibold text-gray-900 uppercase">
               Customer Service
             </h4>
@@ -72,10 +112,10 @@ export default function Footer() {
                 Shipping Info, Returns & Refunds
               </Link>
             </div>
-          </div>
+          </div> */}
 
           {/* Company */}
-          <div>
+          {/* <div>
             <h4 className="text-xs font-semibold text-gray-900 uppercase">
               Company
             </h4>
@@ -90,10 +130,10 @@ export default function Footer() {
                 Help Center
               </Link>
             </div>
-          </div>
+          </div> */}
 
           {/* Legal */}
-          <div>
+          {/* <div>
             <h4 className="text-xs font-semibold text-gray-900 uppercase">
               Legal
             </h4>
@@ -111,7 +151,7 @@ export default function Footer() {
                 Privacy Policy
               </Link>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Bottom Bar */}
@@ -124,7 +164,9 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex items-center gap-4">
               <a
-                href="#"
+                href="https://www.instagram.com/gadgetskabila/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-500 hover:text-gray-800 transition-colors"
                 aria-label="Instagram"
               >
@@ -139,27 +181,16 @@ export default function Footer() {
               <a
                 href="#"
                 className="text-gray-500 hover:text-gray-800 transition-colors"
-                aria-label="Facebook"
+                aria-label="YouTube"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <svg
                   className="w-5 h-5"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-gray-800 transition-colors"
-                aria-label="Twitter"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  <path d="M23.498 6.186a2.997 2.997 0 0 0-2.11-2.12C19.507 3.5 12 3.5 12 3.5s-7.507 0-9.388.566a2.997 2.997 0 0 0-2.11 2.12C0 8.086 0 12 0 12s0 3.914.502 5.814a2.997 2.997 0 0 0 2.11 2.12C4.493 20.5 12 20.5 12 20.5s7.507 0 9.388-.566a2.997 2.997 0 0 0 2.11-2.12C24 15.914 24 12 24 12s0-3.914-.502-5.814zM9.75 15.568V8.432L16.5 12l-6.75 3.568z" />
                 </svg>
               </a>
             </div>

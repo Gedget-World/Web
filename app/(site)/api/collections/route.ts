@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         slug,
+        image_url,
         products:products(count)
       `,
       )
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
       id: collection.id,
       name: collection.name,
       slug: collection.slug,
+      image_url: collection.image_url,
       count: collection.products?.[0]?.count || 0,
     }));
 

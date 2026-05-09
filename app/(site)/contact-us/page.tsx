@@ -38,7 +38,7 @@ export default function ContactUsPage() {
     "store_country",
   ]);
 
-  const contactEmail = getSetting("contact_email", "support@gadgetkabila.com");
+  const contactEmail = getSetting("contact_email", "support@gadgetskabila.com");
   const contactPhone = getSetting("contact_phone", "+91 8839978399");
   const storeAddress = getSetting(
     "store_address",
@@ -182,7 +182,7 @@ export default function ContactUsPage() {
             {/* Contact Options */}
             <div className="space-y-4">
               {/* Start a Chat */}
-              <Link
+              {/* <Link
                 href="#"
                 className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all group"
               >
@@ -195,7 +195,7 @@ export default function ContactUsPage() {
                     Get instant answers to your questions
                   </p>
                 </div>
-              </Link>
+              </Link> */}
 
               {/* Email Us */}
               <Link
@@ -273,7 +273,7 @@ export default function ContactUsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded-xl">
                 <div className="flex justify-center mb-2">
                   <Users className="w-6 h-6 text-gray-700" />
@@ -281,13 +281,13 @@ export default function ContactUsPage() {
                 <div className="text-2xl font-bold text-gray-900">500+</div>
                 <div className="text-xs text-gray-500">Happy Customers</div>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-xl">
+              {/* <div className="text-center p-4 bg-gray-50 rounded-xl">
                 <div className="flex justify-center mb-2">
                   <Zap className="w-6 h-6 text-gray-700" />
                 </div>
                 <div className="text-2xl font-bold text-gray-900">24hr</div>
                 <div className="text-xs text-gray-500">Response Time</div>
-              </div>
+              </div> */}
               <div className="text-center p-4 bg-gray-50 rounded-xl">
                 <div className="flex justify-center mb-2">
                   <Building2 className="w-6 h-6 text-gray-700" />
