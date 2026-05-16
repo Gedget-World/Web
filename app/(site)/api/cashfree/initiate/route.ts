@@ -1,0 +1,85 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createCashfreePaymentSession } from "@/lib/cashfree";
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { order_id, amount, customer_phone, customer_name } = body;
+
+    if (!order_id || !amount || !customer_phone) {
+      return NextResponse.json(
+        {
+          error: "Missing required fields: order_id, amount, customer_phone",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verify order exists and belongs to user
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", order_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json(
+        { error: "Order not found or unauthorized" },
+        { status: 404 },
+      );
+    }
+
+    // Create Cashfree payment session
+    const paymentSession = await createCashfreePaymentSession({
+      order_id,
+      customer_email: user.email || "",
+      customer_phone,
+      amount,
+      customer_name,
+    });
+
+    // Store payment session info in database (optional, for tracking)
+    if (paymentSession.order_id) {
+      await supabase
+        .from("orders")
+        .update({
+          payment_gateway: "cashfree",
+          payment_session_id: paymentSession.order_id,
+          metadata: {
+            ...(order.metadata || {}),
+            cashfree_order_id: paymentSession.order_id,
+          },
+        })
+        .eq("id", order_id);
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: paymentSession,
+    });
+  } catch (error) {
+    console.error("[CASHFREE] Payment session error:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create payment session",
+      },
+      { status: 500 },
+    );
+  }
+}

@@ -4,6 +4,7 @@ import type React from "react";
 
 import { useCart } from "@/hooks/use-cart";
 import { useStoreSettings } from "@/hooks/use-store-settings";
+import { useCashfreePayment } from "@/hooks/use-cashfree-payment";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,11 @@ export function CheckoutForm({ user }: { user: User }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const {
+    initiatePayment: initiateCashfreePayment,
+    isLoading: cashfreeLoading,
+    error: cashfreeError,
+  } = useCashfreePayment();
 
   // Use cached customer data
   const {
@@ -215,7 +221,8 @@ export function CheckoutForm({ user }: { user: User }) {
     setError(null);
 
     try {
-      const response = await fetch("/api/orders", {
+      // Step 1: Create order in database
+      const orderResponse = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -224,7 +231,7 @@ export function CheckoutForm({ user }: { user: User }) {
           // Order details
           user_id: user.id,
           total,
-          status: "pending",
+          status: paymentMethod === "cod" ? "confirmed" : "pending",
 
           // Customer information
           customer_name: shippingInfo.fullName,
@@ -249,7 +256,7 @@ export function CheckoutForm({ user }: { user: User }) {
             price: item.price,
           })),
 
-          // Additional metadata (you can remove payment_method if not adding to schema)
+          // Additional metadata
           metadata: {
             payment_method: paymentMethod,
             shipping_state: shippingInfo.state,
@@ -257,14 +264,54 @@ export function CheckoutForm({ user }: { user: User }) {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json();
         throw new Error(errorData.message || "Failed to create order");
       }
 
-      setOrderPlaced(true);
-      clearCart();
-      router.push("/checkout/success");
+      const orderData = await orderResponse.json();
+      const orderId = orderData.orderId;
+
+      if (!orderId) {
+        throw new Error("Order created but no ID returned");
+      }
+
+      // Step 2: Handle payment based on method
+      if (paymentMethod === "cod") {
+        // For COD, order is already confirmed
+        setOrderPlaced(true);
+        clearCart();
+        router.push("/checkout/success");
+      } else if (paymentMethod === "online") {
+        // For online payment, initiate Cashfree payment
+        const phoneNumber = customerInfo?.phone || shippingInfo.fullName;
+
+        if (!phoneNumber) {
+          throw new Error("Phone number is required for online payment");
+        }
+
+        try {
+          await initiateCashfreePayment({
+            orderId,
+            amount: total,
+            customerEmail: user.email || "",
+            customerPhone: phoneNumber,
+            customerName: shippingInfo.fullName,
+          });
+
+          // If payment was successful, Cashfree will handle the redirect
+          // or we can manually redirect to success
+          setOrderPlaced(true);
+          clearCart();
+        } catch (paymentError) {
+          // Payment failed or was cancelled
+          setError(
+            paymentError instanceof Error
+              ? paymentError.message
+              : "Payment failed. Please try again.",
+          );
+        }
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -775,59 +822,25 @@ export function CheckoutForm({ user }: { user: User }) {
                 </div>
 
                 {paymentMethod === "online" && (
-                  <>
-                    <div className="grid gap-2">
-                      <Label htmlFor="cardNumber" className="text-sm">
-                        Card Number
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="cardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
-                          required
-                          className="pr-12"
-                        />
-                        {/* Card Brand Detection */}
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {cardNumber.startsWith("4") ? (
-                            <span className="text-[9px] sm:text-[10px] font-bold text-blue-700 bg-blue-100 px-1 sm:px-1.5 py-0.5 rounded">
-                              VISA
-                            </span>
-                          ) : cardNumber.startsWith("5") ? (
-                            <span className="text-[9px] sm:text-[10px] font-bold text-orange-700 bg-orange-100 px-1 sm:px-1.5 py-0.5 rounded">
-                              MC
-                            </span>
-                          ) : cardNumber.startsWith("6") ? (
-                            <span className="text-[9px] sm:text-[10px] font-bold text-green-700 bg-green-100 px-1 sm:px-1.5 py-0.5 rounded">
-                              RuPay
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
+                  <div className="space-y-4">
+                    <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs sm:text-sm text-blue-800">
+                        <span className="font-semibold">Secure Checkout:</span>{" "}
+                        You will be redirected to Cashfree's secure payment
+                        gateway to complete your payment. All transactions are
+                        encrypted and safe.
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="expiry" className="text-sm">
-                          Expiry Date
-                        </Label>
-                        <Input id="expiry" placeholder="MM/YY" required />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="cvv" className="text-sm">
-                          CVV
-                        </Label>
-                        <Input
-                          id="cvv"
-                          placeholder="123"
-                          type="password"
-                          maxLength={4}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </>
+                  </div>
+                )}
+
+                {(error || cashfreeError) && (
+                  <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-xs sm:text-sm text-red-700">
+                      <span className="font-semibold">Error:</span>{" "}
+                      {error || cashfreeError}
+                    </p>
+                  </div>
                 )}
 
                 {/* Order Review Accordion */}
@@ -920,13 +933,15 @@ export function CheckoutForm({ user }: { user: User }) {
                     <Button
                       type="submit"
                       size="lg"
-                      disabled={isLoading || !termsAccepted}
+                      disabled={isLoading || cashfreeLoading || !termsAccepted}
                       className="w-full sm:w-auto sm:min-w-[180px] h-11 sm:h-12 text-sm sm:text-base font-semibold"
                     >
-                      {isLoading ? (
+                      {isLoading || cashfreeLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Processing...
+                          {paymentMethod === "online"
+                            ? "Processing..."
+                            : "Processing..."}
                         </>
                       ) : (
                         <>
