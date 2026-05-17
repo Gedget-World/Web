@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createCashfreePaymentSession } from "@/lib/cashfree";
+import {
+  createCashfreePaymentSession,
+  isValidCashfreePhoneNumber,
+  normalizePhoneNumber,
+} from "@/lib/cashfree";
 
 export async function POST(request: Request) {
   try {
@@ -27,6 +31,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedPhone = normalizePhoneNumber(String(customer_phone));
+    if (!isValidCashfreePhoneNumber(normalizedPhone)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid customer_phone. Use a valid number like +919090407368 or 9090407368.",
+        },
+        { status: 400 },
+      );
+    }
+
     // Verify order exists and belongs to user
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -46,7 +61,7 @@ export async function POST(request: Request) {
     const paymentSession = await createCashfreePaymentSession({
       order_id,
       customer_email: user.email || "",
-      customer_phone,
+      customer_phone: normalizedPhone,
       amount,
       customer_name,
     });

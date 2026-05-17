@@ -59,6 +59,22 @@ export function verifyCashfreeWebhookSignature(
 }
 
 /**
+ * Normalize phone number by removing spaces, hyphens, and parentheses.
+ */
+export function normalizePhoneNumber(phone: string): string {
+  return phone.trim().replace(/[\s()-]/g, "");
+}
+
+/**
+ * Validate phone format accepted by Cashfree.
+ * Examples: +919090407368, 9090407368, +16014635923
+ */
+export function isValidCashfreePhoneNumber(phone: string): boolean {
+  const normalizedPhone = normalizePhoneNumber(phone);
+  return /^(\+\d{10,15}|\d{10,15})$/.test(normalizedPhone);
+}
+
+/**
  * Create payment session with Cashfree
  */
 export async function createCashfreePaymentSession(paymentData: {
@@ -70,6 +86,13 @@ export async function createCashfreePaymentSession(paymentData: {
   customer_name?: string;
 }) {
   const endpoint = "/pg/orders";
+  const normalizedPhone = normalizePhoneNumber(paymentData.customer_phone);
+
+  if (!isValidCashfreePhoneNumber(normalizedPhone)) {
+    throw new Error(
+      "Invalid customer phone number. Use a valid format like +919090407368 or 9090407368.",
+    );
+  }
 
   const requestBody = {
     order_id: paymentData.order_id,
@@ -78,7 +101,7 @@ export async function createCashfreePaymentSession(paymentData: {
     customer_details: {
       customer_id: paymentData.order_id,
       customer_email: paymentData.customer_email,
-      customer_phone: paymentData.customer_phone,
+      customer_phone: normalizedPhone,
       customer_name: paymentData.customer_name || "Customer",
     },
     order_meta: {

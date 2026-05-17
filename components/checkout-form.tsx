@@ -284,7 +284,7 @@ export function CheckoutForm({ user }: { user: User }) {
         router.push("/checkout/success");
       } else if (paymentMethod === "online") {
         // For online payment, initiate Cashfree payment
-        const phoneNumber = customerInfo?.phone || shippingInfo.fullName;
+        const phoneNumber = customerInfo?.phone?.trim() || "";
 
         if (!phoneNumber) {
           throw new Error("Phone number is required for online payment");
