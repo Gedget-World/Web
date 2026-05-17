@@ -79,10 +79,7 @@ export default function ContactForm({ user }: ContactFormProps) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const result = await saveCustomer({
-      ...tempData,
-      email: user.email,
-    });
+    const result = await saveCustomer(tempData);
 
     if (result) {
       setIsEditing(false);

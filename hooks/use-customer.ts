@@ -10,7 +10,6 @@ type Customer = {
   last_name: string | null;
   phone: string | null;
   phone_verified: boolean;
-  email?: string;
 };
 
 type Address = {
@@ -136,9 +135,7 @@ export function useCustomer(userId: string | undefined) {
     return { customer: null, address: null };
   };
 
-  const saveCustomer = async (
-    customerData: Partial<Customer> & { email?: string },
-  ) => {
+  const saveCustomer = async (customerData: Partial<Customer>) => {
     if (!userId) return null;
 
     try {

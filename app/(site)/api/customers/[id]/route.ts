@@ -63,7 +63,6 @@ export async function PUT(
       .update({
         first_name: body.first_name,
         last_name: body.last_name,
-        email: body.email,
         phone: body.phone,
         date_of_birth: body.date_of_birth,
         preferences: body.preferences,
