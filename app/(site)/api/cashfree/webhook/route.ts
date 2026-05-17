@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCashfreePaymentStatus } from "@/lib/cashfree";
 
+function mapCashfreeStatusToOrderStatus(status?: string) {
+  const normalized = (status || "").toUpperCase();
+
+  if (["PAID", "CAPTURED", "SUCCESS"].includes(normalized)) {
+    return "confirmed";
+  }
+
+  if (["FAILED", "CANCELLED", "TERMINATED", "EXPIRED"].includes(normalized)) {
+    return "cancelled";
+  }
+
+  return "pending";
+}
+
 /**
  * Webhook endpoint to receive payment updates from Cashfree
  * Cashfree will POST to this endpoint whenever a payment status changes
@@ -127,18 +141,54 @@ export async function GET(request: Request) {
       const paymentStatus = await getCashfreePaymentStatus(
         order.payment_session_id,
       );
+
+      const cashfreeStatus =
+        paymentStatus?.order_status ||
+        paymentStatus?.payment_status ||
+        "PENDING";
+      const mappedOrderStatus = mapCashfreeStatusToOrderStatus(cashfreeStatus);
+
+      // Keep DB order state in sync even if webhook is delayed/missed.
+      if (order.status !== mappedOrderStatus) {
+        await supabase
+          .from("orders")
+          .update({
+            status: mappedOrderStatus,
+            metadata: {
+              ...(order.metadata || {}),
+              cashfree_status: cashfreeStatus,
+              status_checked_at: new Date().toISOString(),
+            },
+          })
+          .eq("id", order.id);
+      }
+
       return NextResponse.json({
         success: true,
-        data: paymentStatus,
+        data: {
+          ...paymentStatus,
+          order_id: order.id,
+          order_status: cashfreeStatus,
+          internal_order_status: mappedOrderStatus,
+        },
       });
     }
 
     // Return current order status
+    const fallbackCashfreeStatus =
+      order.status === "confirmed"
+        ? "PAID"
+        : order.status === "cancelled"
+          ? "FAILED"
+          : "PENDING";
+
     return NextResponse.json({
       success: true,
       data: {
         order_id: order.id,
         status: order.status,
+        order_status: fallbackCashfreeStatus,
+        internal_order_status: order.status,
       },
     });
   } catch (error) {

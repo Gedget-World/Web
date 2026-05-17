@@ -7,6 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+const SUCCESS_STATUSES = new Set(["PAID", "CAPTURED", "SUCCESS", "CONFIRMED"]);
+const FAILURE_STATUSES = new Set([
+  "FAILED",
+  "CANCELLED",
+  "TERMINATED",
+  "EXPIRED",
+]);
+
 function PaymentCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,6 +23,7 @@ function PaymentCallbackContent() {
   );
   const [message, setMessage] = useState("Processing your payment...");
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
@@ -31,13 +40,13 @@ function PaymentCallbackContent() {
         setOrderId(orderIdParam);
 
         // If we already have status from URL param
-        if (statusParam === "PAID" || statusParam === "CAPTURED") {
+        if (SUCCESS_STATUSES.has((statusParam || "").toUpperCase())) {
           setStatus("success");
           setMessage("Payment successful! Your order is confirmed.");
           setTimeout(() => {
             router.push("/checkout/success");
           }, 2000);
-        } else if (statusParam === "FAILED" || statusParam === "CANCELLED") {
+        } else if (FAILURE_STATUSES.has((statusParam || "").toUpperCase())) {
           setStatus("failed");
           setMessage("Payment failed. Please try again or contact support.");
         } else {
@@ -51,40 +60,61 @@ function PaymentCallbackContent() {
           }
 
           const result = await response.json();
-          const cashfreeStatus = result.data?.order_status;
+          const cashfreeStatus = String(
+            result.data?.order_status || "",
+          ).toUpperCase();
+          const internalStatus = String(
+            result.data?.internal_order_status || result.data?.status || "",
+          ).toUpperCase();
 
-          if (cashfreeStatus === "PAID" || cashfreeStatus === "CAPTURED") {
+          if (
+            SUCCESS_STATUSES.has(cashfreeStatus) ||
+            SUCCESS_STATUSES.has(internalStatus)
+          ) {
             setStatus("success");
             setMessage("Payment successful! Your order is confirmed.");
             setTimeout(() => {
               router.push("/checkout/success");
             }, 2000);
           } else if (
-            cashfreeStatus === "FAILED" ||
-            cashfreeStatus === "CANCELLED"
+            FAILURE_STATUSES.has(cashfreeStatus) ||
+            FAILURE_STATUSES.has(internalStatus)
           ) {
             setStatus("failed");
             setMessage("Payment failed. Please try again.");
           } else {
             setStatus("loading");
             setMessage("Verifying payment status...");
-            // Retry after 2 seconds
-            setTimeout(checkPaymentStatus, 2000);
+            // Retry with cap to avoid false failures during webhook/API delay.
+            if (attempt < 8) {
+              setTimeout(() => setAttempt((prev) => prev + 1), 2000);
+            } else {
+              setStatus("failed");
+              setMessage(
+                "We could not verify payment yet. Please check your Orders page; if debited, contact support.",
+              );
+            }
           }
         }
       } catch (error) {
         console.error("Error checking payment status:", error);
-        setStatus("failed");
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Error verifying payment. Please contact support.",
-        );
+        if (attempt < 8) {
+          setStatus("loading");
+          setMessage("Verifying payment status...");
+          setTimeout(() => setAttempt((prev) => prev + 1), 2000);
+        } else {
+          setStatus("failed");
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Error verifying payment. Please contact support.",
+          );
+        }
       }
     };
 
     checkPaymentStatus();
-  }, [searchParams, router]);
+  }, [searchParams, router, attempt]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
