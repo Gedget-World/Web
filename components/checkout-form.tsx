@@ -220,6 +220,22 @@ export function CheckoutForm({ user }: { user: User }) {
     setIsLoading(true);
     setError(null);
 
+    // Pre-validate phone for online payment BEFORE creating an order to
+    // avoid leaving ghost "pending" orders in the DB.
+    if (paymentMethod === "online") {
+      const rawPhone = (customerInfo?.phone || "").trim();
+      const normalized = rawPhone.replace(/[\s()-]/g, "");
+      const isValidPhone = /^(\+\d{10,15}|\d{10,15})$/.test(normalized);
+      if (!isValidPhone) {
+        setIsLoading(false);
+        setError(
+          "A valid phone number is required for online payment. Please update your contact details.",
+        );
+        setTab("contact");
+        return;
+      }
+    }
+
     try {
       // Step 1: Create order in database
       const orderResponse = await fetch("/api/orders", {
@@ -290,6 +306,16 @@ export function CheckoutForm({ user }: { user: User }) {
           throw new Error("Phone number is required for online payment");
         }
 
+        // Stash orderId so /checkout/payment-callback can recover it if
+        // Cashfree doesn't append order_id back to the return URL.
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("pending_order_id", orderId);
+          } catch {
+            /* ignore */
+          }
+        }
+
         try {
           await initiateCashfreePayment({
             orderId,
@@ -299,12 +325,24 @@ export function CheckoutForm({ user }: { user: User }) {
             customerName: shippingInfo.fullName,
           });
 
-          // If payment was successful, Cashfree will handle the redirect
-          // or we can manually redirect to success
+          // With redirectTarget=_self the line below is rarely reached
+          // because Cashfree navigates the user away. Kept as a safety net.
           setOrderPlaced(true);
-          clearCart();
         } catch (paymentError) {
-          // Payment failed or was cancelled
+          // Payment session creation / SDK failure: mark order cancelled to
+          // prevent ghost pending orders.
+          try {
+            await fetch(`/api/orders/${orderId}/cancel`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                reason: "payment_initiation_failed",
+              }),
+            });
+          } catch {
+            /* best-effort */
+          }
+
           setError(
             paymentError instanceof Error
               ? paymentError.message

@@ -219,8 +219,23 @@ export function OrderDetailClient({
     return deliveryDate;
   };
 
+  const getPaymentMethodLabel = () => {
+    const method = (order.payment_method || "").toString().toLowerCase();
+    if (!method) return "Not specified";
+    if (method === "cod") return "Cash on Delivery";
+    if (method === "online") return "Online Payment";
+    if (method.includes("upi")) return "UPI";
+    if (method.includes("card")) return "Card";
+    if (method.includes("netbanking") || method.includes("net_banking"))
+      return "Net Banking";
+    if (method.includes("wallet")) return "Wallet";
+    return order.payment_method;
+  };
+
   const getPaymentMethodIcon = () => {
-    // You can customize based on actual payment method data
+    const method = (order.payment_method || "").toString().toLowerCase();
+    if (method === "cod") return <Banknote className="h-4 w-4" />;
+    if (method.includes("wallet")) return <Wallet className="h-4 w-4" />;
     return <CreditCard className="h-4 w-4" />;
   };
 
@@ -859,9 +874,39 @@ export function OrderDetailClient({
                       Payment Method
                     </span>
                     <Badge variant="outline" className="text-xs">
-                      {order.payment_method || "Card"}
+                      {getPaymentMethodLabel()}
                     </Badge>
                   </div>
+
+                  {/* Payment Status */}
+                  {order.payment_status && (
+                    <div className="flex justify-between text-xs text-slate-500">
+                      <span>Payment Status</span>
+                      <span className="font-medium uppercase">
+                        {order.payment_status}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Transaction ID */}
+                  {(order.transaction_id || order.cf_payment_id) && (
+                    <div className="flex justify-between text-xs text-slate-500 gap-2">
+                      <span className="shrink-0">Transaction ID</span>
+                      <span className="font-mono text-slate-700 truncate text-right">
+                        {order.transaction_id || order.cf_payment_id}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Paid At */}
+                  {order.paid_at && (
+                    <div className="flex justify-between text-xs text-slate-500">
+                      <span>Paid On</span>
+                      <span className="text-slate-700">
+                        {new Date(order.paid_at).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between font-bold text-lg pt-3 border-t-2">
                     <span className="text-slate-900">Total</span>

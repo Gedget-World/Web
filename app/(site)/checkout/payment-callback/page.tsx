@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useCart } from "@/hooks/use-cart";
 
 const SUCCESS_STATUSES = new Set(["PAID", "CAPTURED", "SUCCESS", "CONFIRMED"]);
 const FAILURE_STATUSES = new Set([
@@ -18,6 +19,7 @@ const FAILURE_STATUSES = new Set([
 function PaymentCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { clearCart } = useCart();
   const [status, setStatus] = useState<"loading" | "success" | "failed">(
     "loading",
   );
@@ -26,14 +28,47 @@ function PaymentCallbackContent() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    const handleSuccess = () => {
+      setStatus("success");
+      setMessage("Payment successful! Your order is confirmed.");
+      try {
+        clearCart();
+        sessionStorage.removeItem("pending_order_id");
+      } catch {
+        /* ignore */
+      }
+      setTimeout(() => {
+        router.push("/checkout/success");
+      }, 2000);
+    };
+
+    const handleFailure = (msg: string) => {
+      setStatus("failed");
+      setMessage(msg);
+      try {
+        sessionStorage.removeItem("pending_order_id");
+      } catch {
+        /* ignore */
+      }
+    };
+
     const checkPaymentStatus = async () => {
       try {
-        const orderIdParam = searchParams.get("order_id");
+        // Cashfree may not always append order_id; fall back to sessionStorage.
+        let orderIdParam = searchParams.get("order_id");
+        if (!orderIdParam && typeof window !== "undefined") {
+          try {
+            orderIdParam = sessionStorage.getItem("pending_order_id");
+          } catch {
+            /* ignore */
+          }
+        }
         const statusParam = searchParams.get("order_status");
 
         if (!orderIdParam) {
-          setStatus("failed");
-          setMessage("Order ID not found. Please contact support.");
+          handleFailure(
+            "We couldn't identify your order. If you were charged, please contact support.",
+          );
           return;
         }
 
@@ -41,59 +76,51 @@ function PaymentCallbackContent() {
 
         // If we already have status from URL param
         if (SUCCESS_STATUSES.has((statusParam || "").toUpperCase())) {
-          setStatus("success");
-          setMessage("Payment successful! Your order is confirmed.");
-          setTimeout(() => {
-            router.push("/checkout/success");
-          }, 2000);
-        } else if (FAILURE_STATUSES.has((statusParam || "").toUpperCase())) {
-          setStatus("failed");
-          setMessage("Payment failed. Please try again or contact support.");
+          handleSuccess();
+          return;
+        }
+
+        if (FAILURE_STATUSES.has((statusParam || "").toUpperCase())) {
+          handleFailure("Payment failed. Please try again or contact support.");
+          return;
+        }
+
+        // Otherwise, check payment status from API
+        const response = await fetch(
+          `/api/cashfree/webhook?order_id=${orderIdParam}`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch payment status");
+        }
+
+        const result = await response.json();
+        const cashfreeStatus = String(
+          result.data?.order_status || "",
+        ).toUpperCase();
+        const internalStatus = String(
+          result.data?.internal_order_status || result.data?.status || "",
+        ).toUpperCase();
+
+        if (
+          SUCCESS_STATUSES.has(cashfreeStatus) ||
+          SUCCESS_STATUSES.has(internalStatus)
+        ) {
+          handleSuccess();
+        } else if (
+          FAILURE_STATUSES.has(cashfreeStatus) ||
+          FAILURE_STATUSES.has(internalStatus)
+        ) {
+          handleFailure("Payment failed. Please try again.");
         } else {
-          // Otherwise, check payment status from API
-          const response = await fetch(
-            `/api/cashfree/webhook?order_id=${orderIdParam}`,
-          );
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch payment status");
-          }
-
-          const result = await response.json();
-          const cashfreeStatus = String(
-            result.data?.order_status || "",
-          ).toUpperCase();
-          const internalStatus = String(
-            result.data?.internal_order_status || result.data?.status || "",
-          ).toUpperCase();
-
-          if (
-            SUCCESS_STATUSES.has(cashfreeStatus) ||
-            SUCCESS_STATUSES.has(internalStatus)
-          ) {
-            setStatus("success");
-            setMessage("Payment successful! Your order is confirmed.");
-            setTimeout(() => {
-              router.push("/checkout/success");
-            }, 2000);
-          } else if (
-            FAILURE_STATUSES.has(cashfreeStatus) ||
-            FAILURE_STATUSES.has(internalStatus)
-          ) {
-            setStatus("failed");
-            setMessage("Payment failed. Please try again.");
+          setStatus("loading");
+          setMessage("Verifying payment status...");
+          if (attempt < 8) {
+            setTimeout(() => setAttempt((prev) => prev + 1), 2000);
           } else {
-            setStatus("loading");
-            setMessage("Verifying payment status...");
-            // Retry with cap to avoid false failures during webhook/API delay.
-            if (attempt < 8) {
-              setTimeout(() => setAttempt((prev) => prev + 1), 2000);
-            } else {
-              setStatus("failed");
-              setMessage(
-                "We could not verify payment yet. Please check your Orders page; if debited, contact support.",
-              );
-            }
+            handleFailure(
+              "We could not verify payment yet. Please check your Orders page; if debited, contact support.",
+            );
           }
         }
       } catch (error) {
@@ -103,8 +130,7 @@ function PaymentCallbackContent() {
           setMessage("Verifying payment status...");
           setTimeout(() => setAttempt((prev) => prev + 1), 2000);
         } else {
-          setStatus("failed");
-          setMessage(
+          handleFailure(
             error instanceof Error
               ? error.message
               : "Error verifying payment. Please contact support.",
@@ -114,7 +140,7 @@ function PaymentCallbackContent() {
     };
 
     checkPaymentStatus();
-  }, [searchParams, router, attempt]);
+  }, [searchParams, router, attempt, clearCart]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">

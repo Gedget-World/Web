@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   createCashfreePaymentSession,
   isValidCashfreePhoneNumber,
@@ -66,16 +67,26 @@ export async function POST(request: Request) {
       customer_name,
     });
 
-    // Store payment session info in database (optional, for tracking)
+    // Store payment session info in database (optional, for tracking).
+    // Use service role to ensure write succeeds regardless of RLS policies.
     if (paymentSession.order_id) {
-      await supabase
+      let writer;
+      try {
+        writer = createServiceClient();
+      } catch {
+        writer = supabase;
+      }
+
+      await writer
         .from("orders")
         .update({
           payment_gateway: "cashfree",
           payment_session_id: paymentSession.order_id,
+          payment_status: "initiated",
           metadata: {
             ...(order.metadata || {}),
             cashfree_order_id: paymentSession.order_id,
+            payment_initiated_at: new Date().toISOString(),
           },
         })
         .eq("id", order_id);

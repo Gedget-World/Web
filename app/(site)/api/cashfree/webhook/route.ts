@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCashfreePaymentStatus } from "@/lib/cashfree";
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  getCashfreePaymentStatus,
+  verifyCashfreeWebhookSignature,
+} from "@/lib/cashfree";
 
 function mapCashfreeStatusToOrderStatus(status?: string) {
   const normalized = (status || "").toUpperCase();
@@ -22,21 +26,62 @@ function mapCashfreeStatusToOrderStatus(status?: string) {
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    const body = JSON.parse(rawBody || "{}");
     console.log("[CASHFREE WEBHOOK] Received webhook:", body);
 
-    const supabase = await createClient();
+    // Optional signature verification (best-effort; do not block if header absent)
+    const signature =
+      request.headers.get("x-webhook-signature") ||
+      request.headers.get("x-cashfree-signature") ||
+      "";
+    if (signature && process.env.CASHFREE_VERIFY_SIGNATURE === "true") {
+      const ok = verifyCashfreeWebhookSignature(body, signature);
+      if (!ok) {
+        console.warn("[CASHFREE WEBHOOK] Invalid signature, rejecting");
+        return NextResponse.json(
+          { error: "Invalid signature" },
+          { status: 401 },
+        );
+      }
+    }
 
-    // Extract order information from webhook
-    const {
-      order_id,
-      order_amount,
-      order_status,
-      payment_method,
-      transaction_id,
-      cf_payment_id,
-      customer_email,
-    } = body;
+    // Webhook is server-to-server: use service role to bypass RLS.
+    let supabase;
+    try {
+      supabase = createServiceClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    // Cashfree's webhook payload nests data under `data` for newer API versions.
+    const data = body?.data || body;
+    const order = data?.order || data;
+    const payment = data?.payment || data;
+
+    const order_id = order?.order_id || data?.order_id || body?.order_id;
+    const order_status =
+      order?.order_status ||
+      payment?.payment_status ||
+      data?.order_status ||
+      body?.order_status;
+    const payment_method =
+      payment?.payment_group ||
+      payment?.payment_method ||
+      data?.payment_method ||
+      body?.payment_method ||
+      null;
+    const transaction_id =
+      payment?.bank_reference ||
+      payment?.transaction_id ||
+      data?.transaction_id ||
+      body?.transaction_id ||
+      null;
+    const cf_payment_id =
+      payment?.cf_payment_id ||
+      data?.cf_payment_id ||
+      body?.cf_payment_id ||
+      null;
 
     if (!order_id || !order_status) {
       return NextResponse.json(
@@ -45,29 +90,57 @@ export async function POST(request: Request) {
       );
     }
 
-    // Map Cashfree status to our order status
-    let orderStatus = "pending";
-    if (order_status === "PAID" || order_status === "CAPTURED") {
-      orderStatus = "confirmed";
-    } else if (order_status === "FAILED" || order_status === "CANCELLED") {
-      orderStatus = "cancelled";
-    } else if (order_status === "PENDING") {
-      orderStatus = "pending";
+    const mappedStatus = mapCashfreeStatusToOrderStatus(order_status);
+
+    // Load existing order to merge metadata + enforce idempotency.
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("id, status, payment_status, metadata, paid_at")
+      .eq("id", order_id)
+      .single();
+
+    if (!existingOrder) {
+      console.warn("[CASHFREE WEBHOOK] Order not found for id:", order_id);
+      // Acknowledge so Cashfree doesn't keep retrying.
+      return NextResponse.json({ success: true, ignored: true });
     }
 
-    // Update order status in database
+    // Idempotency: skip if already in a terminal state matching this update.
+    if (
+      existingOrder.status === mappedStatus &&
+      existingOrder.payment_status === order_status &&
+      (mappedStatus === "confirmed" || mappedStatus === "cancelled")
+    ) {
+      return NextResponse.json({ success: true, duplicate: true });
+    }
+
+    const mergedMetadata = {
+      ...(existingOrder?.metadata || {}),
+      payment_method: payment_method,
+      transaction_id: transaction_id,
+      cf_payment_id: cf_payment_id,
+      cashfree_status: order_status,
+      webhook_received_at: new Date().toISOString(),
+    };
+
+    // Update order with normalized payment details
+    const updatePayload: Record<string, any> = {
+      status: mappedStatus,
+      payment_status: order_status,
+      payment_gateway: "cashfree",
+      metadata: mergedMetadata,
+    };
+
+    if (payment_method) updatePayload.payment_method = payment_method;
+    if (transaction_id) updatePayload.transaction_id = transaction_id;
+    if (cf_payment_id) updatePayload.cf_payment_id = cf_payment_id;
+    if (mappedStatus === "confirmed") {
+      updatePayload.paid_at = new Date().toISOString();
+    }
+
     const { error: updateError } = await supabase
       .from("orders")
-      .update({
-        status: orderStatus,
-        metadata: {
-          payment_method: payment_method,
-          transaction_id: transaction_id,
-          cf_payment_id: cf_payment_id,
-          cashfree_status: order_status,
-          webhook_received_at: new Date().toISOString(),
-        },
-      })
+      .update(updatePayload)
       .eq("id", order_id);
 
     if (updateError) {
@@ -150,16 +223,24 @@ export async function GET(request: Request) {
 
       // Keep DB order state in sync even if webhook is delayed/missed.
       if (order.status !== mappedOrderStatus) {
+        const reconcilePayload: Record<string, any> = {
+          status: mappedOrderStatus,
+          payment_status: cashfreeStatus,
+          payment_gateway: "cashfree",
+          metadata: {
+            ...(order.metadata || {}),
+            cashfree_status: cashfreeStatus,
+            status_checked_at: new Date().toISOString(),
+          },
+        };
+
+        if (mappedOrderStatus === "confirmed" && !order.paid_at) {
+          reconcilePayload.paid_at = new Date().toISOString();
+        }
+
         await supabase
           .from("orders")
-          .update({
-            status: mappedOrderStatus,
-            metadata: {
-              ...(order.metadata || {}),
-              cashfree_status: cashfreeStatus,
-              status_checked_at: new Date().toISOString(),
-            },
-          })
+          .update(reconcilePayload)
           .eq("id", order.id);
       }
 

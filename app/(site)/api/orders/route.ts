@@ -59,6 +59,9 @@ export async function POST(request: Request) {
       customer = newCustomer;
     }
 
+    // Resolve payment method from metadata
+    const paymentMethod = metadata?.payment_method || null;
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -75,6 +78,9 @@ export async function POST(request: Request) {
         shipping_country,
         discount_amount: discount_amount || 0,
         coupon_code: coupon_code || null,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === "cod" ? "cod_pending" : "pending",
+        metadata: metadata || {},
       })
       .select()
       .single();

@@ -80,26 +80,20 @@ export function useCashfreePayment() {
           throw new Error("No payment session ID received from server");
         }
 
-        // Step 5: Redirect to payment page
+        // Step 5: Redirect to Cashfree hosted payment page in the same tab.
+        // Using "_self" ensures Cashfree navigates back to return_url with
+        // order_id/order_status appended, which the /checkout/payment-callback
+        // page relies on. With "_modal" Cashfree never redirects and the
+        // user is left stranded on /checkout.
         const checkoutOptions = {
           paymentSessionId: sessionId,
-          redirectTarget: "_modal",
+          redirectTarget: "_self",
         };
 
-        return new Promise((resolve, reject) => {
-          cashfreeInstance
-            .checkout(checkoutOptions)
-            .then((result: any) => {
-              if (result.error) {
-                reject(new Error(result.error.message));
-              } else {
-                resolve(data);
-              }
-            })
-            .catch((err: any) => {
-              reject(new Error(err.message || "Payment failed"));
-            });
-        });
+        // checkout() with _self triggers a full-page navigation, so the
+        // promise typically never resolves; we still await it for safety.
+        await cashfreeInstance.checkout(checkoutOptions);
+        return data;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error occurred";
