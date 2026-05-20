@@ -13,6 +13,7 @@ export type WishlistProduct = {
   price: number;
   image_url: string | null;
   stock: number;
+  is_out_of_stock: boolean;
   discount_percentage: number | null;
   is_new_arrival?: boolean;
   is_featured?: boolean;

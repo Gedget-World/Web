@@ -372,21 +372,22 @@ export function SiteHeader() {
             {/* Wishlist (Mobile) */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href="/wishlist" className="md:hidden">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative hover:bg-pink-50"
-                  >
-                    <Heart className="h-5 w-5 text-gray-600 hover:text-pink-500 transition-colors" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="relative md:hidden"
+                >
+                  <Link href="/wishlist">
+                    <Heart className="h-5 w-5" />
                     {wishlistCount > 0 && (
                       <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">
                         {wishlistCount > 99 ? "99+" : wishlistCount}
                       </span>
                     )}
                     <span className="sr-only">Wishlist</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 <p>Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ""}</p>
@@ -396,21 +397,22 @@ export function SiteHeader() {
             {/* Wishlist (Desktop) */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href="/wishlist" className="hidden md:flex">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative hover:bg-pink-50"
-                  >
-                    <Heart className="h-5 w-5 text-gray-600 hover:text-pink-500 transition-colors" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="relative hidden md:flex"
+                >
+                  <Link href="/wishlist">
+                    <Heart className="h-5 w-5" />
                     {wishlistCount > 0 && (
                       <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center">
                         {wishlistCount > 99 ? "99+" : wishlistCount}
                       </span>
                     )}
                     <span className="sr-only">Wishlist</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 <p>Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ""}</p>

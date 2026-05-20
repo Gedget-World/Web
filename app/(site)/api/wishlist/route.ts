@@ -32,6 +32,7 @@ export async function GET() {
           price,
           image_url,
           stock,
+          is_out_of_stock,
           discount_percentage,
           is_new_arrival,
           is_featured

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CouponInput } from "@/components/coupon-input";
 import { Badge } from "@/components/ui/badge";
 import { RecommendedProducts } from "@/components/recommended-products";
+import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -30,10 +32,61 @@ import {
 } from "lucide-react";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, appliedCoupon } = useCart();
+  const { items, updateQuantity, updateItemStock, removeItem, appliedCoupon } =
+    useCart();
   const { getSetting, loading: settingsLoading } = useStoreSettings([
     "currency_symbol",
   ]);
+  const supabase = useMemo(() => createClient(), []);
+  const hasValidatedInitialCart = useRef(false);
+
+  useEffect(() => {
+    const validateCartOnFirstLoad = async () => {
+      if (items.length === 0 || hasValidatedInitialCart.current) {
+        return;
+      }
+
+      hasValidatedInitialCart.current = true;
+
+      const productIds = items.map((item) => item.id);
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, stock, is_out_of_stock, is_active")
+        .in("id", productIds);
+
+      if (error) {
+        console.error("Error validating cart items:", error);
+        return;
+      }
+
+      const productsById = new Map(
+        data?.map((product) => [product.id, product]),
+      );
+
+      items.forEach((item) => {
+        const product = productsById.get(item.id);
+
+        if (!product || product.is_active === false) {
+          removeItem(item.id);
+          return;
+        }
+
+        if (product.is_out_of_stock || (product.stock ?? 0) <= 0) {
+          removeItem(item.id);
+          return;
+        }
+
+        if (item.quantity > (product.stock ?? 0)) {
+          updateItemStock(item.id, product.stock ?? 0);
+          return;
+        }
+
+        updateItemStock(item.id, product.stock ?? 0);
+      });
+    };
+
+    validateCartOnFirstLoad();
+  }, [items, removeItem, supabase, updateItemStock]);
 
   const currencySymbol = getSetting("currency_symbol", "₹");
 
