@@ -134,6 +134,9 @@ dependencies:
   cmdk:
     specifier: 1.0.4
     version: 1.0.4(@types/react-dom@19.2.2)(@types/react@19.2.2)(react-dom@19.2.1)(react@19.2.1)
+  country-state-city:
+    specifier: ^3.2.1
+    version: 3.2.1
   date-fns:
     specifier: 4.1.0
     version: 4.1.0
@@ -3051,6 +3054,10 @@ packages:
     requiresBuild: true
     dev: false
     optional: true
+
+  /country-state-city@3.2.1:
+    resolution: {integrity: sha512-kxbanqMc6izjhc/EHkGPCTabSPZ2G6eG4/97akAYHJUN4stzzFEvQPZoF8oXDQ+10gM/O/yUmISCR1ZVxyb6EA==}
+    dev: false
 
   /crelt@1.0.6:
     resolution: {integrity: sha512-VQ2MBenTq1fWZUH9DJNGti7kKv6EeAuYr3cLwxUWhIu1baTaXh4Ib5W2CqHVqib4/MqbYGJqiL3Zb8GJZr3l4g==}

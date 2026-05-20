@@ -13,13 +13,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { State, City } from "country-state-city";
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
@@ -45,9 +53,11 @@ import {
   Tag,
   Clock,
 } from "lucide-react";
-import ContactForm from "./contact-form";
+import ContactForm, { type ContactFormHandle } from "./contact-form";
 import { RecentlyViewedProducts } from "./recently-viewed-products";
 import { useCustomer } from "@/hooks/use-customer";
+
+const INDIA_CODE = "IN";
 
 export function CheckoutForm({ user }: { user: User }) {
   const { items, clearCart, appliedCoupon } = useCart();
@@ -112,9 +122,13 @@ export function CheckoutForm({ user }: { user: User }) {
 
   const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
+  const contactFormRef = useRef<ContactFormHandle>(null);
+  const [isSavingContact, setIsSavingContact] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [orderReviewOpen, setOrderReviewOpen] = useState(true);
   const [cardNumber, setCardNumber] = useState("");
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
   const [shippingInfo, setShippingInfo] = useState({
     fullName: "",
     address_line1: "",
@@ -134,9 +148,31 @@ export function CheckoutForm({ user }: { user: User }) {
     console.log("Shipping Info:", shippingInfo);
   }, [shippingInfo]);
 
+  // Load Indian states on mount
+  useEffect(() => {
+    const indiaStates = State.getStatesOfCountry(INDIA_CODE);
+    setStates(indiaStates || []);
+  }, []);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (shippingInfo.state) {
+      const selectedState = states.find((s) => s.name === shippingInfo.state);
+      if (selectedState) {
+        const stateCities = City.getCitiesOfState(
+          INDIA_CODE,
+          selectedState.isoCode,
+        );
+        setCities(stateCities || []);
+        // Reset city when state changes
+        setShippingInfo((prev) => ({ ...prev, city: "" }));
+      }
+    }
+  }, [shippingInfo.state, states]);
+
   // COD price limits
   const COD_MIN_AMOUNT = 599;
-  const COD_MAX_AMOUNT = 10000;
+  const COD_MAX_AMOUNT = 9999;
 
   // Check if COD is available
   const isCodAvailable =
@@ -482,7 +518,10 @@ export function CheckoutForm({ user }: { user: User }) {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
-                <ContactForm user={{ id: user.id, email: user.email || "" }} />
+                <ContactForm
+                  ref={contactFormRef}
+                  user={{ id: user.id, email: user.email || "" }}
+                />
 
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                   <Button
@@ -493,10 +532,25 @@ export function CheckoutForm({ user }: { user: User }) {
                     <ArrowLeft className="h-4 w-4 mr-1" /> Back
                   </Button>
                   <Button
-                    onClick={() => setTab("shipping")}
+                    onClick={async () => {
+                      if (isSavingContact) return;
+                      setIsSavingContact(true);
+                      const ok =
+                        (await contactFormRef.current?.save()) ?? false;
+                      setIsSavingContact(false);
+                      if (ok) setTab("shipping");
+                    }}
+                    disabled={isSavingContact}
                     className="order-1 sm:order-2"
                   >
-                    Continue
+                    {isSavingContact ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Continue"
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -605,18 +659,33 @@ export function CheckoutForm({ user }: { user: User }) {
                     >
                       City <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      id="city"
-                      required
-                      placeholder="Enter city"
+                    <Select
                       value={shippingInfo.city}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setShippingInfo({
                           ...shippingInfo,
-                          city: e.target.value,
+                          city: value,
                         })
                       }
-                    />
+                      disabled={!shippingInfo.state}
+                    >
+                      <SelectTrigger id="city" className="w-full">
+                        <SelectValue
+                          placeholder={
+                            shippingInfo.state
+                              ? "Select city"
+                              : "Select state first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city.name} value={city.name}>
+                            {city.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid gap-1.5 sm:gap-2">
                     <Label
@@ -647,18 +716,26 @@ export function CheckoutForm({ user }: { user: User }) {
                     >
                       State <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      id="state"
-                      required
-                      placeholder="Enter state"
+                    <Select
                       value={shippingInfo.state}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setShippingInfo({
                           ...shippingInfo,
-                          state: e.target.value,
+                          state: value,
                         })
                       }
-                    />
+                    >
+                      <SelectTrigger id="state" className="w-full">
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {states.map((state) => (
+                          <SelectItem key={state.isoCode} value={state.name}>
+                            {state.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid gap-1.5 sm:gap-2">
                     <Label
@@ -671,13 +748,8 @@ export function CheckoutForm({ user }: { user: User }) {
                       id="country"
                       required
                       placeholder="Enter country"
-                      value={shippingInfo.country}
-                      onChange={(e) =>
-                        setShippingInfo({
-                          ...shippingInfo,
-                          country: e.target.value,
-                        })
-                      }
+                      value="India"
+                      disabled
                     />
                   </div>
                 </div>
@@ -1140,31 +1212,9 @@ export function CheckoutForm({ user }: { user: User }) {
                   </span>
                 </div>
                 <div className="flex flex-col items-center text-center p-1.5 sm:p-2">
-                  <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 mb-0.5 sm:mb-1" />
-                  <span className="text-[9px] sm:text-[10px] text-slate-600">
-                    Easy Return
-                  </span>
-                </div>
-                <div className="flex flex-col items-center text-center p-1.5 sm:p-2">
                   <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 mb-0.5 sm:mb-1" />
                   <span className="text-[9px] sm:text-[10px] text-slate-600">
                     Free Delivery
-                  </span>
-                </div>
-              </div>
-
-              {/* Customer Support */}
-              <div className="flex items-center justify-center gap-3 sm:gap-4 pt-1.5 sm:pt-2 border-t">
-                <div className="flex items-center gap-1 text-slate-600">
-                  <Headphones className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <span className="text-[9px] sm:text-[10px]">
-                    24/7 Support
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-slate-600">
-                  <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <span className="text-[9px] sm:text-[10px]">
-                    1800-XXX-XXXX
                   </span>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { State, City } from "country-state-city";
 import {
   Card,
   CardContent,
@@ -57,6 +58,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useCustomer } from "@/hooks/use-customer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -160,6 +168,9 @@ export function ProfileClient({
   const [copied, setCopied] = useState(false);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const INDIA_CODE = "IN";
 
   // Use cached address if available, otherwise use initial
   const currentAddress = cachedAddress || initialAddress;
@@ -184,10 +195,30 @@ export function ProfileClient({
         city: currentAddress.city || "",
         state: currentAddress.state || "",
         postal_code: currentAddress.postal_code || "",
-        country: currentAddress.country || "India",
+        country: "India",
       });
     }
   }, [currentAddress]);
+
+  // Load Indian states on mount
+  useEffect(() => {
+    const indiaStates = State.getStatesOfCountry(INDIA_CODE);
+    setStates(indiaStates || []);
+  }, []);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (addressForm.state) {
+      const selectedState = states.find((s) => s.name === addressForm.state);
+      if (selectedState) {
+        const stateCities = City.getCitiesOfState(
+          INDIA_CODE,
+          selectedState.isoCode,
+        );
+        setCities(stateCities || []);
+      }
+    }
+  }, [addressForm.state, states]);
 
   const handleSaveAddress = async () => {
     if (
@@ -628,17 +659,33 @@ export function ProfileClient({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
+                      <Select
                         value={addressForm.city}
-                        onChange={(e) =>
+                        onValueChange={(value) =>
                           setAddressForm({
                             ...addressForm,
-                            city: e.target.value,
+                            city: value,
                           })
                         }
-                        placeholder="Mumbai"
-                      />
+                        disabled={!addressForm.state}
+                      >
+                        <SelectTrigger id="city" className="w-full">
+                          <SelectValue
+                            placeholder={
+                              addressForm.state
+                                ? "Select city"
+                                : "Select state first"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cities.map((city) => (
+                            <SelectItem key={city.name} value={city.name}>
+                              {city.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="postal_code">PIN Code *</Label>
@@ -658,31 +705,30 @@ export function ProfileClient({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="state">State *</Label>
-                      <Input
-                        id="state"
+                      <Select
                         value={addressForm.state}
-                        onChange={(e) =>
+                        onValueChange={(value) =>
                           setAddressForm({
                             ...addressForm,
-                            state: e.target.value,
+                            state: value,
                           })
                         }
-                        placeholder="Maharashtra"
-                      />
+                      >
+                        <SelectTrigger id="state" className="w-full">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {states.map((state) => (
+                            <SelectItem key={state.isoCode} value={state.name}>
+                              {state.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="country">Country *</Label>
-                      <Input
-                        id="country"
-                        value={addressForm.country}
-                        onChange={(e) =>
-                          setAddressForm({
-                            ...addressForm,
-                            country: e.target.value,
-                          })
-                        }
-                        placeholder="India"
-                      />
+                      <Input id="country" value="India" disabled />
                     </div>
                   </div>
                 </div>

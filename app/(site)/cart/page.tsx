@@ -355,16 +355,8 @@ export default function CartPage() {
                     <span className="text-xs">Secure Payment</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-600">
-                    <RotateCcw className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs">Easy Returns</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-600">
                     <Truck className="h-4 w-4 text-purple-600" />
                     <span className="text-xs">Fast Delivery</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <CreditCard className="h-4 w-4 text-orange-600" />
-                    <span className="text-xs">Multiple Payment</span>
                   </div>
                 </div>
               </div>

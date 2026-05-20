@@ -7,8 +7,17 @@ import FAQSections from "@/components/faq-sections";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Star, Quote, Mail, Gift, CheckCircle, Sparkles } from "lucide-react";
-import { useState } from "react";
+import {
+  Star,
+  Quote,
+  Mail,
+  Gift,
+  CheckCircle,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface Product {
   id: string;
@@ -34,26 +43,104 @@ interface HomePageSectionsProps {
 function TestimonialsSection() {
   const testimonials = [
     {
-      name: "Priya Sharma",
-      location: "Mumbai",
+      name: "Amit Gupta",
+      location: "Pune",
       rating: 5,
-      text: "Amazing quality products and super fast delivery! The customer service is exceptional. Will definitely shop again.",
-      avatar: "PS",
+      text: "Bhai seriously the delivery speed is insane! Ordered on monday got on wednesday, came packed in bubble wrap like it was fragile. Real 5/5",
+      avatar: "AG",
     },
     {
-      name: "Rahul Verma",
+      name: "Tanvi Singh",
+      location: "Gurgaon",
+      rating: 5,
+      text: "My mom wanted these earphones, i was skeptical but OMG so good for the price. Way better than local shops. Telling everyone now 🙌",
+      avatar: "TS",
+    },
+    {
+      name: "Rajesh Kumar",
+      location: "Kolkata",
+      rating: 5,
+      text: "Got 3 orders from here and havent been disappointed once. Customer service reply in 2 mins itself! This is how it should be.",
+      avatar: "RK",
+    },
+    {
+      name: "Priya Das",
+      location: "Chennai",
+      rating: 5,
+      text: "Finally found a place that's not overpriced like amazon! Plus return process is so smooth, just collect from home. Thumbs up",
+      avatar: "PD",
+    },
+    {
+      name: "Vikram Singh",
       location: "Delhi",
       rating: 5,
-      text: "Best prices I've found for gadgets. The packaging was secure and the product exceeded my expectations.",
-      avatar: "RV",
+      text: "Ordered during diwali sale and prices were genuinely good, not like fake discounts. Already ordered again lol",
+      avatar: "VS",
     },
     {
-      name: "Anita Patel",
+      name: "Rohan Mehta",
       location: "Bangalore",
       rating: 5,
-      text: "I love shopping here! Great selection of products, easy returns, and the deals are unbeatable.",
-      avatar: "AP",
+      text: "My gf uses it every day now, says its perfect for office. Quality is solid, not cheaply made like other brands. Worth every paisa.",
+      avatar: "RM",
     },
+    {
+      name: "Arun Nair",
+      location: "Kochi",
+      rating: 5,
+      text: "Cashfree payment works perfectly, no issues with any payment method. Also got the product in sealed box which was nice",
+      avatar: "AN",
+    },
+    {
+      name: "Suresh Yadav",
+      location: "Jaipur",
+      rating: 5,
+      text: "Ordered 5 items for my shop and they gave bulk discount without me even asking! Proper business ethic visible here",
+      avatar: "SY",
+    },
+    {
+      name: "Harsh Patel",
+      location: "Ahmedabad",
+      rating: 5,
+      text: "Thought it would take 2 weeks but it reached in 3 days to my village itself! Shocked honestly. Product is dope too",
+      avatar: "HP",
+    },
+    {
+      name: "Neha Kapoor",
+      location: "Hyderabad",
+      rating: 5,
+      text: "Using for 2 months now and zero complaints. Battery life is even better than expected. This is what quality feels like",
+      avatar: "NK",
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Auto-shift carousel every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [testimonials.length]);
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const goToPrev = () => {
+    setCurrentIndex((prev) =>
+      prev === 0 ? testimonials.length - 1 : prev - 1,
+    );
+  };
+
+  const cardsPerView = 3;
+
+  // Get 3 visible testimonials
+  const visibleTestimonials = [
+    testimonials[currentIndex],
+    testimonials[(currentIndex + 1) % testimonials.length],
+    testimonials[(currentIndex + 2) % testimonials.length],
   ];
 
   return (
@@ -73,41 +160,79 @@ function TestimonialsSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-shadow relative"
-            >
-              <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/10" />
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-5 h-5 fill-yellow-400 text-yellow-400"
-                  />
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                &ldquo;{testimonial.text}&rdquo;
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-primary font-semibold">
-                    {testimonial.avatar}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {testimonial.name}
+        {/* Carousel */}
+        <div className="max-w-4xl mx-auto">
+          <div className="relative">
+            {/* Testimonial Cards Grid */}
+            <div className="grid md:grid-cols-3 gap-6">
+              {visibleTestimonials.map((testimonial, idx) => (
+                <div
+                  key={`${currentIndex}-${idx}`}
+                  className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-shadow relative animate-fadeIn"
+                >
+                  <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/10" />
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className="w-5 h-5 fill-yellow-400 text-yellow-400"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-4">
+                    {testimonial.text}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {testimonial.location}
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-primary font-semibold">
+                        {testimonial.avatar}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {testimonial.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {testimonial.location}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+
+            {/* Navigation Arrows */}
+            <button
+              onClick={goToPrev}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 bg-primary text-white rounded-full p-2 hover:bg-primary/90 transition-colors"
+              aria-label="Previous testimonial"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={goToNext}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 bg-primary text-white rounded-full p-2 hover:bg-primary/90 transition-colors"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Dots Navigation */}
+          <div className="flex justify-center gap-2 mt-8">
+            {testimonials.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`h-2 rounded-full transition-all ${
+                  index >= currentIndex && index < currentIndex + cardsPerView
+                    ? "bg-primary w-8"
+                    : "bg-gray-300 w-2 hover:bg-gray-400"
+                }`}
+                aria-label={`Go to testimonial ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Trust stats */}
@@ -126,6 +251,20 @@ function TestimonialsSection() {
             </div>
           ))}
         </div>
+
+        <style jsx>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.5s ease-in-out;
+          }
+        `}</style>
       </div>
     </section>
   );
