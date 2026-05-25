@@ -4,6 +4,7 @@ import { LazySection, SectionSkeleton } from "@/components/lazy-section";
 import ProductsList from "@/components/Products-list";
 import FeaturedSection from "@/components/featured-section";
 import FAQSections from "@/components/faq-sections";
+import { Banners } from "@/components/banners";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,6 +116,7 @@ function TestimonialsSection() {
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [cardsPerView, setCardsPerView] = useState(3);
 
   // Auto-shift carousel every 5 seconds
   useEffect(() => {
@@ -123,6 +125,22 @@ function TestimonialsSection() {
     }, 5000);
     return () => clearInterval(interval);
   }, [testimonials.length]);
+
+  useEffect(() => {
+    const updateCardsPerView = () => {
+      if (window.innerWidth < 640) {
+        setCardsPerView(1);
+      } else if (window.innerWidth < 1024) {
+        setCardsPerView(2);
+      } else {
+        setCardsPerView(3);
+      }
+    };
+
+    updateCardsPerView();
+    window.addEventListener("resize", updateCardsPerView);
+    return () => window.removeEventListener("resize", updateCardsPerView);
+  }, []);
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -134,18 +152,19 @@ function TestimonialsSection() {
     );
   };
 
-  const cardsPerView = 3;
+  const visibleTestimonials = Array.from({ length: cardsPerView }, (_, idx) => {
+    return testimonials[(currentIndex + idx) % testimonials.length];
+  });
 
-  // Get 3 visible testimonials
-  const visibleTestimonials = [
-    testimonials[currentIndex],
-    testimonials[(currentIndex + 1) % testimonials.length],
-    testimonials[(currentIndex + 2) % testimonials.length],
-  ];
+  const isActiveDot = (dotIndex: number) => {
+    return Array.from({ length: cardsPerView }).some(
+      (_, idx) => (currentIndex + idx) % testimonials.length === dotIndex,
+    );
+  };
 
   return (
-    <section className="py-16 bg-linear-to-b from-white to-gray-50">
-      <div className="container mx-auto px-4">
+    <section className="bg-linear-to-b from-white to-gray-50 py-12 md:py-16">
+      <div className="container mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 text-sm font-medium px-4 py-1.5 rounded-full mb-4">
             <Star className="w-4 h-4 fill-yellow-500" />
@@ -161,25 +180,33 @@ function TestimonialsSection() {
         </div>
 
         {/* Carousel */}
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto max-w-6xl">
           <div className="relative">
             {/* Testimonial Cards Grid */}
-            <div className="grid md:grid-cols-3 gap-6">
+            <div
+              className={`grid gap-4 sm:gap-6 ${
+                cardsPerView === 1
+                  ? "grid-cols-1"
+                  : cardsPerView === 2
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              }`}
+            >
               {visibleTestimonials.map((testimonial, idx) => (
                 <div
                   key={`${currentIndex}-${idx}`}
-                  className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-shadow relative animate-fadeIn"
+                  className="relative animate-fadeIn rounded-2xl bg-white p-5 shadow-sm transition-shadow hover:shadow-lg sm:p-6 lg:p-8"
                 >
-                  <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/10" />
+                  <Quote className="absolute right-4 top-4 h-8 w-8 text-primary/10 sm:right-6 sm:top-6 sm:h-10 sm:w-10" />
                   <div className="flex items-center gap-1 mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star
                         key={i}
-                        className="w-5 h-5 fill-yellow-400 text-yellow-400"
+                        className="h-4 w-4 fill-yellow-400 text-yellow-400 sm:h-5 sm:w-5"
                       />
                     ))}
                   </div>
-                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-4">
+                  <p className="mb-5 line-clamp-5 text-sm leading-relaxed text-gray-600 sm:mb-6 sm:text-base">
                     {testimonial.text}
                   </p>
                   <div className="flex items-center gap-4">
@@ -204,14 +231,14 @@ function TestimonialsSection() {
             {/* Navigation Arrows */}
             <button
               onClick={goToPrev}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 bg-primary text-white rounded-full p-2 hover:bg-primary/90 transition-colors"
+              className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-primary p-2 text-white transition-colors hover:bg-primary/90 md:block"
               aria-label="Previous testimonial"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={goToNext}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 bg-primary text-white rounded-full p-2 hover:bg-primary/90 transition-colors"
+              className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-primary p-2 text-white transition-colors hover:bg-primary/90 md:block"
               aria-label="Next testimonial"
             >
               <ChevronRight className="w-6 h-6" />
@@ -225,13 +252,22 @@ function TestimonialsSection() {
                 key={index}
                 onClick={() => setCurrentIndex(index)}
                 className={`h-2 rounded-full transition-all ${
-                  index >= currentIndex && index < currentIndex + cardsPerView
+                  isActiveDot(index)
                     ? "bg-primary w-8"
                     : "bg-gray-300 w-2 hover:bg-gray-400"
                 }`}
                 aria-label={`Go to testimonial ${index + 1}`}
               />
             ))}
+          </div>
+
+          <div className="mt-4 flex justify-center gap-3 md:hidden">
+            <Button variant="outline" size="icon" onClick={goToPrev}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={goToNext}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
@@ -362,6 +398,11 @@ export function HomePageSections({
 }: HomePageSectionsProps) {
   return (
     <>
+      {/* Dynamic Banners Below Hero Section */}
+      <LazySection fallback={<SectionSkeleton height="220px" />}>
+        <Banners placementName="home-page-below-hero-section" />
+      </LazySection>
+
       {/* Featured Products */}
       <LazySection fallback={<SectionSkeleton height="500px" />}>
         <ProductsList
@@ -403,6 +444,11 @@ export function HomePageSections({
       {/* FAQ */}
       <LazySection fallback={<SectionSkeleton height="400px" />}>
         <FAQSections />
+      </LazySection>
+
+      {/* Dynamic Banners Above Footer */}
+      <LazySection fallback={<SectionSkeleton height="220px" />}>
+        <Banners placementName="home-page-above-footer" />
       </LazySection>
     </>
   );
