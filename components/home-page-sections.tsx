@@ -2,9 +2,8 @@
 
 import { LazySection, SectionSkeleton } from "@/components/lazy-section";
 import ProductsList from "@/components/Products-list";
-import FeaturedSection from "@/components/featured-section";
+// import FeaturedSection from "@/components/featured-section";
 import FAQSections from "@/components/faq-sections";
-import { Banners } from "@/components/banners";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -306,87 +305,6 @@ function TestimonialsSection() {
   );
 }
 
-// Newsletter Section Component
-function NewsletterSection() {
-  const [email, setEmail] = useState("");
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setIsSubscribed(true);
-      setEmail("");
-    }
-  };
-
-  return (
-    <section className="py-16">
-      <div className="container mx-auto px-4">
-        <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-gray-900 via-gray-800 to-gray-900">
-          {/* Decorative elements */}
-          <div className="absolute top-0 left-0 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-
-          <div className="relative z-10 py-16 px-8 md:px-16 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6">
-              <Gift className="w-4 h-4" />
-              Get 10% Off Your First Order
-            </div>
-
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Subscribe to Our Newsletter
-            </h2>
-            <p className="text-gray-400 max-w-xl mx-auto mb-8">
-              Stay updated with the latest products, exclusive deals, and tech
-              news. Be the first to know about our special offers!
-            </p>
-
-            {isSubscribed ? (
-              <div className="flex items-center justify-center gap-3 bg-green-500/20 text-green-400 px-6 py-4 rounded-xl max-w-md mx-auto">
-                <CheckCircle className="w-6 h-6" />
-                <span className="font-medium">
-                  Thank you for subscribing! Check your inbox for welcome
-                  discount.
-                </span>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
-              >
-                <div className="relative flex-1">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-12 h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-primary"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="h-12 px-8 font-semibold"
-                >
-                  Subscribe
-                  <Sparkles className="w-4 h-4 ml-2" />
-                </Button>
-              </form>
-            )}
-
-            <p className="text-gray-500 text-sm mt-4">
-              By subscribing, you agree to our Privacy Policy. Unsubscribe
-              anytime.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 interface HomePageSectionsProps {
   featuredProducts: Product[];
   arrivalProducts: Product[];
@@ -398,11 +316,6 @@ export function HomePageSections({
 }: HomePageSectionsProps) {
   return (
     <>
-      {/* Dynamic Banners Below Hero Section */}
-      <LazySection fallback={<SectionSkeleton height="220px" />}>
-        <Banners placementName="home-page-below-hero-section" />
-      </LazySection>
-
       {/* Featured Products */}
       <LazySection fallback={<SectionSkeleton height="500px" />}>
         <ProductsList
@@ -444,11 +357,6 @@ export function HomePageSections({
       {/* FAQ */}
       <LazySection fallback={<SectionSkeleton height="400px" />}>
         <FAQSections />
-      </LazySection>
-
-      {/* Dynamic Banners Above Footer */}
-      <LazySection fallback={<SectionSkeleton height="220px" />}>
-        <Banners placementName="home-page-above-footer" />
       </LazySection>
     </>
   );
