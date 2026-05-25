@@ -97,39 +97,6 @@ export function BannerCard({ banner }: { banner: BannerItem }) {
           />
         </picture>
       )}
-
-      {(banner.overlay_color ||
-        banner.title ||
-        banner.subtitle ||
-        banner.link_text) && (
-        <div
-          className={`absolute inset-0 flex p-6 md:p-10 ${textPositionClass(banner.text_position)}`}
-          style={{ backgroundColor: banner.overlay_color || "transparent" }}
-        >
-          {(banner.title || banner.subtitle || banner.link_text) && (
-            <div
-              className="max-w-2xl space-y-2"
-              style={{ color: banner.text_color || "#ffffff" }}
-            >
-              {banner.title && (
-                <h3 className="text-xl font-bold md:text-3xl">
-                  {banner.title}
-                </h3>
-              )}
-              {banner.subtitle && (
-                <p className="text-sm opacity-95 md:text-base">
-                  {banner.subtitle}
-                </p>
-              )}
-              {banner.link_text && (
-                <span className="mt-2 inline-flex rounded-full bg-black/35 px-4 py-1.5 text-sm font-medium">
-                  {banner.link_text}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen">
-      <HeroSection />
+      {/* <HeroSection /> */}
       <HomePageSections
         featuredProducts={featuredProducts || []}
         arrivalProducts={arrivalProducts || []}
