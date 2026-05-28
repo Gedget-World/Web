@@ -59,13 +59,27 @@ export async function POST(request: Request) {
     }
 
     // Create Cashfree payment session
-    const paymentSession = await createCashfreePaymentSession({
-      order_id,
-      customer_email: user.email || "",
-      customer_phone: normalizedPhone,
-      amount,
-      customer_name,
-    });
+    console.log("[CASHFREE] Initiating payment session for order:", order_id);
+    let paymentSession;
+    try {
+      paymentSession = await createCashfreePaymentSession({
+        order_id,
+        customer_email: user.email || "",
+        customer_phone: normalizedPhone,
+        amount,
+        customer_name,
+      });
+      console.log(
+        "[CASHFREE] Payment session created successfully:",
+        paymentSession,
+      );
+    } catch (cashfreeError) {
+      console.error(
+        "[CASHFREE] Payment session creation failed:",
+        cashfreeError,
+      );
+      throw cashfreeError;
+    }
 
     // Store payment session info in database (optional, for tracking).
     // Use service role to ensure write succeeds regardless of RLS policies.
@@ -98,12 +112,21 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[CASHFREE] Payment session error:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to create payment session";
+    const errorStack = error instanceof Error ? error.stack : "";
+
+    if (errorStack) {
+      console.error("[CASHFREE] Error stack:", errorStack);
+    }
+
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create payment session",
+        error: errorMessage,
+        details:
+          process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 },
     );

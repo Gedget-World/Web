@@ -121,6 +121,19 @@ export async function createCashfreePaymentSession(paymentData: {
   const bodyString = JSON.stringify(requestBody);
   const headers = generateCashfreeAuthHeader(endpoint, bodyString);
 
+  // Debug logging - remove after fixing
+  console.log("[Cashfree Debug] API Base URL:", CASHFREE_API_BASE_URL);
+  console.log("[Cashfree Debug] Endpoint:", endpoint);
+  console.log(
+    "[Cashfree Debug] Full URL:",
+    `${CASHFREE_API_BASE_URL}${endpoint}`,
+  );
+  console.log("[Cashfree Debug] Headers:", {
+    ...headers,
+    "x-client-secret": "***HIDDEN***",
+  });
+  console.log("[Cashfree Debug] Request Body:", requestBody);
+
   try {
     const response = await fetch(`${CASHFREE_API_BASE_URL}${endpoint}`, {
       method: "POST",
@@ -132,8 +145,19 @@ export async function createCashfreePaymentSession(paymentData: {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Cashfree API Error: ${error.message}`);
+      const errorText = await response.text();
+      let errorMessage = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || JSON.stringify(errorJson);
+      } catch {
+        // If response is not JSON, use the text as is
+      }
+      console.error("[Cashfree Debug] Error Response Status:", response.status);
+      console.error("[Cashfree Debug] Error Response:", errorMessage);
+      throw new Error(
+        `Cashfree API Error (${response.status}): ${errorMessage}`,
+      );
     }
 
     return await response.json();
