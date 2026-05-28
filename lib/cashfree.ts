@@ -1,19 +1,48 @@
 import crypto from "crypto";
 
 // Cashfree API Configuration
+const rawCashfreeEnv = (
+  process.env.CASHFREE_ENV ||
+  process.env.NEXT_PUBLIC_CASHFREE_ENV ||
+  (process.env.NODE_ENV === "production" ? "production" : "sandbox")
+)
+  .trim()
+  .toLowerCase();
+
+const CASHFREE_ENV =
+  rawCashfreeEnv === "production" || rawCashfreeEnv === "prod"
+    ? "production"
+    : "sandbox";
+
 const CASHFREE_API_BASE_URL =
-  process.env.NEXT_PUBLIC_CASHFREE_ENV === "production"
+  CASHFREE_ENV === "production"
     ? "https://api.cashfree.com"
     : "https://sandbox.cashfree.com";
 
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID?.trim();
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY?.trim();
 
 // Validate environment variables
 if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
   console.warn(
     "Cashfree credentials not configured. Payment integration will not work.",
   );
+}
+
+function assertCashfreeCredentials() {
+  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    throw new Error(
+      "Cashfree credentials missing. Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY.",
+    );
+  }
+}
+
+function getCashfreeCredentials(): { appId: string; secretKey: string } {
+  assertCashfreeCredentials();
+  return {
+    appId: CASHFREE_APP_ID as string,
+    secretKey: CASHFREE_SECRET_KEY as string,
+  };
 }
 
 /**
@@ -28,9 +57,16 @@ export function generateCashfreeAuthHeader(
   "x-api-version": string;
   "x-idempotency-key"?: string;
 } {
-  const headers: any = {
-    "x-client-id": CASHFREE_APP_ID!,
-    "x-client-secret": CASHFREE_SECRET_KEY!,
+  const { appId, secretKey } = getCashfreeCredentials();
+
+  const headers: {
+    "x-client-id": string;
+    "x-client-secret": string;
+    "x-api-version": string;
+    "x-idempotency-key"?: string;
+  } = {
+    "x-client-id": appId,
+    "x-client-secret": secretKey,
     "x-api-version": "2023-08-01",
   };
 
@@ -121,18 +157,12 @@ export async function createCashfreePaymentSession(paymentData: {
   const bodyString = JSON.stringify(requestBody);
   const headers = generateCashfreeAuthHeader(endpoint, bodyString);
 
-  // Debug logging - remove after fixing
-  console.log("[Cashfree Debug] API Base URL:", CASHFREE_API_BASE_URL);
-  console.log("[Cashfree Debug] Endpoint:", endpoint);
-  console.log(
-    "[Cashfree Debug] Full URL:",
-    `${CASHFREE_API_BASE_URL}${endpoint}`,
-  );
-  console.log("[Cashfree Debug] Headers:", {
-    ...headers,
-    "x-client-secret": "***HIDDEN***",
+  console.log("[Cashfree] Creating order", {
+    env: CASHFREE_ENV,
+    baseUrl: CASHFREE_API_BASE_URL,
+    endpoint,
+    appIdPrefix: `${(headers["x-client-id"] || "").slice(0, 6)}***`,
   });
-  console.log("[Cashfree Debug] Request Body:", requestBody);
 
   try {
     const response = await fetch(`${CASHFREE_API_BASE_URL}${endpoint}`, {
@@ -153,10 +183,16 @@ export async function createCashfreePaymentSession(paymentData: {
       } catch {
         // If response is not JSON, use the text as is
       }
-      console.error("[Cashfree Debug] Error Response Status:", response.status);
-      console.error("[Cashfree Debug] Error Response:", errorMessage);
+      console.error("[Cashfree] Error Response Status:", response.status);
+      console.error("[Cashfree] Error Response:", errorMessage);
+
+      const authHint =
+        response.status === 401
+          ? ` | Check 1) CASHFREE_ENV/NEXT_PUBLIC_CASHFREE_ENV (${CASHFREE_ENV}) matches your key type, 2) CASHFREE_APP_ID and CASHFREE_SECRET_KEY are production keys for production URL, 3) no extra spaces/newlines in env values.`
+          : "";
+
       throw new Error(
-        `Cashfree API Error (${response.status}): ${errorMessage}`,
+        `Cashfree API Error (${response.status}): ${errorMessage}${authHint}`,
       );
     }
 
