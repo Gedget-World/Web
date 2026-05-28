@@ -2,8 +2,6 @@
 
 **Effective Date:** 24-April-2026
 
-**Last Updated:** 24-April-2026
-
 At **Gadgets Kabila** ([https://gadgetskabila.com/](https://gadgetskabila.com/)), operated by `Gadgets Kabila`.
 
 ## Personal Identification Information
@@ -104,7 +102,3 @@ For accessibility questions, feedback, or assistance:
 - **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
 - **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
 - **Support Hours:** 24/7 Supports available.
-
----
-
-This Statement was last updated on <b>25-April-2026</b>

@@ -46,12 +46,10 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
-  Calendar,
   Banknote,
   Smartphone,
   Loader2,
   Tag,
-  Clock,
 } from "lucide-react";
 import ContactForm, { type ContactFormHandle } from "./contact-form";
 import { RecentlyViewedProducts } from "./recently-viewed-products";
@@ -110,15 +108,6 @@ export function CheckoutForm({ user }: { user: User }) {
 
   // Calculate total items
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Estimated delivery date (3-5 business days)
-  const deliveryDate = new Date();
-  deliveryDate.setDate(deliveryDate.getDate() + 5);
-  const deliveryDateStr = deliveryDate.toLocaleDateString("en-IN", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 
   const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
@@ -571,25 +560,6 @@ export function CheckoutForm({ user }: { user: User }) {
                 </p>
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
-                {/* Free Shipping Badge */}
-                <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-green-50 border border-green-200 rounded-lg">
-                  <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-xs font-semibold text-green-700">
-                      Free Shipping on this order!
-                    </p>
-                    <p className="text-[9px] sm:text-[10px] text-green-600">
-                      Estimated delivery: {deliveryDateStr}
-                    </p>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 text-[9px] sm:text-[10px] shrink-0"
-                  >
-                    FREE
-                  </Badge>
-                </div>
-
                 <div className="grid gap-1.5 sm:gap-2">
                   <Label
                     htmlFor="fullName"
@@ -1128,20 +1098,6 @@ export function CheckoutForm({ user }: { user: User }) {
                     </p>
                   </div>
                 ))}
-              </div>
-
-              {/* Estimated Delivery */}
-              <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-blue-50 rounded-lg">
-                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] sm:text-xs font-medium text-slate-900">
-                    Estimated Delivery
-                  </p>
-                  <p className="text-[9px] sm:text-[10px] text-blue-600 font-semibold">
-                    {deliveryDateStr}
-                  </p>
-                </div>
-                <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500 shrink-0" />
               </div>
 
               {/* Price Breakdown */}

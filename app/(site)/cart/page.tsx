@@ -115,15 +115,6 @@ export default function CartPage() {
   // Calculate total items
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Estimated delivery date (3-5 business days from now)
-  const deliveryDate = new Date();
-  deliveryDate.setDate(deliveryDate.getDate() + 5);
-  const deliveryDateStr = deliveryDate.toLocaleDateString("en-IN", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
   if (items.length === 0) {
     return (
       <main className="min-h-screen py-8 px-4 md:px-8 max-w-7xl mx-auto">
@@ -282,28 +273,6 @@ export default function CartPage() {
               </CardContent>
             </Card>
           ))}
-
-          {/* Delivery Info Card */}
-          <Card className="bg-blue-50 border-blue-100">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                  <Truck className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    Estimated Delivery
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    Get it by{" "}
-                    <span className="font-semibold text-blue-600">
-                      {deliveryDateStr}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="lg:col-span-1">
@@ -371,8 +340,7 @@ export default function CartPage() {
               <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-xs text-amber-800">
                   <span className="font-semibold">Cash on Delivery (COD):</span>{" "}
-                  Available only for orders minimum ₹599 without any coupon
-                  applied.
+                  Available only for order value of Rs. 599 and above.
                 </p>
               </div>
 

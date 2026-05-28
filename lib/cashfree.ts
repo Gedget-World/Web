@@ -20,18 +20,26 @@ if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
  * Generate authorization headers for Cashfree API v2023-08-01
  */
 export function generateCashfreeAuthHeader(
-  _endpoint: string,
-  _body: string,
+  endpoint: string,
+  body: string,
 ): {
   "x-client-id": string;
   "x-client-secret": string;
   "x-api-version": string;
+  "x-idempotency-key"?: string;
 } {
-  return {
+  const headers: any = {
     "x-client-id": CASHFREE_APP_ID!,
     "x-client-secret": CASHFREE_SECRET_KEY!,
     "x-api-version": "2023-08-01",
   };
+
+  // Add idempotency key for POST requests to prevent duplicate processing
+  if (body && (endpoint.includes("/orders") || endpoint.includes("/refunds"))) {
+    headers["x-idempotency-key"] = crypto.randomUUID();
+  }
+
+  return headers;
 }
 
 /**
