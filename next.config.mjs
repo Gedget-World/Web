@@ -57,6 +57,16 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self';",
+          },
+        ],
+      },
     ];
   },
 };
