@@ -1,6 +1,7 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -56,15 +57,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en" className={`${roboto.variable} antialiased`}>
       <head>
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -86,6 +90,7 @@ export default function RootLayout({
           }}
         />
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -100,6 +105,7 @@ export default function RootLayout({
           }}
         />
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
