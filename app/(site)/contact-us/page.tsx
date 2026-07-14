@@ -267,7 +267,7 @@ export default function ContactUsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Globe className="w-4 h-4" />
-                  <span>Pan India Delivery</span>
+                  <span>Pan India Shipping</span>
                 </div>
               </div>
             </div>
@@ -278,7 +278,7 @@ export default function ContactUsPage() {
                 <div className="flex justify-center mb-2">
                   <Users className="w-6 h-6 text-gray-700" />
                 </div>
-                <div className="text-2xl font-bold text-gray-900">500+</div>
+                <div className="text-2xl font-bold text-gray-900">10K+</div>
                 <div className="text-xs text-gray-500">Happy Customers</div>
               </div>
               {/* <div className="text-center p-4 bg-gray-50 rounded-xl">
