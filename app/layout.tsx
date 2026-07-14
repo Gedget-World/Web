@@ -65,10 +65,13 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="en" className={`${roboto.variable} antialiased`}>
+    <html
+      lang="en"
+      className={`${roboto.className} antialiased`}
+      suppressHydrationWarning
+    >
       <head>
         <script
-          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -90,7 +93,6 @@ export default async function RootLayout({
           }}
         />
         <script
-          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -105,7 +107,6 @@ export default async function RootLayout({
           }}
         />
         <script
-          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({

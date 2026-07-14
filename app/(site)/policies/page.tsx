@@ -1,21 +1,5 @@
 import Link from "next/link";
-import {
-  FileText,
-  Shield,
-  Truck,
-  CreditCard,
-  RefreshCw,
-  Cookie,
-  User,
-  AlertTriangle,
-  Scale,
-  Phone,
-  Tag,
-  Building2,
-  Megaphone,
-  Accessibility,
-  ChevronRight,
-} from "lucide-react";
+import { FileText, Shield, Truck, ChevronRight } from "lucide-react";
 
 const policies = [
   {

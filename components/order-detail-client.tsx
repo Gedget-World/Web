@@ -79,6 +79,16 @@ export function OrderDetailClient({
   const [emailNotifyEnabled, setEmailNotifyEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiItems, setConfettiItems] = useState<
+    Array<{
+      id: number;
+      left: number;
+      delay: number;
+      duration: number;
+      color: string;
+      shape: string;
+    }>
+  >([]);
   const [isSticky, setIsSticky] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -93,6 +103,22 @@ export function OrderDetailClient({
   // Confetti for delivered orders
   useEffect(() => {
     if (order.status === "delivered" && !isLoading) {
+      // Generate confetti items only once
+      const items = Array.from({ length: 50 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        delay: Math.random() * 3,
+        duration: 3 + Math.random() * 2,
+        color: [
+          "bg-green-500",
+          "bg-yellow-500",
+          "bg-pink-500",
+          "bg-blue-500",
+          "bg-purple-500",
+        ][Math.floor(Math.random() * 5)],
+        shape: Math.random() > 0.5 ? "rounded-full" : "rotate-45",
+      }));
+      setConfettiItems(items);
       setShowConfetti(true);
       const timer = setTimeout(() => setShowConfetti(false), 5000);
       return () => clearTimeout(timer);
@@ -266,28 +292,18 @@ export function OrderDetailClient({
         {/* Confetti Animation */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-            {[...Array(50)].map((_, i) => (
+            {confettiItems.map((item) => (
               <div
-                key={i}
+                key={item.id}
                 className="absolute animate-confetti"
                 style={{
-                  left: `${Math.random() * 100}%`,
+                  left: `${item.left}%`,
                   top: `-10%`,
-                  animationDelay: `${Math.random() * 3}s`,
-                  animationDuration: `${3 + Math.random() * 2}s`,
+                  animationDelay: `${item.delay}s`,
+                  animationDuration: `${item.duration}s`,
                 }}
               >
-                <div
-                  className={`w-3 h-3 ${
-                    [
-                      "bg-green-500",
-                      "bg-yellow-500",
-                      "bg-pink-500",
-                      "bg-blue-500",
-                      "bg-purple-500",
-                    ][Math.floor(Math.random() * 5)]
-                  } ${Math.random() > 0.5 ? "rounded-full" : "rotate-45"}`}
-                />
+                <div className={`w-3 h-3 ${item.color} ${item.shape}`} />
               </div>
             ))}
           </div>

@@ -40,9 +40,15 @@ function buildCsp(nonce: string) {
     supabaseOrigin,
   ].filter(Boolean);
 
+  // Allow 'unsafe-eval' in development for Next.js React refresh runtime
+  const isProduction = process.env.NODE_ENV === "production";
+  const scriptSrc = isProduction
+    ? `'self' 'nonce-${nonce}' https://sdk.cashfree.com`
+    : `'self' 'nonce-${nonce}' 'unsafe-eval' https://sdk.cashfree.com`;
+
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://sdk.cashfree.com`,
+    `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src ${imgSources.join(" ")}`,
     "font-src 'self' data:",

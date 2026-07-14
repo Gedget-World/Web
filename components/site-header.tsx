@@ -71,6 +71,7 @@ export function SiteHeader() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [greeting, setGreeting] = useState("");
   const wishlistCount = useWishlistStore((state) => state.items.length);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -122,6 +123,18 @@ export function SiteHeader() {
     fetchCollections();
   }, [supabase]);
 
+  // Set greeting on client-side only to avoid hydration mismatch
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting("Good morning");
+    } else if (hour < 17) {
+      setGreeting("Good afternoon");
+    } else {
+      setGreeting("Good evening");
+    }
+  }, []);
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     // Clear cached customer data
@@ -131,13 +144,6 @@ export function SiteHeader() {
     setMobileMenuOpen(false);
     router.push("/");
     router.refresh();
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
   };
 
   return (
@@ -208,7 +214,7 @@ export function SiteHeader() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">
-                            {getGreeting()},
+                            {greeting},
                           </p>
                           <p className="font-semibold text-gray-900">
                             {user.user_metadata?.full_name ||
