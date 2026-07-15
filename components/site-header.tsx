@@ -458,7 +458,7 @@ export function SiteHeader() {
                     </div>
                     <div className="hidden lg:block text-left">
                       <p className="text-xs text-muted-foreground leading-none">
-                        {getGreeting()}
+                        {greeting}
                       </p>
                       <p className="text-sm font-medium text-gray-900 leading-tight">
                         {user.user_metadata?.full_name?.split(" ")[0] ||
