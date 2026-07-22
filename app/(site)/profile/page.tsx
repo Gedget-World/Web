@@ -106,9 +106,9 @@ export default async function ProfilePage() {
     <ProfileClient
       user={{
         id: user.id,
-        email: user.email || "",
+        phone: user.phone || null,
         created_at: user.created_at,
-        email_confirmed_at: user.email_confirmed_at,
+        phone_confirmed_at: user.phone_confirmed_at,
         avatar_url:
           (user.user_metadata?.avatar_url as string | undefined) ||
           (user.user_metadata?.picture as string | undefined),

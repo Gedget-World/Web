@@ -31,3 +31,7 @@ next-env.d.ts
 
 # Additional scripts
 open-project.bat
+
+# Supabase
+/supabase
+

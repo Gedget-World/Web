@@ -56,23 +56,14 @@ export default function FAQSections() {
               wallets for a fast and secure checkout.
             </AccordionContent>
           </AccordionItem>
-          <AccordionItem value="item-3">
-            <AccordionTrigger className="text-sm md:text-base text-left">
-              What is your return and refund policy?
-            </AccordionTrigger>
-            <AccordionContent className="text-sm text-slate-600">
-              Most products are eligible for easy returns within 7 days of
-              delivery. Refunds are processed to your original payment method
-              within 3–5 business days after pickup.
-            </AccordionContent>
-          </AccordionItem>
+
           <AccordionItem value="item-4">
             <AccordionTrigger className="text-sm md:text-base text-left">
               How long does delivery take?
             </AccordionTrigger>
             <AccordionContent className="text-sm text-slate-600">
               Standard delivery takes 2–5 business days, depending on your
-              location and the seller.
+              location or PIN Code.
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="item-5">

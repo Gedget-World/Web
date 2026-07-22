@@ -42,7 +42,6 @@ type Customer = {
 interface CustomerProfileFormProps {
   user: {
     id: string;
-    email: string;
   };
   initialCustomer?: Customer | null;
 }

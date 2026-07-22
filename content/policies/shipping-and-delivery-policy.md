@@ -72,4 +72,4 @@ For accessibility questions, feedback, or assistance:
 - **Phone:** +91 8839978399
 - **Address:** Shop no.3, Bhramha Krishna Tower, SMR Palace, Neelbad. Bhopal. (M.P.) 462044, Madhya Pradesh, INDIA
 - **Website:** ([https://gadgetskabila.com](https://gadgetskabila.com/))
-- **Support Hours:** 24/7 Supports available.
+- **Support Hours:** 11 AM TO 6 PM IST Supports available.

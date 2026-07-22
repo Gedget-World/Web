@@ -340,7 +340,8 @@ export default function CartPage() {
               <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-xs text-amber-800">
                   <span className="font-semibold">Cash on Delivery (COD):</span>{" "}
-                  Available only for order value of Rs. 599 and above.
+                  Available only for order value of Rs. 599 and above. 20%
+                  advance to be paid for the cash on delivery orders.
                 </p>
               </div>
 

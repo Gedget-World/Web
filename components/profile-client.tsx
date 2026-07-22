@@ -16,11 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   User,
-  Mail,
   Calendar,
   Phone,
-  CheckCircle2,
-  AlertCircle,
   Package,
   Heart,
   Star,
@@ -135,9 +132,9 @@ type WishlistItem = {
 interface ProfileClientProps {
   user: {
     id: string;
-    email: string;
+    phone: string | null;
     created_at: string;
-    email_confirmed_at?: string;
+    phone_confirmed_at?: string;
     avatar_url?: string;
   };
   customer: Customer | null;
@@ -273,7 +270,7 @@ export function ProfileClient({
     if (customer?.phone) completed++;
     if (customer?.date_of_birth) completed++;
     if (currentAddress) completed++;
-    if (user.email_confirmed_at) completed++;
+    if (user.phone_confirmed_at) completed++;
 
     return Math.round((completed / total) * 100);
   };
@@ -362,9 +359,10 @@ export function ProfileClient({
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                     />
+                  ) : customer?.first_name ? (
+                    customer.first_name[0].toUpperCase()
                   ) : (
-                    customer?.first_name?.[0]?.toUpperCase() ||
-                    user.email[0].toUpperCase()
+                    <User className="h-8 w-8" />
                   )}
                 </div>
                 <div>
@@ -374,7 +372,9 @@ export function ProfileClient({
                       ? `${customer.first_name} ${customer.last_name || ""}`
                       : "Welcome!"}
                   </h1>
-                  <p className="text-sm text-white/80">{user.email}</p>
+                  {user.phone && (
+                    <p className="text-sm text-white/80">{user.phone}</p>
+                  )}
                 </div>
               </div>
 
@@ -408,17 +408,6 @@ export function ProfileClient({
 
         {/* Verified Badges Row */}
         <div className="flex flex-wrap gap-3 mb-6">
-          {user.email_confirmed_at ? (
-            <Badge className="flex items-center gap-1.5 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Email Verified
-            </Badge>
-          ) : (
-            <Badge className="flex items-center gap-1.5 bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">
-              <AlertCircle className="h-3.5 w-3.5" />
-              Email Not Verified
-            </Badge>
-          )}
           {customer?.phone_verified ? (
             <Badge className="flex items-center gap-1.5 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
               <Phone className="h-3.5 w-3.5" />
@@ -437,7 +426,7 @@ export function ProfileClient({
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Profile Form */}
             <CustomerProfileForm
-              user={{ id: user.id, email: user.email }}
+              user={{ id: user.id }}
               initialCustomer={customer}
             />
 
@@ -829,14 +818,14 @@ export function ProfileClient({
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-                    <Mail className="h-4 w-4 text-slate-600" />
+                    <Phone className="h-4 w-4 text-slate-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                      Email
+                      Phone
                     </p>
                     <p className="text-sm text-slate-900 truncate">
-                      {user.email}
+                      {user.phone || "Not set"}
                     </p>
                   </div>
                 </div>
