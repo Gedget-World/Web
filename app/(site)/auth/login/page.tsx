@@ -238,9 +238,7 @@ export default function LoginPage() {
                     <Label htmlFor="phone">Phone Number</Label>
                     <InputGroup className="h-11">
                       <InputGroupAddon align="inline-start">
-                        <InputGroupText className="mt-[2px]">
-                          +91
-                        </InputGroupText>
+                        <InputGroupText className="mt-0.5">+91</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         id="phone"
