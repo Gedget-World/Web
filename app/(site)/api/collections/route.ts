@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Fetch all active collections with product counts
+    // Fetch all active collections
     const { data: collections, error } = await supabase
       .from("collections")
       .select(
@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         slug,
-        image_url,
-        products:products(count)
+        image_url
       `,
       )
       .eq("is_active", true)
@@ -28,18 +27,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform data to include product count
-    const collectionsWithCounts = (collections || []).map((collection) => ({
-      id: collection.id,
-      name: collection.name,
-      slug: collection.slug,
-      image_url: collection.image_url,
-      count: collection.products?.[0]?.count || 0,
-    }));
-
     return NextResponse.json({
-      collections: collectionsWithCounts,
-      total: collectionsWithCounts.length,
+      collections: collections || [],
+      total: (collections || []).length,
     });
   } catch (error) {
     console.error("Collections API error:", error);

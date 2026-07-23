@@ -120,39 +120,6 @@ export async function POST(request: Request) {
       throw itemsError;
     }
 
-    // Decrease stock for each product
-    for (const item of order_items) {
-      const { error: stockError } = await supabase.rpc("decrement_stock", {
-        product_id: item.product_id,
-        quantity: item.quantity,
-      });
-
-      if (stockError) {
-        console.error(
-          "[DEBUG] Stock update error for product:",
-          item.product_id,
-          stockError,
-        );
-        // If RPC doesn't exist, try direct update
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock")
-          .eq("id", item.product_id)
-          .single();
-
-        if (product) {
-          const newStock = Math.max(0, (product.stock || 0) - item.quantity);
-          await supabase
-            .from("products")
-            .update({
-              stock: newStock,
-              is_out_of_stock: newStock <= 0,
-            })
-            .eq("id", item.product_id);
-        }
-      }
-    }
-
     // Increment coupon used_count if a coupon was applied
     if (coupon_code) {
       const { error: couponError } = await supabase.rpc(

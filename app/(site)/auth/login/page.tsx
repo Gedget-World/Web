@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Loader2,
   AlertCircle,
@@ -31,6 +31,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import OTPInputComponent from "@/components/otp-input-component";
+
+import BASE_LOGO from "@/content/assets/logo/base-logo.png";
+import { BrandName } from "@/components/brand-name";
+import Image from "next/image";
 
 const RESEND_SECONDS = 60;
 
@@ -46,6 +50,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   const isPhoneValid = phone.length === 10;
 
@@ -60,6 +65,13 @@ export default function LoginPage() {
     window.addEventListener("load", handleLoad);
     return () => window.removeEventListener("load", handleLoad);
   }, []);
+
+  // Focus the phone input as soon as it becomes interactive.
+  useEffect(() => {
+    if (pageLoaded) {
+      phoneInputRef.current?.focus();
+    }
+  }, [pageLoaded]);
 
   // Countdown for the resend button.
   useEffect(() => {
@@ -149,18 +161,6 @@ export default function LoginPage() {
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
 
-        {/* Logo & Brand */}
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
-              <ShoppingBag className="w-7 h-7 text-primary" />
-            </div>
-            <span className="text-2xl font-bold text-white">
-              Gadgets Kabila
-            </span>
-          </Link>
-        </div>
-
         {/* Main Content */}
         <div className="relative z-10 space-y-8">
           <div>
@@ -215,8 +215,12 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-white" />
+              <div className="w-15 h-15 rounded-xl flex items-center justify-center">
+                <Image
+                  src={BASE_LOGO}
+                  alt="Gadgets Kabila Logo"
+                  className="w-15 h-15"
+                />
               </div>
               <span className="text-xl font-bold text-gray-900">
                 Gadgets Kabila
@@ -225,15 +229,30 @@ export default function LoginPage() {
           </div>
 
           <Card className="border-0 shadow-xl">
-            <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+            <CardHeader className="space-y-0">
+              {/* Logo & Brand */}
+              <div className="relative z-10">
+                <Link href="/" className="flex items-center gap-3">
+                  <div className="w-12 h-12 flex items-center justify-center ">
+                    <Image
+                      src={BASE_LOGO}
+                      alt="Gadgets Kabila Logo"
+                      className="w-12 h-12"
+                    />
+                  </div>
+                  <BrandName className="text-2xl font-bold text-white" />
+                </Link>
+              </div>
+              <CardTitle className="text-2xl font-bold">
+                Create Account
+              </CardTitle>
               <CardDescription>
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}>
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <InputGroup className="h-11">
@@ -242,8 +261,10 @@ export default function LoginPage() {
                       </InputGroupAddon>
                       <InputGroupInput
                         id="phone"
-                        type="tel"
+                        ref={phoneInputRef}
+                        type="text"
                         inputMode="numeric"
+                        autoComplete="tel-national"
                         placeholder="12345 67890"
                         required
                         disabled={otpSent || !pageLoaded}

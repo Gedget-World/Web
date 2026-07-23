@@ -927,7 +927,7 @@ export function ProfileClient({
                   <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
                     <RotateCcw className="h-4 w-4 text-green-600" />
                   </div>
-                  <span className="text-slate-700">Free Returns (30 days)</span>
+                  <span className="text-slate-700">Prepaid Offers</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">

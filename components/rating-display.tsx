@@ -58,12 +58,6 @@ export function RatingDisplay({
       <span className={`${text} font-medium text-slate-700`}>
         {rating.toFixed(1)}
       </span>
-      {showCount && (
-        <span className={`${text} text-slate-500`}>
-          ({reviewCount.toLocaleString("en-IN")}{" "}
-          {reviewCount === 1 ? "review" : "reviews"})
-        </span>
-      )}
     </div>
   );
 }

@@ -257,20 +257,8 @@ export async function getSearchFacets(
           count: row.count,
         });
         break;
-      case "is_featured":
-        facets.isFeatured = {
-          value: row.facet_value,
-          id: null,
-          count: row.count,
-        };
-        break;
-      case "is_new_arrival":
-        facets.isNewArrival = {
-          value: row.facet_value,
-          id: null,
-          count: row.count,
-        };
-        break;
+      // "is_featured" facet counting intentionally not processed/used.
+      // "is_new_arrival" facet counting intentionally not processed/used.
     }
   }
 

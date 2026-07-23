@@ -983,14 +983,14 @@ export function CheckoutForm({ user }: { user: User }) {
                   >
                     I agree to the{" "}
                     <Link
-                      href="/policies/terms"
+                      href="/policies/terms-and-conditions"
                       className="text-blue-600 hover:underline"
                     >
                       Terms & Conditions
                     </Link>{" "}
                     and{" "}
                     <Link
-                      href="/policies/privacy"
+                      href="/policies/privacy-policy"
                       className="text-blue-600 hover:underline"
                     >
                       Privacy Policy

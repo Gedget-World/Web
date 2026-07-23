@@ -74,7 +74,6 @@ export function ProductsClient() {
     id: string;
     name: string;
     slug: string;
-    count: number;
     image_url?: string | null;
   }
   const [allCollections, setAllCollections] = useState<CollectionItem[]>([]);
@@ -279,11 +278,11 @@ export function ProductsClient() {
             </p>
           ) : (
             <>
-              <div className="space-y-1 sm:space-y-2 max-h-40 sm:max-h-48 overflow-y-auto">
+              <div className="space-y-1 sm:space-y-2 max-h-40 sm:max-h-48 overflow-y-auto overflow-x-hidden">
                 {displayedCollections.map((collection) => (
                   <label
                     key={collection.id}
-                    className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors"
+                    className="flex items-center gap-2 min-w-0 text-sm sm:text-base cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors"
                   >
                     <Checkbox
                       checked={selectedCollectionSlug === collection.slug}
@@ -292,11 +291,10 @@ export function ProductsClient() {
                           checked ? collection.slug : undefined,
                         )
                       }
-                      className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                      className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0"
                     />
-                    <span className="flex-1 truncate">{collection.name}</span>
-                    <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
-                      ({collection.count})
+                    <span className="flex-1 min-w-0 truncate">
+                      {collection.name}
                     </span>
                   </label>
                 ))}
@@ -384,37 +382,27 @@ export function ProductsClient() {
             <span>In Stock Only</span>
           </label>
 
-          {facets?.isFeatured && (
-            <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
-              <Checkbox
-                checked={filters.isFeatured === true}
-                onCheckedChange={(checked) =>
-                  updateFilter("isFeatured", checked ? true : undefined)
-                }
-                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-              />
-              <span className="flex-1">Featured</span>
-              <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
-                ({facets.isFeatured.count})
-              </span>
-            </label>
-          )}
+          <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
+            <Checkbox
+              checked={filters.isFeatured === true}
+              onCheckedChange={(checked) =>
+                updateFilter("isFeatured", checked ? true : undefined)
+              }
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+            />
+            <span className="flex-1">Featured</span>
+          </label>
 
-          {facets?.isNewArrival && (
-            <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
-              <Checkbox
-                checked={filters.isNewArrival === true}
-                onCheckedChange={(checked) =>
-                  updateFilter("isNewArrival", checked ? true : undefined)
-                }
-                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-              />
-              <span className="flex-1">New Arrivals</span>
-              <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
-                ({facets.isNewArrival.count})
-              </span>
-            </label>
-          )}
+          <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer hover:bg-accent/50 rounded px-1.5 sm:px-2 py-1.5 sm:py-1 -mx-1 transition-colors">
+            <Checkbox
+              checked={filters.isNewArrival === true}
+              onCheckedChange={(checked) =>
+                updateFilter("isNewArrival", checked ? true : undefined)
+              }
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+            />
+            <span className="flex-1">New Arrivals</span>
+          </label>
         </CollapsibleContent>
       </Collapsible>
 
@@ -553,7 +541,7 @@ export function ProductsClient() {
                 </SheetTrigger>
                 <SheetContent
                   side="left"
-                  className="w-full sm:w-80 px-4 sm:px-6"
+                  className="w-full sm:w-80 px-4 sm:px-6 overflow-x-hidden"
                 >
                   <SheetHeader className="pb-3 sm:pb-4 border-b">
                     <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -569,7 +557,7 @@ export function ProductsClient() {
                       )}
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="mt-4 sm:mt-6 overflow-y-auto max-h-[calc(100vh-100px)] pb-6">
+                  <div className="mt-4 sm:mt-6 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-100px)] pb-6">
                     <FilterContent isMobile={true} />
                   </div>
                 </SheetContent>

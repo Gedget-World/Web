@@ -5,16 +5,13 @@ import type { Metadata } from "next";
 import {
   TriangleAlert,
   Check,
-  XCircle,
   Truck,
-  RotateCcw,
   Shield,
   CreditCard,
   ChevronRight,
   Flame,
   TrendingUp,
   Award,
-  Star,
   BadgeCheck,
   Users,
   Video,
@@ -32,6 +29,24 @@ import { ProductQA } from "@/components/product-qa";
 import { StickyAddToCart } from "@/components/sticky-add-to-cart";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 
+// lucide-react's brand icons (Instagram/Youtube) are deprecated, so we use
+// small inline SVGs for these brand logos instead.
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  );
+}
+
+function YoutubeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M23.498 6.186a2.99 2.99 0 0 0-2.106-2.115C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.392.526A2.99 2.99 0 0 0 .502 6.186 31.03 31.03 0 0 0 0 12a31.03 31.03 0 0 0 .502 5.814 2.99 2.99 0 0 0 2.106 2.115c1.887.526 9.392.526 9.392.526s7.505 0 9.392-.526a2.99 2.99 0 0 0 2.106-2.115A31.03 31.03 0 0 0 24 12a31.03 31.03 0 0 0-.502-5.814zM9.75 15.568V8.432L15.818 12 9.75 15.568z" />
+    </svg>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -43,7 +58,7 @@ export async function generateMetadata({
   const { data: product } = await supabase
     .from("products")
     .select(
-      "name, description, price, image_url, discount_percentage, specifications, collections(name)",
+      "name, description, price, image_url, discount_percentage, specifications, collections(name), instagram_url, youtube_url",
     )
     .eq("slug", slug)
     .eq("is_active", true)
@@ -375,6 +390,34 @@ export default async function ProductDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Social Media Links */}
+          {(product.instagram_url || product.youtube_url) && (
+            <div className="mb-6 flex flex-wrap items-center gap-2.5">
+              {product.instagram_url && (
+                <a
+                  href={product.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-purple-600 via-pink-600 to-orange-500 text-white text-xs font-medium px-3.5 py-2 shadow-sm hover:shadow-md hover:opacity-90 transition-all"
+                >
+                  <InstagramIcon className="h-4 w-4" />
+                  Instagram
+                </a>
+              )}
+              {product.youtube_url && (
+                <a
+                  href={product.youtube_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-red-600 text-white text-xs font-medium px-3.5 py-2 shadow-sm hover:shadow-md hover:bg-red-700 transition-all"
+                >
+                  <YoutubeIcon className="h-4 w-4" />
+                  YouTube
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Product Specifications */}
           <div className="mb-6">

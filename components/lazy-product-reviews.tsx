@@ -217,7 +217,7 @@ export function LazyProductReviews({
                   : "No ratings yet"}
               </span>
               <span className="text-blue-600 text-xs">
-                {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+                ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
               </span>
             </div>
           </div>

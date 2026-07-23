@@ -228,7 +228,7 @@ export function SiteHeader() {
                 })()}
 
               {/* Quick Links */}
-              <div className="p-4 border-b">
+              {/* <div className="p-4 border-b">
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/deals"
@@ -247,7 +247,7 @@ export function SiteHeader() {
                     <span className="text-sm font-medium">New</span>
                   </Link>
                 </div>
-              </div>
+              </div> */}
 
               {/* Collections List */}
               <div className="flex-1 overflow-y-auto py-4">
@@ -325,14 +325,7 @@ export function SiteHeader() {
                       className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
                     >
                       <LogIn className="h-5 w-5" />
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/auth/sign-up"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
-                    >
-                      Sign Up
+                      New User
                     </Link>
                   </div>
                 )}
@@ -552,7 +545,7 @@ export function SiteHeader() {
                           Welcome
                         </p>
                         <p className="text-sm font-medium text-gray-900 leading-tight">
-                          Sign In / Sign Up
+                          Create Account
                         </p>
                       </div>
                     </Button>
@@ -572,16 +565,9 @@ export function SiteHeader() {
                         className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
                       >
                         <LogIn className="mr-3 h-4 w-4 text-gray-500" />
-                        Sign In
+                        New User
                       </Link>
-                      <Link
-                        href="/auth/sign-up"
-                        className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
-                      >
-                        <UserCircle className="mr-3 h-4 w-4 text-gray-500" />
-                        Sign Up
-                      </Link>
-                      <div className="bg-border -mx-1 my-1 h-px" />
+                      {/* <div className="bg-border -mx-1 my-1 h-px" /> */}
                       <Link
                         href="/contact-us"
                         className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
