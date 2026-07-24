@@ -151,7 +151,7 @@ export function SiteHeader() {
       {/* Announcement Bar */}
       <div className="bg-linear-to-r from-primary via-primary/90 to-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
-        <div className="container relative flex items-center justify-center gap-2 px-2 py-2 text-[11px] sm:text-xs md:text-sm">
+        <div className="container relative flex items-center justify-center gap-2 px-2 max-w-7xl mx-auto py-2 text-[11px] sm:text-xs md:text-sm">
           <div className="flex items-center gap-3 sm:gap-6 text-white whitespace-nowrap">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -171,7 +171,7 @@ export function SiteHeader() {
 
       {/* Main Header */}
       <div className="border-b bg-white">
-        <div className="container mx-auto flex h-14 md:h-16 items-center px-4 md:px-8">
+        <div className="container mx-auto max-w-7xl flex h-14 md:h-16 items-center px-4 md:px-8">
           {/* Mobile Menu Button */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild className="md:hidden">

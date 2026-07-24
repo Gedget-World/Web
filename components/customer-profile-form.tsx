@@ -75,12 +75,15 @@ export function CustomerProfileForm({
         : "/api/customers";
       const method = initialCustomer ? "PUT" : "POST";
 
+      // Phone number is tied to the verified login and can't be edited here.
+      const { phone, phone_verified, ...editableFields } = customer;
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(customer),
+        body: JSON.stringify(editableFields),
       });
 
       if (!response.ok) {
@@ -110,14 +113,6 @@ export function CustomerProfileForm({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePhoneVerification = async () => {
-    // Placeholder for phone verification
-    toast({
-      title: "Phone Verification",
-      description: "Phone verification feature coming soon!",
-    });
   };
 
   const isProfileComplete =
@@ -173,17 +168,19 @@ export function CustomerProfileForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number *</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={customer.phone || ""}
-                onChange={(e) =>
-                  setCustomer((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="Enter your phone number"
-                required
+                disabled
+                readOnly
+                placeholder="Not set"
               />
+              <p className="text-xs text-slate-500">
+                Your phone number is linked to your login and verified via OTP,
+                so it can't be changed here.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -299,13 +296,9 @@ export function CustomerProfileForm({
                         Verified
                       </Badge>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-xs cursor-pointer"
-                        onClick={handlePhoneVerification}
-                      >
+                      <Badge variant="outline" className="text-xs">
                         <AlertCircle className="h-3 w-3 mr-1" />
-                        Verify Phone
+                        Not Verified
                       </Badge>
                     )}
                   </div>

@@ -260,19 +260,21 @@ export function ProfileClient({
     return "Good Evening";
   };
 
+  // Checklist of items needed to reach 100% profile completion
+  const getProfileTasks = () => [
+    { label: "Add your first name", done: !!customer?.first_name },
+    { label: "Add your last name", done: !!customer?.last_name },
+    { label: "Add a phone number", done: !!customer?.phone },
+    { label: "Add your date of birth", done: !!customer?.date_of_birth },
+    { label: "Save a delivery address", done: !!currentAddress },
+    { label: "Verify your phone number", done: !!user.phone_confirmed_at },
+  ];
+
   // Calculate profile completion
   const calculateProfileCompletion = () => {
-    let completed = 0;
-    const total = 6;
-
-    if (customer?.first_name) completed++;
-    if (customer?.last_name) completed++;
-    if (customer?.phone) completed++;
-    if (customer?.date_of_birth) completed++;
-    if (currentAddress) completed++;
-    if (user.phone_confirmed_at) completed++;
-
-    return Math.round((completed / total) * 100);
+    const tasks = getProfileTasks();
+    const completed = tasks.filter((task) => task.done).length;
+    return Math.round((completed / tasks.length) * 100);
   };
 
   // Member tier based on orders
@@ -337,6 +339,7 @@ export function ProfileClient({
   };
 
   const profileCompletion = calculateProfileCompletion();
+  const pendingProfileTasks = getProfileTasks().filter((task) => !task.done);
   const memberTier = getMemberTier();
   const TierIcon = memberTier.icon;
 
@@ -395,9 +398,22 @@ export function ProfileClient({
               </div>
               <Progress value={profileCompletion} className="h-2 bg-white" />
               {profileCompletion < 100 && (
-                <p className="text-xs text-white/70 mt-2">
-                  Complete your profile to unlock exclusive benefits!
-                </p>
+                <div className="mt-3 space-y-1.5">
+                  <p className="text-xs text-white/70">
+                    Complete your profile to unlock exclusive benefits:
+                  </p>
+                  <ul className="space-y-1">
+                    {pendingProfileTasks.map((task) => (
+                      <li
+                        key={task.label}
+                        className="flex items-center gap-2 text-xs text-white/90"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/60 shrink-0" />
+                        {task.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>

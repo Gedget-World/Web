@@ -6,19 +6,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Phone / phone_verified are never set here — they're kept in sync with
+    // auth.users by DB triggers and are protected from client writes.
     const { data, error } = await supabase
       .from("customers")
-      .insert([
+      .upsert(
         {
-          user_id: body.user_id,
+          user_id: user.id,
           first_name: body.first_name,
           last_name: body.last_name,
-          phone: body.phone,
           date_of_birth: body.date_of_birth,
           preferences: body.preferences || {},
           marketing_consent: body.marketing_consent || false,
         },
-      ])
+        { onConflict: "user_id" },
+      )
       .select()
       .single();
 
@@ -50,6 +60,14 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || user.id !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { data, error } = await supabase
       .from("customers")

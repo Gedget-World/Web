@@ -8,6 +8,14 @@ export async function GET(
   try {
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || user.id !== params.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Fetch customer data
     const { data: customer, error: customerError } = await supabase
       .from("customers")
@@ -58,18 +66,30 @@ export async function PUT(
     const body = await request.json();
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Phone / phone_verified are intentionally excluded — they can only be
+    // changed by the auth-sync triggers (see 018_sync_customer_auth_metadata.sql
+    // and 019_secure_customer_profile.sql), never by this endpoint.
+    // The user_id filter also ensures customers can only ever update their own row.
     const { data, error } = await supabase
       .from("customers")
       .update({
         first_name: body.first_name,
         last_name: body.last_name,
-        phone: body.phone,
         date_of_birth: body.date_of_birth,
         preferences: body.preferences,
         marketing_consent: body.marketing_consent,
         updated_at: new Date().toISOString(),
       })
       .eq("id", params.id)
+      .eq("user_id", user.id)
       .select()
       .single();
 
@@ -95,10 +115,19 @@ export async function DELETE(
   try {
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { error } = await supabase
       .from("customers")
       .delete()
-      .eq("id", params.id);
+      .eq("id", params.id)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Error deleting customer:", error);

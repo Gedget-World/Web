@@ -16,23 +16,61 @@ type BannerItem = {
   alt_text: string | null;
 };
 
-function textPositionClass(position: string | null) {
-  switch (position) {
-    case "left":
-      return "items-center justify-start text-left";
-    case "right":
-      return "items-center justify-end text-right";
-    default:
-      return "items-center justify-center text-center";
+// Update these if the banner asset dimensions/breakpoints change.
+// Widths are the max viewport width (in px) each banner size applies to,
+// except desktop which applies from DESKTOP.minWidth upward.
+const BANNER_SIZES = {
+  mobile: { width: 800, height: 1000, maxWidth: 767 },
+  tablet: { width: 1200, height: 700, minWidth: 768, maxWidth: 1023 },
+  desktop: { width: 1920, height: 700, minWidth: 1024 },
+};
+
+const BANNER_ASPECT_RATIO_CSS = `
+  .banner-card {
+    aspect-ratio: ${BANNER_SIZES.mobile.width} / ${BANNER_SIZES.mobile.height};
   }
-}
+  @media (min-width: ${BANNER_SIZES.tablet.minWidth}px) {
+    .banner-card {
+      aspect-ratio: ${BANNER_SIZES.tablet.width} / ${BANNER_SIZES.tablet.height};
+    }
+  }
+  @media (min-width: ${BANNER_SIZES.desktop.minWidth}px) {
+    .banner-card {
+      aspect-ratio: ${BANNER_SIZES.desktop.width} / ${BANNER_SIZES.desktop.height};
+    }
+  }
+`;
 
 export function BannerCard({ banner }: { banner: BannerItem }) {
   const linkUrl = banner.link_url?.trim();
   const hasLink = Boolean(linkUrl);
 
+  const image = (
+    <picture>
+      {banner.mobile_image_url && (
+        <source
+          media={`(max-width: ${BANNER_SIZES.mobile.maxWidth}px)`}
+          srcSet={banner.mobile_image_url}
+        />
+      )}
+      {banner.tablet_image_url && (
+        <source
+          media={`(min-width: ${BANNER_SIZES.tablet.minWidth}px) and (max-width: ${BANNER_SIZES.tablet.maxWidth}px)`}
+          srcSet={banner.tablet_image_url}
+        />
+      )}
+      <img
+        src={banner.desktop_image_url}
+        alt={banner.alt_text || banner.title}
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    </picture>
+  );
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl">
+    <div className="banner-card group relative w-full overflow-hidden rounded-sm">
+      <style>{BANNER_ASPECT_RATIO_CSS}</style>
       {hasLink ? (
         <a
           href={linkUrl}
@@ -40,62 +78,12 @@ export function BannerCard({ banner }: { banner: BannerItem }) {
           rel={
             banner.link_target === "_blank" ? "noopener noreferrer" : undefined
           }
-          className="block"
+          className="absolute inset-0 block"
         >
-          <picture>
-            {banner.mobile_image_url && (
-              <source
-                media="(max-width: 767px)"
-                srcSet={banner.mobile_image_url}
-              />
-            )}
-            {banner.tablet_image_url && (
-              <source
-                media="(max-width: 1023px)"
-                srcSet={banner.tablet_image_url}
-              />
-            )}
-            <img
-              src={banner.desktop_image_url}
-              alt={banner.alt_text || banner.title}
-              loading="lazy"
-              className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-              style={{
-                aspectRatio:
-                  banner.desktop_width && banner.desktop_height
-                    ? `${banner.desktop_width} / ${banner.desktop_height}`
-                    : undefined,
-              }}
-            />
-          </picture>
+          {image}
         </a>
       ) : (
-        <picture>
-          {banner.mobile_image_url && (
-            <source
-              media="(max-width: 767px)"
-              srcSet={banner.mobile_image_url}
-            />
-          )}
-          {banner.tablet_image_url && (
-            <source
-              media="(max-width: 1023px)"
-              srcSet={banner.tablet_image_url}
-            />
-          )}
-          <img
-            src={banner.desktop_image_url}
-            alt={banner.alt_text || banner.title}
-            loading="lazy"
-            className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-            style={{
-              aspectRatio:
-                banner.desktop_width && banner.desktop_height
-                  ? `${banner.desktop_width} / ${banner.desktop_height}`
-                  : undefined,
-            }}
-          />
-        </picture>
+        image
       )}
     </div>
   );
@@ -104,7 +92,7 @@ export function BannerCard({ banner }: { banner: BannerItem }) {
 export function BannerList({ banners }: { banners: BannerItem[] }) {
   return (
     <section className="py-8">
-      <div className="container mx-auto px-4">
+      <div className="container max-w-7xl mx-auto px-4">
         <div className="space-y-4">
           {banners.map((banner) => (
             <BannerCard key={banner.id} banner={banner} />

@@ -489,7 +489,7 @@ function BannerFormContent() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 hidden">
                     <Label htmlFor="link_text">Button Text</Label>
                     <Input
                       id="link_text"
@@ -502,48 +502,50 @@ function BannerFormContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="text_color">Text Color</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={banner.text_color}
-                        onChange={(e) =>
-                          handleChange("text_color", e.target.value)
-                        }
-                        className="w-12 h-10 p-1"
-                      />
-                      <Input
-                        value={banner.text_color}
-                        onChange={(e) =>
-                          handleChange("text_color", e.target.value)
-                        }
-                        className="flex-1"
-                      />
+                <div className="hidden">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="text_color">Text Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          value={banner.text_color}
+                          onChange={(e) =>
+                            handleChange("text_color", e.target.value)
+                          }
+                          className="w-12 h-10 p-1"
+                        />
+                        <Input
+                          value={banner.text_color}
+                          onChange={(e) =>
+                            handleChange("text_color", e.target.value)
+                          }
+                          className="flex-1"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Text Position</Label>
-                    <Select
-                      value={banner.text_position}
-                      onValueChange={(value) =>
-                        handleChange("text_position", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="left">Left</SelectItem>
-                        <SelectItem value="center">Center</SelectItem>
-                        <SelectItem value="right">Right</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label>Text Position</Label>
+                      <Select
+                        value={banner.text_position}
+                        onValueChange={(value) =>
+                          handleChange("text_position", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="left">Left</SelectItem>
+                          <SelectItem value="center">Center</SelectItem>
+                          <SelectItem value="right">Right</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 hidden">
                   <Label htmlFor="overlay_color">
                     Overlay Color (optional)
                   </Label>
@@ -571,9 +573,19 @@ function BannerFormContent() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ImageUploader type="desktop" label="Desktop Image" required />
-                <ImageUploader type="tablet" label="Tablet Image" />
-                <ImageUploader type="mobile" label="Mobile Image" />
+                <ImageUploader
+                  type="desktop"
+                  label="Desktop Image (1920 × 700) pixels"
+                  required
+                />
+                <ImageUploader
+                  type="tablet"
+                  label="Tablet Image (1200 × 700) pixels"
+                />
+                <ImageUploader
+                  type="mobile"
+                  label="Mobile Image (800 × 1000) pixels"
+                />
               </div>
             </CardContent>
           </Card>
