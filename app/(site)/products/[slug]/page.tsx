@@ -279,12 +279,16 @@ export default async function ProductDetailPage({
           )}
 
           {/* Sold Count / Popularity */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-1 text-slate-600">
-              <Users className="h-3.5 w-3.5" />
-              <span className="text-xs">500+ bought this month</span>
+          {product.monthly_purchase_count > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-1 text-slate-600">
+                <Users className="h-3.5 w-3.5" />
+                <span className="text-xs">
+                  {product.monthly_purchase_count}k+ bought this month
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Price Section */}
           <div className="flex flex-col gap-1 mb-3">

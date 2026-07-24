@@ -44,8 +44,9 @@ interface CustomerStore {
   isCacheValid: () => boolean;
 }
 
-// Cache duration: 5 minutes
-const CACHE_DURATION = 5 * 60 * 1000;
+// Cache duration: 5 minutes (disabled in development so changes are always fresh)
+const CACHE_DURATION =
+  process.env.NODE_ENV === "development" ? 0 : 5 * 60 * 1000;
 
 export const useCustomerStore = create<CustomerStore>()(
   persist(

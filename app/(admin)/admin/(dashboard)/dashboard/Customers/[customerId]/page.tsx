@@ -78,7 +78,6 @@ export default function CustomerDetailPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const supabase = createClient();
@@ -100,17 +99,6 @@ export default function CustomerDetailPage() {
 
       if (!customerError && customerData) {
         setCustomer(customerData);
-
-        // Fetch user email from auth.users via user_id
-        const { data: userData } = await supabase
-          .from("users")
-          .select("email")
-          .eq("id", customerData.user_id)
-          .single();
-
-        if (userData) {
-          setUserEmail(userData.email);
-        }
 
         // Fetch addresses
         const { data: addressData } = await supabase
@@ -231,19 +219,15 @@ export default function CustomerDetailPage() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Name</span>
-              <span className="font-medium">{getFullName()}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Email</span>
               <div className="flex items-center gap-2">
-                <span className="font-medium">{userEmail || "-"}</span>
-                {userEmail && (
+                <span className="font-medium">{getFullName()}</span>
+                {getFullName() !== "-" && (
                   <button
-                    onClick={() => copyToClipboard(userEmail, "email")}
+                    onClick={() => copyToClipboard(getFullName(), "name")}
                     className="p-1 hover:bg-gray-100 rounded transition-all"
-                    title="Copy email"
+                    title="Copy name"
                   >
-                    {copied === "email" ? (
+                    {copied === "name" ? (
                       <Check className="h-3.5 w-3.5 text-green-500" />
                     ) : (
                       <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
@@ -400,6 +384,49 @@ export default function CustomerDetailPage() {
                   <p className="text-sm text-muted-foreground">
                     {address.country}
                   </p>
+
+                  {/* Copy individual fields */}
+                  <div className="border-t pt-2 mt-2 space-y-1.5">
+                    {[
+                      { label: "Address Line 1", value: address.address_line1 },
+                      { label: "Address Line 2", value: address.address_line2 },
+                      { label: "City", value: address.city },
+                      { label: "State", value: address.state },
+                      { label: "Postal Code", value: address.postal_code },
+                      { label: "Country", value: address.country },
+                    ]
+                      .filter((field) => field.value)
+                      .map((field) => {
+                        const fieldKey = `address-${address.id}-${field.label}`;
+                        return (
+                          <div
+                            key={field.label}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0">
+                              <span className="text-xs text-muted-foreground">
+                                {field.label}
+                              </span>
+                              <p className="text-sm truncate">{field.value}</p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(field.value as string, fieldKey)
+                              }
+                              className="p-1 hover:bg-gray-100 rounded transition-all shrink-0"
+                              title={`Copy ${field.label}`}
+                            >
+                              {copied === fieldKey ? (
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                  </div>
+
                   <Button
                     variant="outline"
                     size="sm"

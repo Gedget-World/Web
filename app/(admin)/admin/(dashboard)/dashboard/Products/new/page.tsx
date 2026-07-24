@@ -35,6 +35,7 @@ export default function CreateProductPage() {
     price: null as number | null,
     discount_percentage: 0 as number,
     stock: null as number | null,
+    monthly_purchase_count: 0 as number,
     image_urls: "" as string,
     image_name: "" as string,
     collection_id: "",
@@ -352,6 +353,7 @@ export default function CreateProductPage() {
             stock: product.stock,
             discount_percentage: product.discount_percentage,
             sales_count: 0,
+            monthly_purchase_count: product.monthly_purchase_count,
             is_new_arrival: product.is_new_arrival,
             is_active: product.is_active,
             image_name: product.image_name,
@@ -601,7 +603,9 @@ export default function CreateProductPage() {
             )}
 
             <div>
-              <label className="block text-sm text-gray-500 mb-1">Stock</label>
+              <label className="block text-sm text-gray-500 mb-1">
+                Maximum items allowed per customer in the cart
+              </label>
               <Input
                 type="number"
                 value={product.stock || ""}
@@ -730,6 +734,27 @@ export default function CreateProductPage() {
                   Please provide a product description.
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">
+                Monthly Purchase Count
+              </label>
+              <Input
+                type="number"
+                min={0}
+                value={product.monthly_purchase_count}
+                placeholder="Enter monthly purchase count"
+                onChange={(e) =>
+                  handleChange(
+                    "monthly_purchase_count",
+                    parseInt(e.target.value) || 0,
+                  )
+                }
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                {product.monthly_purchase_count}k+ bought this month
+              </p>
             </div>
 
             <div>

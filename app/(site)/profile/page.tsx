@@ -45,11 +45,15 @@ export default async function ProfilePage() {
     .limit(5);
 
   // Get user's default address (only storing single address)
-  const { data: address } = await supabase
-    .from("addresses")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  // Note: addresses is linked via customer_id, not user_id directly.
+  const { data: address } = customer
+    ? await supabase
+        .from("addresses")
+        .select("*")
+        .eq("customer_id", customer.id)
+        .eq("type", "shipping")
+        .single()
+    : { data: null };
 
   // Get wishlist items (if table exists)
   let wishlistItems: any[] = [];

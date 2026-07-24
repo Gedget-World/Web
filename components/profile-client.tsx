@@ -173,7 +173,6 @@ export function ProfileClient({
   const currentAddress = cachedAddress || initialAddress;
 
   const [addressForm, setAddressForm] = useState({
-    full_name: currentAddress?.full_name || "",
     address_line1: currentAddress?.address_line1 || "",
     address_line2: currentAddress?.address_line2 || "",
     city: currentAddress?.city || "",
@@ -186,7 +185,6 @@ export function ProfileClient({
   useEffect(() => {
     if (currentAddress) {
       setAddressForm({
-        full_name: currentAddress.full_name || "",
         address_line1: currentAddress.address_line1 || "",
         address_line2: currentAddress.address_line2 || "",
         city: currentAddress.city || "",
@@ -219,7 +217,6 @@ export function ProfileClient({
 
   const handleSaveAddress = async () => {
     if (
-      !addressForm.full_name ||
       !addressForm.address_line1 ||
       !addressForm.city ||
       !addressForm.state ||
@@ -233,8 +230,12 @@ export function ProfileClient({
       return;
     }
 
+    const full_name = `${customer?.first_name || ""} ${
+      customer?.last_name || ""
+    }`.trim();
+
     setIsSavingAddress(true);
-    const result = await saveAddress(addressForm);
+    const result = await saveAddress({ ...addressForm, full_name });
     setIsSavingAddress(false);
 
     if (result) {
@@ -354,16 +355,8 @@ export function ProfileClient({
               <div className="flex items-center gap-4">
                 {/* Avatar */}
                 <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl md:text-3xl font-bold border-2 border-white/30 overflow-hidden">
-                  {user.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.avatar_url}
-                      alt="Profile"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : customer?.first_name ? (
-                    customer.first_name[0].toUpperCase()
+                  {customer?.first_name?.trim() ? (
+                    customer.first_name.trim()[0].toUpperCase()
                   ) : (
                     <User className="h-8 w-8" />
                   )}
@@ -619,20 +612,6 @@ export function ProfileClient({
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name *</Label>
-                    <Input
-                      id="full_name"
-                      value={addressForm.full_name}
-                      onChange={(e) =>
-                        setAddressForm({
-                          ...addressForm,
-                          full_name: e.target.value,
-                        })
-                      }
-                      placeholder="John Doe"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="address_line1">Address Line 1 *</Label>
                     <Textarea
                       id="address_line1"
@@ -663,52 +642,6 @@ export function ProfileClient({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Select
-                        value={addressForm.city}
-                        onValueChange={(value) =>
-                          setAddressForm({
-                            ...addressForm,
-                            city: value,
-                          })
-                        }
-                        disabled={!addressForm.state}
-                      >
-                        <SelectTrigger id="city" className="w-full">
-                          <SelectValue
-                            placeholder={
-                              addressForm.state
-                                ? "Select city"
-                                : "Select state first"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cities.map((city) => (
-                            <SelectItem key={city.name} value={city.name}>
-                              {city.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postal_code">PIN Code *</Label>
-                      <Input
-                        id="postal_code"
-                        value={addressForm.postal_code}
-                        onChange={(e) =>
-                          setAddressForm({
-                            ...addressForm,
-                            postal_code: e.target.value,
-                          })
-                        }
-                        placeholder="400001"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
                       <Label htmlFor="state">State *</Label>
                       <Select
                         value={addressForm.state}
@@ -716,6 +649,7 @@ export function ProfileClient({
                           setAddressForm({
                             ...addressForm,
                             state: value,
+                            city: "",
                           })
                         }
                       >
@@ -736,6 +670,47 @@ export function ProfileClient({
                       <Input id="country" value="India" disabled />
                     </div>
                   </div>
+                  {addressForm.state && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <Select
+                          value={addressForm.city}
+                          onValueChange={(value) =>
+                            setAddressForm({
+                              ...addressForm,
+                              city: value,
+                            })
+                          }
+                        >
+                          <SelectTrigger id="city" className="w-full">
+                            <SelectValue placeholder="Select city" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cities.map((city) => (
+                              <SelectItem key={city.name} value={city.name}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postal_code">PIN Code *</Label>
+                        <Input
+                          id="postal_code"
+                          value={addressForm.postal_code}
+                          onChange={(e) =>
+                            setAddressForm({
+                              ...addressForm,
+                              postal_code: e.target.value,
+                            })
+                          }
+                          placeholder="400001"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button

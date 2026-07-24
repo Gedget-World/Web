@@ -119,7 +119,6 @@ export function CheckoutForm({ user }: { user: User }) {
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [shippingInfo, setShippingInfo] = useState({
-    fullName: "",
     address_line1: "",
     address_line2: "",
     city: "",
@@ -132,6 +131,11 @@ export function CheckoutForm({ user }: { user: User }) {
     last_name: string;
     phone: string;
   } | null>(null);
+
+  // Full name is always derived from the customer's first/last name
+  // (collected in the Contact step) rather than a separate editable field.
+  const fullName =
+    `${customerInfo?.first_name || ""} ${customerInfo?.last_name || ""}`.trim();
 
   useEffect(() => {
     console.log("Shipping Info:", shippingInfo);
@@ -183,11 +187,6 @@ export function CheckoutForm({ user }: { user: User }) {
     const loadCustomerData = async () => {
       // Use cache if valid
       if (isCacheValid() && cachedCustomer?.user_id === user.id) {
-        const fullName =
-          `${cachedCustomer.first_name || ""} ${cachedCustomer.last_name || ""}`.trim();
-        if (fullName) {
-          setShippingInfo((prev) => ({ ...prev, fullName }));
-        }
         setCustomerInfo({
           first_name: cachedCustomer.first_name || "",
           last_name: cachedCustomer.last_name || "",
@@ -212,11 +211,6 @@ export function CheckoutForm({ user }: { user: User }) {
       const { customer, address } = await fetchCustomerData();
 
       if (customer) {
-        const fullName =
-          `${customer.first_name || ""} ${customer.last_name || ""}`.trim();
-        if (fullName) {
-          setShippingInfo((prev) => ({ ...prev, fullName }));
-        }
         setCustomerInfo({
           first_name: customer.first_name || "",
           last_name: customer.last_name || "",
@@ -275,7 +269,7 @@ export function CheckoutForm({ user }: { user: User }) {
           status: paymentMethod === "cod" ? "confirmed" : "pending",
 
           // Customer information
-          customer_name: shippingInfo.fullName,
+          customer_name: fullName,
           customer_email: user.email,
 
           // Shipping address details (flattened to match schema)
@@ -347,7 +341,7 @@ export function CheckoutForm({ user }: { user: User }) {
             amount: total,
             customerEmail: user.email || "",
             customerPhone: phoneNumber,
-            customerName: shippingInfo.fullName,
+            customerName: fullName,
           });
 
           // With redirectTarget=_self the line below is rarely reached
@@ -507,10 +501,7 @@ export function CheckoutForm({ user }: { user: User }) {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
-                <ContactForm
-                  ref={contactFormRef}
-                  user={{ id: user.id, email: user.email || "" }}
-                />
+                <ContactForm ref={contactFormRef} user={{ id: user.id }} />
 
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                   <Button
@@ -562,26 +553,6 @@ export function CheckoutForm({ user }: { user: User }) {
               <CardContent className="space-y-3 sm:space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
                 <div className="grid gap-1.5 sm:gap-2">
                   <Label
-                    htmlFor="fullName"
-                    className="text-sm flex items-center gap-1"
-                  >
-                    Full Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="fullName"
-                    required
-                    placeholder="Enter your full name"
-                    value={shippingInfo.fullName}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        fullName: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid gap-1.5 sm:gap-2">
-                  <Label
                     htmlFor="address_line1"
                     className="text-sm flex items-center gap-1"
                   >
@@ -624,63 +595,6 @@ export function CheckoutForm({ user }: { user: User }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="grid gap-1.5 sm:gap-2">
                     <Label
-                      htmlFor="city"
-                      className="text-sm flex items-center gap-1"
-                    >
-                      City <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={shippingInfo.city}
-                      onValueChange={(value) =>
-                        setShippingInfo({
-                          ...shippingInfo,
-                          city: value,
-                        })
-                      }
-                      disabled={!shippingInfo.state}
-                    >
-                      <SelectTrigger id="city" className="w-full">
-                        <SelectValue
-                          placeholder={
-                            shippingInfo.state
-                              ? "Select city"
-                              : "Select state first"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city.name} value={city.name}>
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-1.5 sm:gap-2">
-                    <Label
-                      htmlFor="postal_code"
-                      className="text-sm flex items-center gap-1"
-                    >
-                      PIN Code <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="postal_code"
-                      required
-                      placeholder="6-digit PIN code"
-                      value={shippingInfo.postal_code}
-                      onChange={(e) =>
-                        setShippingInfo({
-                          ...shippingInfo,
-                          postal_code: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="grid gap-1.5 sm:gap-2">
-                    <Label
                       htmlFor="state"
                       className="text-sm flex items-center gap-1"
                     >
@@ -692,6 +606,7 @@ export function CheckoutForm({ user }: { user: User }) {
                         setShippingInfo({
                           ...shippingInfo,
                           state: value,
+                          city: "",
                         })
                       }
                     >
@@ -723,6 +638,58 @@ export function CheckoutForm({ user }: { user: User }) {
                     />
                   </div>
                 </div>
+                {shippingInfo.state && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid gap-1.5 sm:gap-2">
+                      <Label
+                        htmlFor="city"
+                        className="text-sm flex items-center gap-1"
+                      >
+                        City <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={shippingInfo.city}
+                        onValueChange={(value) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            city: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="city" className="w-full">
+                          <SelectValue placeholder="Select city" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cities.map((city) => (
+                            <SelectItem key={city.name} value={city.name}>
+                              {city.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-1.5 sm:gap-2">
+                      <Label
+                        htmlFor="postal_code"
+                        className="text-sm flex items-center gap-1"
+                      >
+                        PIN Code <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="postal_code"
+                        required
+                        placeholder="6-digit PIN code"
+                        value={shippingInfo.postal_code}
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            postal_code: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Secure Address Info */}
                 <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-slate-500 pt-1">
@@ -741,7 +708,7 @@ export function CheckoutForm({ user }: { user: User }) {
                   <Button
                     onClick={async () => {
                       if (
-                        !shippingInfo.fullName ||
+                        !fullName ||
                         !shippingInfo.address_line1 ||
                         !shippingInfo.city ||
                         !shippingInfo.state ||
@@ -756,7 +723,7 @@ export function CheckoutForm({ user }: { user: User }) {
                       try {
                         setIsLoading(true);
                         const result = await saveAddress({
-                          full_name: shippingInfo.fullName,
+                          full_name: fullName,
                           address_line1: shippingInfo.address_line1,
                           address_line2: shippingInfo.address_line2,
                           city: shippingInfo.city,

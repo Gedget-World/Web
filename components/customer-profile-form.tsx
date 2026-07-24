@@ -65,6 +65,27 @@ export function CustomerProfileForm({
     phone_verified: initialCustomer?.phone_verified || false,
   });
 
+  // `useState` above only captures `initialCustomer` on the very first
+  // render. If the parent re-renders with fresh server data later (e.g.
+  // after a client-side navigation, router cache revalidation, or the
+  // customer record loading a moment after the form's own mount), this
+  // component would otherwise keep showing the blank/stale values it
+  // started with. Re-sync whenever the prop actually changes.
+  useEffect(() => {
+    if (!initialCustomer) return;
+    setCustomer({
+      user_id: user.id,
+      first_name: initialCustomer.first_name || "",
+      last_name: initialCustomer.last_name || "",
+      phone: initialCustomer.phone || "",
+      date_of_birth: initialCustomer.date_of_birth || "",
+      preferences: initialCustomer.preferences || {},
+      marketing_consent: initialCustomer.marketing_consent || false,
+      phone_verified: initialCustomer.phone_verified || false,
+    });
+    setIsEditing(false);
+  }, [initialCustomer, user.id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -78,12 +99,21 @@ export function CustomerProfileForm({
       // Phone number is tied to the verified login and can't be edited here.
       const { phone, phone_verified, ...editableFields } = customer;
 
+      // Normalize blank strings to null so optional fields are stored as
+      // NULL (matching the DB schema) instead of empty strings.
+      const payload = {
+        ...editableFields,
+        first_name: editableFields.first_name?.trim() || null,
+        last_name: editableFields.last_name?.trim() || null,
+        date_of_birth: editableFields.date_of_birth || null,
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editableFields),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -115,8 +145,11 @@ export function CustomerProfileForm({
     }
   };
 
-  const isProfileComplete =
-    customer.first_name && customer.last_name && customer.phone;
+  const isProfileComplete = Boolean(
+    customer.first_name?.trim() &&
+    customer.last_name?.trim() &&
+    customer.phone?.trim(),
+  );
 
   if (isEditing) {
     return (
@@ -136,7 +169,7 @@ export function CustomerProfileForm({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="first_name">First Name *</Label>
+                <Label htmlFor="first_name">First Name</Label>
                 <Input
                   id="first_name"
                   value={customer.first_name || ""}
@@ -147,11 +180,10 @@ export function CustomerProfileForm({
                     }))
                   }
                   placeholder="Enter your first name"
-                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="last_name">Last Name *</Label>
+                <Label htmlFor="last_name">Last Name</Label>
                 <Input
                   id="last_name"
                   value={customer.last_name || ""}
@@ -162,7 +194,6 @@ export function CustomerProfileForm({
                     }))
                   }
                   placeholder="Enter your last name"
-                  required
                 />
               </div>
             </div>

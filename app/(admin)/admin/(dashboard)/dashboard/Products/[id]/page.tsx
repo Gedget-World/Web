@@ -64,6 +64,7 @@ export default function ProductDetailsPage({
     price: null as number | null,
     discount_percentage: null as number | null,
     stock: null as number | null,
+    monthly_purchase_count: null as number | null,
     collection_id: "",
     is_active: null as boolean | null,
     is_featured: null as boolean | null,
@@ -134,6 +135,7 @@ export default function ProductDetailsPage({
           price: data.price,
           discount_percentage: data.discount_percentage,
           stock: data.stock,
+          monthly_purchase_count: data.monthly_purchase_count,
           collection_id: data.collection_id,
           is_active: data.is_active,
           is_featured: data.is_featured,
@@ -453,6 +455,7 @@ export default function ProductDetailsPage({
       price: product.price,
       discount_percentage: product.discount_percentage,
       stock: product.stock,
+      monthly_purchase_count: product.monthly_purchase_count,
       collection_id: product.collection_id,
       is_active: product.is_active,
       is_featured: product.is_featured,
@@ -649,7 +652,13 @@ export default function ProductDetailsPage({
                   },
                   {
                     key: "stock",
-                    label: "Stock",
+                    label: "Maximum items allowed per customer in the cart",
+                    type: "number",
+                    editable: true,
+                  },
+                  {
+                    key: "monthly_purchase_count",
+                    label: "Monthly Purchase Count",
                     type: "number",
                     editable: true,
                   },
@@ -693,6 +702,12 @@ export default function ProductDetailsPage({
                                   <X className="w-4 h-4" />
                                 </Button>
                               </div>
+                              {key === "monthly_purchase_count" ? (
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {product.monthly_purchase_count ?? 0}k+ bought
+                                  this month
+                                </p>
+                              ) : null}
                             </>
                           ) : (
                             <>
@@ -721,6 +736,12 @@ export default function ProductDetailsPage({
                               {key === "stock" && stockValidationError ? (
                                 <p className="text-red-500 mt-1 font-semibold peer-aria-invalid:text-destructive text-xs">
                                   Stock must be a positive number.
+                                </p>
+                              ) : null}
+                              {key === "monthly_purchase_count" ? (
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {product.monthly_purchase_count ?? 0}k+ bought
+                                  this month
                                 </p>
                               ) : null}
                             </>

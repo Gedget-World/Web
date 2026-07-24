@@ -46,6 +46,7 @@ interface Product {
   is_out_of_stock: boolean;
   discount_percentage: number | null;
   sales_count: number;
+  monthly_purchase_count: number;
   instagram_url: string | null;
   youtube_url: string | null;
   specifications: { title: string; description: string }[] | null;
@@ -478,7 +479,10 @@ export default function ViewProductPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Stock</span>
+                <span className="text-gray-500">
+                  Maximum items allowed per
+                  <br /> customer in the cart.
+                </span>
                 <span
                   className={
                     product.stock < 5
@@ -492,6 +496,10 @@ export default function ViewProductPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Sales Count</span>
                 <span>{product.sales_count} sold</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Monthly Purchase Count</span>
+                <span>{product.monthly_purchase_count}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Status</span>

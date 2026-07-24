@@ -46,7 +46,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { useCustomerStore } from "@/hooks/use-customer";
+import { useCustomerStore, useCustomer } from "@/hooks/use-customer";
 import { useWishlistStore } from "@/hooks/use-wishlist";
 import Image from "next/image";
 import BASE_LOGO from "@/content/assets/logo/base-logo.png";
@@ -78,6 +78,24 @@ export function SiteHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
+  const { customer, isHydrated, fetchCustomerData, isCacheValid } = useCustomer(
+    user?.id,
+  );
+  const firstNameInitial = customer?.first_name?.trim()?.[0]?.toUpperCase();
+  // No hardcoded "User" fallback here — if we don't actually know the
+  // customer's name yet, just show nothing instead of a placeholder word.
+  const displayName =
+    customer?.first_name?.trim() ||
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    user?.email?.split("@")[0] ||
+    "";
+  const displayNameShort =
+    customer?.first_name?.trim() ||
+    (user?.user_metadata?.full_name as string | undefined)
+      ?.trim()
+      ?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "";
 
   // Hide collections bar on these pages
   const hideCollectionsBar = [
@@ -110,6 +128,14 @@ export function SiteHeader() {
 
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
+
+  // Fetch the customer profile (for the first-name avatar initial) once
+  // we know who's logged in and the persisted cache has hydrated.
+  useEffect(() => {
+    if (!user?.id || !isHydrated) return;
+    if (isCacheValid() && customer?.user_id === user.id) return;
+    fetchCustomerData();
+  }, [user?.id, isHydrated]);
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -191,41 +217,31 @@ export function SiteHeader() {
               </SheetHeader>
 
               {/* User Welcome (if logged in) */}
-              {user &&
-                (() => {
-                  const avatarUrl =
-                    (user.user_metadata?.avatar_url as string | undefined) ||
-                    (user.user_metadata?.picture as string | undefined);
-                  return (
-                    <div className="p-4 bg-gray-50 border-b">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
-                          {avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={avatarUrl}
-                              alt="Profile"
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-6 h-6 text-primary" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {greeting},
-                          </p>
-                          <p className="font-semibold text-gray-900">
-                            {user.user_metadata?.full_name ||
-                              user.email?.split("@")[0] ||
-                              "User"}
-                          </p>
-                        </div>
-                      </div>
+              {user && (
+                <div className="p-4 bg-gray-50 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                      {firstNameInitial ? (
+                        <span className="text-lg font-semibold text-primary">
+                          {firstNameInitial}
+                        </span>
+                      ) : (
+                        <User className="w-6 h-6 text-primary" />
+                      )}
                     </div>
-                  );
-                })()}
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {displayName ? `${greeting},` : greeting}
+                      </p>
+                      {displayName && (
+                        <p className="font-semibold text-gray-900">
+                          {displayName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Quick Links */}
               {/* <div className="p-4 border-b">
@@ -433,18 +449,10 @@ export function SiteHeader() {
                     className="flex items-center gap-2 px-3 hover:bg-primary/5"
                   >
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
-                      {user.user_metadata?.avatar_url ||
-                      user.user_metadata?.picture ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={
-                            (user.user_metadata?.avatar_url as string) ||
-                            (user.user_metadata?.picture as string)
-                          }
-                          alt="Profile"
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover"
-                        />
+                      {firstNameInitial ? (
+                        <span className="text-sm font-semibold text-primary">
+                          {firstNameInitial}
+                        </span>
                       ) : (
                         <User className="h-4 w-4 text-primary" />
                       )}
@@ -453,22 +461,22 @@ export function SiteHeader() {
                       <p className="text-xs text-muted-foreground leading-none">
                         {greeting}
                       </p>
-                      <p className="text-sm font-medium text-gray-900 leading-tight">
-                        {user.user_metadata?.full_name?.split(" ")[0] ||
-                          user.email?.split("@")[0] ||
-                          "User"}
-                      </p>
+                      {displayNameShort && (
+                        <p className="text-sm font-medium text-gray-900 leading-tight">
+                          {displayNameShort}
+                        </p>
+                      )}
                     </div>
                   </Button>
                   {/* Invisible bridge to prevent gap */}
                   <div className="absolute right-0 top-full h-2 w-56 hidden group-hover/usermenu:block" />
                   <div className="absolute right-0 top-[calc(100%+0.5rem)] w-56 rounded-md border bg-popover p-1 shadow-md opacity-0 invisible translate-y-1 group-hover/usermenu:opacity-100 group-hover/usermenu:visible group-hover/usermenu:translate-y-0 transition-all duration-150 z-50">
                     <div className="px-3 py-3 border-b mb-1 bg-gray-50 -mx-1 -mt-1 rounded-t-md">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
-                        {user.user_metadata?.full_name ||
-                          user.email?.split("@")[0] ||
-                          "User"}
-                      </p>
+                      {displayName && (
+                        <p className="text-sm font-semibold text-slate-900 truncate">
+                          {displayName}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground truncate">
                         {user.email}
                       </p>
@@ -615,18 +623,10 @@ export function SiteHeader() {
                   <Link href="/profile" className="md:hidden ml-2">
                     <Button variant="ghost" size="icon" className="relative">
                       <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30 overflow-hidden">
-                        {user.user_metadata?.avatar_url ||
-                        user.user_metadata?.picture ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={
-                              (user.user_metadata?.avatar_url as string) ||
-                              (user.user_metadata?.picture as string)
-                            }
-                            alt="Profile"
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover"
-                          />
+                        {firstNameInitial ? (
+                          <span className="text-xs font-semibold text-primary">
+                            {firstNameInitial}
+                          </span>
                         ) : (
                           <User className="h-4 w-4 text-primary" />
                         )}

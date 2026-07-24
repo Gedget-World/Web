@@ -10,7 +10,6 @@ import { useCustomer } from "@/hooks/use-customer";
 interface ContactFormProps {
   user: {
     id: string;
-    email: string;
   };
 }
 
@@ -143,10 +142,6 @@ const ContactForm = forwardRef<ContactFormHandle, ContactFormProps>(
     if (!isHydrated || isLoading) {
       return (
         <div className="space-y-3 sm:space-y-4">
-          <div className="grid gap-1.5 sm:gap-2">
-            <Label className="text-sm">Email</Label>
-            <Input disabled value={user.email} className="text-sm" />
-          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="grid gap-1.5 sm:gap-2">
               <Label className="text-sm">Loading...</Label>
@@ -163,19 +158,7 @@ const ContactForm = forwardRef<ContactFormHandle, ContactFormProps>(
 
     return (
       <div className="space-y-3 sm:space-y-4">
-        <div className="grid gap-1.5 sm:gap-2">
-          <Label htmlFor="email" className="text-sm">
-            Email
-          </Label>
-          <Input
-            id="email"
-            disabled
-            type="email"
-            value={user.email}
-            className="text-sm"
-          />
-        </div>
-
+        <Label className="text-sm font-medium">Shipping Name</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div className="grid gap-1.5 sm:gap-2">
             <Label htmlFor="first_name" className="text-sm">
