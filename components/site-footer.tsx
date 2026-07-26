@@ -156,7 +156,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-5 mt-5 border-t border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mr-10 gap-4">
             <p className="text-sm text-gray-600">
               © {new Date().getFullYear()} Gadgets Kabila. All rights reserved.
             </p>
@@ -179,7 +179,7 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://www.youtube.com/@GadgetsKabilaOfficial"
                 className="text-gray-500 hover:text-gray-800 transition-colors"
                 aria-label="YouTube"
                 target="_blank"

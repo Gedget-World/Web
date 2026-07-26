@@ -341,7 +341,7 @@ export function SiteHeader() {
                       className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
                     >
                       <LogIn className="h-5 w-5" />
-                      New User
+                      New User/Sign In
                     </Link>
                   </div>
                 )}
@@ -573,7 +573,7 @@ export function SiteHeader() {
                         className="flex items-center cursor-pointer py-2 px-2 text-sm rounded-sm hover:bg-accent"
                       >
                         <LogIn className="mr-3 h-4 w-4 text-gray-500" />
-                        New User
+                        New User/Sign In
                       </Link>
                       {/* <div className="bg-border -mx-1 my-1 h-px" /> */}
                       <Link

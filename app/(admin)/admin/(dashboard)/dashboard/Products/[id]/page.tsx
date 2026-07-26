@@ -33,6 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import InstagramAndYoutubePreview from "@/components/insta-and-youtube-preview";
 
 export default function ProductDetailsPage({
   params,
@@ -626,6 +627,12 @@ export default function ProductDetailsPage({
                     </p>
                   )}
                 </div>
+
+                <InstagramAndYoutubePreview
+                  instagram_url={product.instagram_url}
+                  youtube_url={product.youtube_url}
+                  title="Social Media Previews"
+                />
               </div>
 
               {/* Editable Product Info */}
@@ -704,8 +711,8 @@ export default function ProductDetailsPage({
                               </div>
                               {key === "monthly_purchase_count" ? (
                                 <p className="text-sm text-gray-500 mt-1">
-                                  {product.monthly_purchase_count ?? 0}k+ bought
-                                  this month
+                                  {product.monthly_purchase_count ?? 0}+ bought
+                                  last month
                                 </p>
                               ) : null}
                             </>

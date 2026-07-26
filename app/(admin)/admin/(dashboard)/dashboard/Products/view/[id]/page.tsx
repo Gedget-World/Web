@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import InstagramAndYoutubePreview from "@/components/insta-and-youtube-preview";
 
 interface Product {
   id: string;
@@ -319,38 +320,12 @@ export default function ViewProductPage() {
                 </div>
               )}
 
-              {/* Social Links */}
-              {(product.instagram_url || product.youtube_url) && (
-                <>
-                  <Separator />
-                  <div className="flex gap-4">
-                    {product.instagram_url && (
-                      <a
-                        href={product.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-pink-600 hover:underline"
-                      >
-                        <Instagram className="h-4 w-4" />
-                        Instagram
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {product.youtube_url && (
-                      <a
-                        href={product.youtube_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-red-600 hover:underline"
-                      >
-                        <Youtube className="h-4 w-4" />
-                        YouTube
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                </>
-              )}
+              <Separator />
+              <InstagramAndYoutubePreview
+                instagram_url={product.instagram_url}
+                youtube_url={product.youtube_url}
+                title="Social Media Previews"
+              />
             </CardContent>
           </Card>
 

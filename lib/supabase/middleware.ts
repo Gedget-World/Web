@@ -30,6 +30,7 @@ function buildCsp(nonce: string) {
     supabaseWssOrigin,
     "https://api.cashfree.com",
     "https://sandbox.cashfree.com",
+    "https://www.instagram.com",
   ].filter(Boolean);
 
   const imgSources = [
@@ -43,8 +44,8 @@ function buildCsp(nonce: string) {
   // Allow 'unsafe-eval' in development for Next.js React refresh runtime
   const isProduction = process.env.NODE_ENV === "production";
   const scriptSrc = isProduction
-    ? `'self' 'nonce-${nonce}' https://sdk.cashfree.com`
-    : `'self' 'nonce-${nonce}' 'unsafe-eval' https://sdk.cashfree.com`;
+    ? `'self' 'nonce-${nonce}' https://sdk.cashfree.com https://www.instagram.com`
+    : `'self' 'nonce-${nonce}' 'unsafe-eval' https://sdk.cashfree.com https://www.instagram.com`;
 
   return [
     "default-src 'self'",

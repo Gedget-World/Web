@@ -28,6 +28,7 @@ import { FrequentlyBoughtTogether } from "@/components/frequently-bought-togethe
 import { ProductQA } from "@/components/product-qa";
 import { StickyAddToCart } from "@/components/sticky-add-to-cart";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
+import InstagramAndYoutubePreview from "@/components/insta-and-youtube-preview";
 
 // lucide-react's brand icons (Instagram/Youtube) are deprecated, so we use
 // small inline SVGs for these brand logos instead.
@@ -284,7 +285,7 @@ export default async function ProductDetailPage({
               <div className="flex items-center gap-1 text-slate-600">
                 <Users className="h-3.5 w-3.5" />
                 <span className="text-xs">
-                  {product.monthly_purchase_count}k+ bought this month
+                  {product.monthly_purchase_count}+ bought last month
                 </span>
               </div>
             </div>
@@ -395,34 +396,6 @@ export default async function ProductDetailPage({
             </div>
           </div>
 
-          {/* Social Media Links */}
-          {(product.instagram_url || product.youtube_url) && (
-            <div className="mb-6 flex flex-wrap items-center gap-2.5">
-              {product.instagram_url && (
-                <a
-                  href={product.instagram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-purple-600 via-pink-600 to-orange-500 text-white text-xs font-medium px-3.5 py-2 shadow-sm hover:shadow-md hover:opacity-90 transition-all"
-                >
-                  <InstagramIcon className="h-4 w-4" />
-                  Instagram
-                </a>
-              )}
-              {product.youtube_url && (
-                <a
-                  href={product.youtube_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-red-600 text-white text-xs font-medium px-3.5 py-2 shadow-sm hover:shadow-md hover:bg-red-700 transition-all"
-                >
-                  <YoutubeIcon className="h-4 w-4" />
-                  YouTube
-                </a>
-              )}
-            </div>
-          )}
-
           {/* Product Specifications */}
           <div className="mb-6">
             <ProductSpecifications
@@ -442,6 +415,13 @@ export default async function ProductDetailPage({
               {product.description || "No description available"}
             </p>
           </div>
+
+          <InstagramAndYoutubePreview
+            instagram_url={product.instagram_url}
+            youtube_url={product.youtube_url}
+            title=""
+            errorMessage={false}
+          />
         </div>
       </div>
 

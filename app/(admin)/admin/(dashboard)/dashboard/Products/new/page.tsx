@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import MultipleImagesHandle from "@/components/admin/multiple-images-handle";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import InstagramAndYoutubePreview from "@/components/insta-and-youtube-preview";
 
 export default function CreateProductPage() {
   const supabase = createClient();
@@ -488,6 +489,12 @@ export default function CreateProductPage() {
                 </p>
               )}
             </div>
+
+            <InstagramAndYoutubePreview
+              instagram_url={product.instagramURL}
+              youtube_url={product.youtubeURL}
+              title="Social Media Previews"
+            />
           </div>
 
           {/* RIGHT SIDE - DETAILS FORM */}
@@ -753,7 +760,7 @@ export default function CreateProductPage() {
                 }
               />
               <p className="text-sm text-gray-500 mt-1">
-                {product.monthly_purchase_count}k+ bought this month
+                {product.monthly_purchase_count}+ bought last month
               </p>
             </div>
 

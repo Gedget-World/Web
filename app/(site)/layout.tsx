@@ -5,6 +5,7 @@ import Footer from "@/components/site-footer";
 import { FirstLoadHandler } from "@/components/first-load-handler";
 import { NavigationProgressWrapper } from "@/components/navigation-progress-wrapper";
 import { PageTransition } from "@/components/page-transition";
+import { WhatsappFloatButton } from "@/components/whatsapp-float-button";
 
 export const metadata: Metadata = {
   title: "Gadgets Kabila - Your Ultimate Tech Destination",
@@ -24,6 +25,7 @@ export default function SiteLayout({
       <SiteHeader />
       <PageTransition>{children}</PageTransition>
       <Footer />
+      <WhatsappFloatButton />
     </>
   );
 }
