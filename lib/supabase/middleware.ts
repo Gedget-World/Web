@@ -30,6 +30,7 @@ function buildCsp(nonce: string) {
     supabaseWssOrigin,
     "https://api.cashfree.com",
     "https://sandbox.cashfree.com",
+    "https://sdk.cashfree.com",
     "https://www.instagram.com",
   ].filter(Boolean);
 
@@ -57,7 +58,7 @@ function buildCsp(nonce: string) {
     "frame-src 'self' https://www.youtube.com https://youtube.com https://www.instagram.com https://instagram.com https://*.cashfree.com https://cashfree.com",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://api.cashfree.com https://sandbox.cashfree.com https://*.cashfree.com",
     "frame-ancestors 'self'",
     "upgrade-insecure-requests",
   ].join("; ");

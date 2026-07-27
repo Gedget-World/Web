@@ -28,7 +28,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
   ArrowLeft,
@@ -50,6 +50,7 @@ import {
   Smartphone,
   Loader2,
   Tag,
+  Gift,
 } from "lucide-react";
 import ContactForm, { type ContactFormHandle } from "./contact-form";
 import { RecentlyViewedProducts } from "./recently-viewed-products";
@@ -61,6 +62,10 @@ export function CheckoutForm({ user }: { user: User }) {
   const { items, clearCart, appliedCoupon } = useCart();
   const { getSetting } = useStoreSettings(["currency_symbol", "store_country"]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isGift, setIsGift] = useState(
+    () => searchParams.get("isGift") === "true",
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -74,6 +79,7 @@ export function CheckoutForm({ user }: { user: User }) {
   const {
     customer: cachedCustomer,
     address: cachedAddress,
+    addresses: cachedAddresses,
     isHydrated,
     fetchCustomerData,
     saveAddress,
@@ -104,8 +110,6 @@ export function CheckoutForm({ user }: { user: User }) {
     }
   }
 
-  const total = subtotal + shipping - discount;
-
   // Calculate total items
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -131,6 +135,32 @@ export function CheckoutForm({ user }: { user: User }) {
     last_name: string;
     phone: string;
   } | null>(null);
+
+  // Saved address book (multiple addresses per customer)
+  const [addressList, setAddressList] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<
+    string | "new" | null
+  >(null);
+
+  // Gift recipient details (only relevant when isGift is true)
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientAddress, setRecipientAddress] = useState({
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    country: defaultCountry,
+  });
+  const [recipientCities, setRecipientCities] = useState<any[]>([]);
+  const [notifyRecipient, setNotifyRecipient] = useState(false);
+  const [giftMessage, setGiftMessage] = useState("");
+  const [hidePrices, setHidePrices] = useState(false);
+  const [giftWrap, setGiftWrap] = useState(false);
+
+  const giftWrapCharge = isGift && giftWrap ? 50 : 0;
+  const total = subtotal + shipping - discount + giftWrapCharge;
 
   // Full name is always derived from the customer's first/last name
   // (collected in the Contact step) rather than a separate editable field.
@@ -167,8 +197,9 @@ export function CheckoutForm({ user }: { user: User }) {
   const COD_MIN_AMOUNT = 599;
   const COD_MAX_AMOUNT = 9999;
 
-  // Check if COD is available
+  // Check if COD is available. Gift orders must be prepaid (online only).
   const isCodAvailable =
+    !isGift &&
     appliedCoupon === null &&
     subtotal >= COD_MIN_AMOUNT &&
     subtotal <= COD_MAX_AMOUNT;
@@ -179,6 +210,42 @@ export function CheckoutForm({ user }: { user: User }) {
       setPaymentMethod("online");
     }
   }, [isCodAvailable, paymentMethod]);
+
+  // Load cities for the recipient's delivery address when its state changes
+  useEffect(() => {
+    if (recipientAddress.state) {
+      const selectedState = states.find(
+        (s) => s.name === recipientAddress.state,
+      );
+      if (selectedState) {
+        const stateCities = City.getCitiesOfState(
+          INDIA_CODE,
+          selectedState.isoCode,
+        );
+        setRecipientCities(stateCities || []);
+        setRecipientAddress((prev) => ({ ...prev, city: "" }));
+      }
+    }
+  }, [recipientAddress.state, states]);
+
+  // Once the saved address list loads, auto-select the default address
+  // (or the first one) and pre-fill the shipping form with it.
+  useEffect(() => {
+    if (selectedAddressId !== null) return;
+    if (addressList.length > 0) {
+      const defaultAddr =
+        addressList.find((a) => a.is_default) || addressList[0];
+      setSelectedAddressId(defaultAddr.id);
+      setShippingInfo({
+        address_line1: defaultAddr.address_line1 || "",
+        address_line2: defaultAddr.address_line2 || "",
+        city: defaultAddr.city || "",
+        state: defaultAddr.state || "",
+        postal_code: defaultAddr.postal_code || "",
+        country: defaultAddr.country || defaultCountry,
+      });
+    }
+  }, [addressList, selectedAddressId, defaultCountry]);
 
   // Use cached customer data or fetch if needed
   useEffect(() => {
@@ -193,22 +260,18 @@ export function CheckoutForm({ user }: { user: User }) {
           phone: cachedCustomer.phone || "",
         });
 
-        if (cachedAddress) {
-          setShippingInfo((prev) => ({
-            ...prev,
-            address_line1: cachedAddress.address_line1 || "",
-            address_line2: cachedAddress.address_line2 || "",
-            city: cachedAddress.city || "",
-            state: cachedAddress.state || "",
-            postal_code: cachedAddress.postal_code || "",
-            country: cachedAddress.country || defaultCountry,
-          }));
-        }
+        setAddressList(
+          cachedAddresses && cachedAddresses.length > 0
+            ? cachedAddresses
+            : cachedAddress
+              ? [cachedAddress]
+              : [],
+        );
         return;
       }
 
       // Fetch from API if cache is invalid
-      const { customer, address } = await fetchCustomerData();
+      const { customer, address, addresses } = await fetchCustomerData();
 
       if (customer) {
         setCustomerInfo({
@@ -218,17 +281,13 @@ export function CheckoutForm({ user }: { user: User }) {
         });
       }
 
-      if (address) {
-        setShippingInfo((prev) => ({
-          ...prev,
-          address_line1: address.address_line1 || "",
-          address_line2: address.address_line2 || "",
-          city: address.city || "",
-          state: address.state || "",
-          postal_code: address.postal_code || "",
-          country: address.country || defaultCountry,
-        }));
-      }
+      setAddressList(
+        addresses && addresses.length > 0
+          ? addresses
+          : address
+            ? [address]
+            : [],
+      );
     };
 
     loadCustomerData();
@@ -266,19 +325,36 @@ export function CheckoutForm({ user }: { user: User }) {
           // Order details
           user_id: user.id,
           total,
-          status: paymentMethod === "cod" ? "confirmed" : "pending",
+          // "processing" (not "confirmed") — the only fulfillment-stage
+          // statuses recognized across the app are pending/processing/
+          // shipped/delivered/cancelled. COD orders are accepted immediately
+          // (no payment to wait for), so they start at "processing".
+          status: paymentMethod === "cod" ? "processing" : "pending",
 
           // Customer information
           customer_name: fullName,
           customer_email: user.email,
 
-          // Shipping address details (flattened to match schema)
-          shipping_address: `${shippingInfo.address_line1}${
-            shippingInfo.address_line2 ? ", " + shippingInfo.address_line2 : ""
-          }, ${shippingInfo.state}`, // Added state to address
-          shipping_city: shippingInfo.city,
-          shipping_postal_code: shippingInfo.postal_code,
-          shipping_country: shippingInfo.country,
+          // Shipping address details (flattened to match schema).
+          // For gift orders, ship to the recipient instead of the buyer.
+          shipping_address: isGift
+            ? `${recipientAddress.address_line1}${
+                recipientAddress.address_line2
+                  ? ", " + recipientAddress.address_line2
+                  : ""
+              }, ${recipientAddress.state}`
+            : `${shippingInfo.address_line1}${
+                shippingInfo.address_line2
+                  ? ", " + shippingInfo.address_line2
+                  : ""
+              }, ${shippingInfo.state}`, // Added state to address
+          shipping_city: isGift ? recipientAddress.city : shippingInfo.city,
+          shipping_postal_code: isGift
+            ? recipientAddress.postal_code
+            : shippingInfo.postal_code,
+          shipping_country: isGift
+            ? recipientAddress.country
+            : shippingInfo.country,
 
           // Coupon and discount information
           coupon_code: appliedCoupon?.code || null,
@@ -291,10 +367,21 @@ export function CheckoutForm({ user }: { user: User }) {
             price: item.price,
           })),
 
+          // Gift details (only meaningful when isGift is true)
+          is_gift: isGift,
+          recipient_name: isGift ? recipientName : null,
+          recipient_phone: isGift ? recipientPhone : null,
+          notify_recipient: isGift ? notifyRecipient : false,
+          gift_message: isGift ? giftMessage.slice(0, 300) : null,
+          hide_prices: isGift ? hidePrices : false,
+          gift_wrap: isGift ? giftWrap : false,
+
           // Additional metadata
           metadata: {
             payment_method: paymentMethod,
-            shipping_state: shippingInfo.state,
+            shipping_state: isGift
+              ? recipientAddress.state
+              : shippingInfo.state,
           },
         }),
       });
@@ -316,7 +403,7 @@ export function CheckoutForm({ user }: { user: User }) {
         // For COD, order is already confirmed
         setOrderPlaced(true);
         clearCart();
-        router.push("/checkout/success");
+        router.push(`/checkout/success?orderId=${orderId}`);
       } else if (paymentMethod === "online") {
         // For online payment, initiate Cashfree payment
         const phoneNumber = customerInfo?.phone?.trim() || "";
@@ -503,6 +590,320 @@ export function CheckoutForm({ user }: { user: User }) {
               <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
                 <ContactForm ref={contactFormRef} user={{ id: user.id }} />
 
+                <label
+                  htmlFor="is-gift-checkout"
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                    isGift
+                      ? "border-pink-300 bg-pink-50"
+                      : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                  }`}
+                >
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                      isGift
+                        ? "bg-pink-100 text-pink-600"
+                        : "bg-white text-slate-400"
+                    }`}
+                  >
+                    <Gift className="h-4.5 w-4.5" />
+                  </div>
+                  <span className="flex-1 text-sm font-medium text-black">
+                    This order is a gift 🎁
+                  </span>
+                  <Checkbox
+                    id="is-gift-checkout"
+                    checked={isGift}
+                    onCheckedChange={(checked) => setIsGift(checked === true)}
+                    className="data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
+                  />
+                </label>
+
+                {isGift && (
+                  <div className="space-y-4 rounded-lg border border-pink-200 bg-pink-50/40 p-3 sm:p-4">
+                    <div className="flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-pink-600" />
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Gift Recipient Details
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid gap-1.5">
+                        <Label
+                          htmlFor="recipient_name"
+                          className="text-sm flex items-center gap-1"
+                        >
+                          Recipient Name <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="recipient_name"
+                          required
+                          placeholder="Who is this gift for?"
+                          value={recipientName}
+                          onChange={(e) => setRecipientName(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label
+                          htmlFor="recipient_phone"
+                          className="text-sm flex items-center gap-1"
+                        >
+                          Recipient Phone{" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="recipient_phone"
+                          required
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={10}
+                          placeholder="10-digit phone number"
+                          value={recipientPhone}
+                          onChange={(e) =>
+                            setRecipientPhone(
+                              e.target.value.replace(/\D/g, "").slice(0, 10),
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1.5">
+                      <Label
+                        htmlFor="recipient_address_line1"
+                        className="text-sm flex items-center gap-1"
+                      >
+                        Recipient Delivery Address{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="recipient_address_line1"
+                        required
+                        placeholder="House/Flat No., Building, Street, Area"
+                        value={recipientAddress.address_line1}
+                        onChange={(e) =>
+                          setRecipientAddress({
+                            ...recipientAddress,
+                            address_line1: e.target.value,
+                          })
+                        }
+                        className="min-h-20 text-sm"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label
+                        htmlFor="recipient_address_line2"
+                        className="text-sm"
+                      >
+                        Landmark / Additional Info{" "}
+                        <span className="text-[10px] sm:text-xs text-slate-400">
+                          (Optional)
+                        </span>
+                      </Label>
+                      <Textarea
+                        id="recipient_address_line2"
+                        placeholder="Near landmark, additional directions..."
+                        value={recipientAddress.address_line2}
+                        onChange={(e) =>
+                          setRecipientAddress({
+                            ...recipientAddress,
+                            address_line2: e.target.value,
+                          })
+                        }
+                        className="min-h-[60px] text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid gap-1.5">
+                        <Label
+                          htmlFor="recipient_state"
+                          className="text-sm flex items-center gap-1"
+                        >
+                          State <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={recipientAddress.state}
+                          onValueChange={(value) =>
+                            setRecipientAddress({
+                              ...recipientAddress,
+                              state: value,
+                              city: "",
+                            })
+                          }
+                        >
+                          <SelectTrigger
+                            id="recipient_state"
+                            className="w-full"
+                          >
+                            <SelectValue placeholder="Select state" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {states.map((state) => (
+                              <SelectItem
+                                key={state.isoCode}
+                                value={state.name}
+                              >
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label
+                          htmlFor="recipient_country"
+                          className="text-sm flex items-center gap-1"
+                        >
+                          Country <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="recipient_country"
+                          required
+                          value="India"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    {recipientAddress.state && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="grid gap-1.5">
+                          <Label
+                            htmlFor="recipient_city"
+                            className="text-sm flex items-center gap-1"
+                          >
+                            City <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={recipientAddress.city}
+                            onValueChange={(value) =>
+                              setRecipientAddress({
+                                ...recipientAddress,
+                                city: value,
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id="recipient_city"
+                              className="w-full"
+                            >
+                              <SelectValue placeholder="Select city" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {recipientCities.map((city) => (
+                                <SelectItem key={city.name} value={city.name}>
+                                  {city.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label
+                            htmlFor="recipient_postal_code"
+                            className="text-sm flex items-center gap-1"
+                          >
+                            PIN Code <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="recipient_postal_code"
+                            required
+                            placeholder="6-digit PIN code"
+                            value={recipientAddress.postal_code}
+                            onChange={(e) =>
+                              setRecipientAddress({
+                                ...recipientAddress,
+                                postal_code: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <label
+                      htmlFor="notify_recipient"
+                      className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white p-3"
+                    >
+                      <Checkbox
+                        id="notify_recipient"
+                        checked={notifyRecipient}
+                        onCheckedChange={(checked) =>
+                          setNotifyRecipient(checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <span className="text-xs sm:text-sm text-slate-700">
+                        Notify recipient about this gift order
+                      </span>
+                    </label>
+
+                    <div className="grid gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="gift_message" className="text-sm">
+                          Gift Message{" "}
+                          <span className="text-[10px] sm:text-xs text-slate-400">
+                            (Optional)
+                          </span>
+                        </Label>
+                        <span className="text-[10px] sm:text-xs text-slate-400">
+                          {giftMessage.length}/300
+                        </span>
+                      </div>
+                      <Textarea
+                        id="gift_message"
+                        placeholder="Write a short message for the recipient..."
+                        value={giftMessage}
+                        onChange={(e) =>
+                          setGiftMessage(e.target.value.slice(0, 300))
+                        }
+                        maxLength={300}
+                        className="min-h-20 text-sm"
+                      />
+                    </div>
+
+                    <label
+                      htmlFor="hide_prices"
+                      className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white p-3"
+                    >
+                      <Checkbox
+                        id="hide_prices"
+                        checked={hidePrices}
+                        onCheckedChange={(checked) =>
+                          setHidePrices(checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <span className="text-xs sm:text-sm text-slate-700">
+                        Hide prices on the recipient's packing slip
+                      </span>
+                    </label>
+
+                    <label
+                      htmlFor="gift_wrap"
+                      className={`flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition-colors ${
+                        giftWrap
+                          ? "border-pink-300 bg-pink-50"
+                          : "border-slate-200 bg-white"
+                      }`}
+                    >
+                      <Checkbox
+                        id="gift_wrap"
+                        checked={giftWrap}
+                        onCheckedChange={(checked) =>
+                          setGiftWrap(checked === true)
+                        }
+                        className="mt-0.5 data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
+                      />
+                      <span className="text-xs sm:text-sm text-slate-700">
+                        Gift wrap this order{" "}
+                        <span className="font-medium text-pink-600">
+                          (+{currencySymbol}50)
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                   <Button
                     disabled
@@ -514,11 +915,33 @@ export function CheckoutForm({ user }: { user: User }) {
                   <Button
                     onClick={async () => {
                       if (isSavingContact) return;
+
+                      if (isGift) {
+                        if (
+                          !recipientName.trim() ||
+                          !recipientAddress.address_line1.trim() ||
+                          !recipientAddress.city ||
+                          !recipientAddress.state ||
+                          !recipientAddress.postal_code.trim()
+                        ) {
+                          alert(
+                            "Please fill in all required recipient details.",
+                          );
+                          return;
+                        }
+                        if (recipientPhone.length !== 10) {
+                          alert(
+                            "Recipient phone number must be exactly 10 digits.",
+                          );
+                          return;
+                        }
+                      }
+
                       setIsSavingContact(true);
                       const ok =
                         (await contactFormRef.current?.save()) ?? false;
                       setIsSavingContact(false);
-                      if (ok) setTab("shipping");
+                      if (ok) setTab(isGift ? "payment" : "shipping");
                     }}
                     disabled={isSavingContact}
                     className="order-1 sm:order-2"
@@ -551,144 +974,227 @@ export function CheckoutForm({ user }: { user: User }) {
                 </p>
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
-                <div className="grid gap-1.5 sm:gap-2">
-                  <Label
-                    htmlFor="address_line1"
-                    className="text-sm flex items-center gap-1"
-                  >
-                    Street Address <span className="text-red-500">*</span>
-                  </Label>
-                  <Textarea
-                    id="address_line1"
-                    required
-                    placeholder="House/Flat No., Building, Street, Area"
-                    value={shippingInfo.address_line1}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        address_line1: e.target.value,
-                      })
-                    }
-                    className="min-h-20 text-sm"
-                  />
-                </div>
-                <div className="grid gap-1.5 sm:gap-2">
-                  <Label htmlFor="address_line2" className="text-sm">
-                    Landmark / Additional Info{" "}
-                    <span className="text-[10px] sm:text-xs text-slate-400">
-                      (Optional)
-                    </span>
-                  </Label>
-                  <Textarea
-                    id="address_line2"
-                    placeholder="Near landmark, additional directions..."
-                    value={shippingInfo.address_line2}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        address_line2: e.target.value,
-                      })
-                    }
-                    className="min-h-[60px] text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="grid gap-1.5 sm:gap-2">
-                    <Label
-                      htmlFor="state"
-                      className="text-sm flex items-center gap-1"
-                    >
-                      State <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={shippingInfo.state}
-                      onValueChange={(value) =>
-                        setShippingInfo({
-                          ...shippingInfo,
-                          state: value,
-                          city: "",
-                        })
-                      }
-                    >
-                      <SelectTrigger id="state" className="w-full">
-                        <SelectValue placeholder="Select state" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {states.map((state) => (
-                          <SelectItem key={state.isoCode} value={state.name}>
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-1.5 sm:gap-2">
-                    <Label
-                      htmlFor="country"
-                      className="text-sm flex items-center gap-1"
-                    >
-                      Country <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="country"
-                      required
-                      placeholder="Enter country"
-                      value="India"
-                      disabled
-                    />
-                  </div>
-                </div>
-                {shippingInfo.state && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="grid gap-1.5 sm:gap-2">
-                      <Label
-                        htmlFor="city"
-                        className="text-sm flex items-center gap-1"
-                      >
-                        City <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={shippingInfo.city}
-                        onValueChange={(value) =>
+                {addressList.length > 0 && (
+                  <div className="space-y-2">
+                    {addressList.map((addr) => (
+                      <button
+                        key={addr.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAddressId(addr.id);
                           setShippingInfo({
-                            ...shippingInfo,
-                            city: value,
-                          })
-                        }
+                            address_line1: addr.address_line1 || "",
+                            address_line2: addr.address_line2 || "",
+                            city: addr.city || "",
+                            state: addr.state || "",
+                            postal_code: addr.postal_code || "",
+                            country: addr.country || defaultCountry,
+                          });
+                        }}
+                        className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                          selectedAddressId === addr.id
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
                       >
-                        <SelectTrigger id="city" className="w-full">
-                          <SelectValue placeholder="Select city" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cities.map((city) => (
-                            <SelectItem key={city.name} value={city.name}>
-                              {city.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate flex items-center gap-1.5">
+                              {addr.full_name}
+                              {addr.is_default && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[9px] px-1.5"
+                                >
+                                  Default
+                                </Badge>
+                              )}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {addr.address_line1}
+                              {addr.address_line2
+                                ? `, ${addr.address_line2}`
+                                : ""}
+                              , {addr.city}, {addr.state} {addr.postal_code}
+                            </p>
+                          </div>
+                          {selectedAddressId === addr.id && (
+                            <Check className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAddressId("new");
+                        setShippingInfo({
+                          address_line1: "",
+                          address_line2: "",
+                          city: "",
+                          state: "",
+                          postal_code: "",
+                          country: defaultCountry,
+                        });
+                      }}
+                      className={`w-full text-left p-3 rounded-lg border-2 border-dashed transition-all ${
+                        selectedAddressId === "new"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-blue-600">
+                        + Add a new address
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {(selectedAddressId === "new" || addressList.length === 0) && (
+                  <>
                     <div className="grid gap-1.5 sm:gap-2">
                       <Label
-                        htmlFor="postal_code"
+                        htmlFor="address_line1"
                         className="text-sm flex items-center gap-1"
                       >
-                        PIN Code <span className="text-red-500">*</span>
+                        Street Address <span className="text-red-500">*</span>
                       </Label>
-                      <Input
-                        id="postal_code"
+                      <Textarea
+                        id="address_line1"
                         required
-                        placeholder="6-digit PIN code"
-                        value={shippingInfo.postal_code}
+                        placeholder="House/Flat No., Building, Street, Area"
+                        value={shippingInfo.address_line1}
                         onChange={(e) =>
                           setShippingInfo({
                             ...shippingInfo,
-                            postal_code: e.target.value,
+                            address_line1: e.target.value,
                           })
                         }
+                        className="min-h-20 text-sm"
                       />
                     </div>
-                  </div>
+                    <div className="grid gap-1.5 sm:gap-2">
+                      <Label htmlFor="address_line2" className="text-sm">
+                        Landmark / Additional Info{" "}
+                        <span className="text-[10px] sm:text-xs text-slate-400">
+                          (Optional)
+                        </span>
+                      </Label>
+                      <Textarea
+                        id="address_line2"
+                        placeholder="Near landmark, additional directions..."
+                        value={shippingInfo.address_line2}
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            address_line2: e.target.value,
+                          })
+                        }
+                        className="min-h-[60px] text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid gap-1.5 sm:gap-2">
+                        <Label
+                          htmlFor="state"
+                          className="text-sm flex items-center gap-1"
+                        >
+                          State <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={shippingInfo.state}
+                          onValueChange={(value) =>
+                            setShippingInfo({
+                              ...shippingInfo,
+                              state: value,
+                              city: "",
+                            })
+                          }
+                        >
+                          <SelectTrigger id="state" className="w-full">
+                            <SelectValue placeholder="Select state" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {states.map((state) => (
+                              <SelectItem
+                                key={state.isoCode}
+                                value={state.name}
+                              >
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-1.5 sm:gap-2">
+                        <Label
+                          htmlFor="country"
+                          className="text-sm flex items-center gap-1"
+                        >
+                          Country <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="country"
+                          required
+                          placeholder="Enter country"
+                          value="India"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    {shippingInfo.state && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="grid gap-1.5 sm:gap-2">
+                          <Label
+                            htmlFor="city"
+                            className="text-sm flex items-center gap-1"
+                          >
+                            City <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={shippingInfo.city}
+                            onValueChange={(value) =>
+                              setShippingInfo({
+                                ...shippingInfo,
+                                city: value,
+                              })
+                            }
+                          >
+                            <SelectTrigger id="city" className="w-full">
+                              <SelectValue placeholder="Select city" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cities.map((city) => (
+                                <SelectItem key={city.name} value={city.name}>
+                                  {city.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-1.5 sm:gap-2">
+                          <Label
+                            htmlFor="postal_code"
+                            className="text-sm flex items-center gap-1"
+                          >
+                            PIN Code <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="postal_code"
+                            required
+                            placeholder="6-digit PIN code"
+                            value={shippingInfo.postal_code}
+                            onChange={(e) =>
+                              setShippingInfo({
+                                ...shippingInfo,
+                                postal_code: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Secure Address Info */}
@@ -707,6 +1213,12 @@ export function CheckoutForm({ user }: { user: User }) {
                   </Button>
                   <Button
                     onClick={async () => {
+                      if (selectedAddressId && selectedAddressId !== "new") {
+                        // Reusing an already-saved address, nothing new to persist
+                        setTab("payment");
+                        return;
+                      }
+
                       if (
                         !fullName ||
                         !shippingInfo.address_line1 ||
@@ -719,7 +1231,7 @@ export function CheckoutForm({ user }: { user: User }) {
                         return;
                       }
 
-                      // Save/update address using cached hook (updates cache automatically)
+                      // Save this as a brand-new address (updates cache automatically)
                       try {
                         setIsLoading(true);
                         const result = await saveAddress({
@@ -735,6 +1247,14 @@ export function CheckoutForm({ user }: { user: User }) {
                         if (!result) {
                           throw new Error("Failed to save address");
                         }
+
+                        const refreshed = await fetchCustomerData(true);
+                        setAddressList(
+                          refreshed.addresses && refreshed.addresses.length > 0
+                            ? refreshed.addresses
+                            : [result],
+                        );
+                        setSelectedAddressId(result.id);
 
                         setTab("payment");
                       } catch (error) {
@@ -861,9 +1381,9 @@ export function CheckoutForm({ user }: { user: User }) {
                       <span className="font-semibold">
                         Cash on Delivery (COD):
                       </span>{" "}
-                      Available only for orders between ₹{COD_MIN_AMOUNT} and ₹
-                      {COD_MAX_AMOUNT.toLocaleString()} without any coupon
-                      applied.
+                      {isGift
+                        ? "Not available for gift orders — gift orders must be paid online."
+                        : `Available only for orders between ₹${COD_MIN_AMOUNT} and ₹${COD_MAX_AMOUNT.toLocaleString()} without any coupon applied.`}
                     </p>
                   </div>
                 </div>
@@ -921,7 +1441,19 @@ export function CheckoutForm({ user }: { user: User }) {
                           </span>
                         </div>
                       ))}
-                      <div className="pt-2 border-t mt-2">
+                      <div className="pt-2 border-t mt-2 space-y-1">
+                        {giftWrapCharge > 0 && (
+                          <p className="text-xs sm:text-sm flex justify-between text-slate-600">
+                            <span className="flex items-center gap-1">
+                              <Gift className="h-3 w-3 text-pink-500" />
+                              Gift Wrap
+                            </span>
+                            <span>
+                              {currencySymbol}
+                              {giftWrapCharge}
+                            </span>
+                          </p>
+                        )}
                         <p className="text-xs sm:text-sm font-semibold flex justify-between">
                           <span>Total:</span>
                           <span>
@@ -968,7 +1500,7 @@ export function CheckoutForm({ user }: { user: User }) {
                 <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-2">
                   <Button
                     variant={"outline"}
-                    onClick={() => setTab("shipping")}
+                    onClick={() => setTab(isGift ? "contact" : "shipping")}
                     className="order-2 sm:order-1"
                   >
                     <ArrowLeft className="h-4 w-4 mr-1" /> Back
@@ -1080,6 +1612,18 @@ export function CheckoutForm({ user }: { user: User }) {
                   <span className="text-slate-600">Shipping</span>
                   <span className="text-green-600 font-medium">Free</span>
                 </div>
+                {giftWrapCharge > 0 && (
+                  <div className="flex justify-between text-xs sm:text-sm text-slate-600">
+                    <span className="flex items-center gap-1">
+                      <Gift className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-pink-500" />
+                      Gift Wrap
+                    </span>
+                    <span className="font-medium">
+                      {currencySymbol}
+                      {giftWrapCharge}
+                    </span>
+                  </div>
+                )}
                 {discount > 0 && (
                   <div className="flex justify-between text-xs sm:text-sm text-green-600 font-medium bg-green-50 -mx-1.5 sm:-mx-2 px-1.5 sm:px-2 py-1 rounded">
                     <span className="flex items-center gap-1">

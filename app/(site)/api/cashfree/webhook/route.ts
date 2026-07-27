@@ -9,8 +9,13 @@ import {
 function mapCashfreeStatusToOrderStatus(status?: string) {
   const normalized = (status || "").toUpperCase();
 
+  // "processing" (not "confirmed") is used here because that is the only
+  // vocabulary the rest of the app (admin dashboard, orders list, order
+  // detail progress bar) understands for a paid/accepted order awaiting
+  // fulfillment. Using an unrecognized status value breaks status badges,
+  // colors, and the progress timeline everywhere else.
   if (["PAID", "CAPTURED", "SUCCESS"].includes(normalized)) {
-    return "confirmed";
+    return "processing";
   }
 
   if (["FAILED", "CANCELLED", "TERMINATED", "EXPIRED"].includes(normalized)) {
@@ -109,7 +114,7 @@ export async function POST(request: Request) {
     if (
       existingOrder.status === mappedStatus &&
       existingOrder.payment_status === order_status &&
-      (mappedStatus === "confirmed" || mappedStatus === "cancelled")
+      (mappedStatus === "processing" || mappedStatus === "cancelled")
     ) {
       return NextResponse.json({ success: true, duplicate: true });
     }
@@ -134,7 +139,7 @@ export async function POST(request: Request) {
     if (payment_method) updatePayload.payment_method = payment_method;
     if (transaction_id) updatePayload.transaction_id = transaction_id;
     if (cf_payment_id) updatePayload.cf_payment_id = cf_payment_id;
-    if (mappedStatus === "confirmed") {
+    if (mappedStatus === "processing") {
       updatePayload.paid_at = new Date().toISOString();
     }
 
@@ -209,11 +214,13 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch payment status from Cashfree if payment_session_id exists
+    // Fetch live payment status from Cashfree if a session was created for
+    // this order. Cashfree's GET /pg/orders/{order_id} endpoint expects
+    // *our* order id (which we set as Cashfree's order_id at session
+    // creation time) — NOT the payment_session_id token, which is a
+    // completely different opaque value and would 404 against this API.
     if (order.payment_session_id) {
-      const paymentStatus = await getCashfreePaymentStatus(
-        order.payment_session_id,
-      );
+      const paymentStatus = await getCashfreePaymentStatus(order.id);
 
       const cashfreeStatus =
         paymentStatus?.order_status ||
@@ -234,7 +241,7 @@ export async function GET(request: Request) {
           },
         };
 
-        if (mappedOrderStatus === "confirmed" && !order.paid_at) {
+        if (mappedOrderStatus === "processing" && !order.paid_at) {
           reconcilePayload.paid_at = new Date().toISOString();
         }
 
@@ -257,7 +264,7 @@ export async function GET(request: Request) {
 
     // Return current order status
     const fallbackCashfreeStatus =
-      order.status === "confirmed"
+      order.status === "processing"
         ? "PAID"
         : order.status === "cancelled"
           ? "FAILED"

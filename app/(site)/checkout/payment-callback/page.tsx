@@ -28,7 +28,7 @@ function PaymentCallbackContent() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const handleSuccess = () => {
+    const handleSuccess = (completedOrderId: string) => {
       setStatus("success");
       setMessage("Payment successful! Your order is confirmed.");
       try {
@@ -38,7 +38,7 @@ function PaymentCallbackContent() {
         /* ignore */
       }
       setTimeout(() => {
-        router.push("/checkout/success");
+        router.push(`/checkout/success?orderId=${completedOrderId}`);
       }, 2000);
     };
 
@@ -76,7 +76,7 @@ function PaymentCallbackContent() {
 
         // If we already have status from URL param
         if (SUCCESS_STATUSES.has((statusParam || "").toUpperCase())) {
-          handleSuccess();
+          handleSuccess(orderIdParam);
           return;
         }
 
@@ -106,7 +106,7 @@ function PaymentCallbackContent() {
           SUCCESS_STATUSES.has(cashfreeStatus) ||
           SUCCESS_STATUSES.has(internalStatus)
         ) {
-          handleSuccess();
+          handleSuccess(orderIdParam);
         } else if (
           FAILURE_STATUSES.has(cashfreeStatus) ||
           FAILURE_STATUSES.has(internalStatus)
@@ -171,7 +171,13 @@ function PaymentCallbackContent() {
                 )}
               </div>
               <Button
-                onClick={() => router.push("/checkout/success")}
+                onClick={() =>
+                  router.push(
+                    orderId
+                      ? `/checkout/success?orderId=${orderId}`
+                      : "/checkout/success",
+                  )
+                }
                 className="w-full"
               >
                 Continue to Orders

@@ -4,6 +4,20 @@
 /* Keep dark utilities disabled so OS/browser theme cannot switch the site. */
 @custom-variant dark (&:is(.theme-dark-disabled *));
 
+@keyframes success-confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+.animate-success-confetti {
+  animation: success-confetti linear forwards;
+}
+
 :root {
   color-scheme: only light;
   --background: #ffffff;

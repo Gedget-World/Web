@@ -29,12 +29,14 @@ type Address = {
 interface CustomerStore {
   customer: Customer | null;
   address: Address | null;
+  addresses: Address[];
   lastFetched: number | null;
   isHydrated: boolean;
 
   // Actions
   setCustomer: (customer: Customer | null) => void;
   setAddress: (address: Address | null) => void;
+  setAddresses: (addresses: Address[]) => void;
   updateCustomer: (updates: Partial<Customer>) => void;
   updateAddress: (updates: Partial<Address>) => void;
   clearCache: () => void;
@@ -53,12 +55,15 @@ export const useCustomerStore = create<CustomerStore>()(
     (set, get) => ({
       customer: null,
       address: null,
+      addresses: [],
       lastFetched: null,
       isHydrated: false,
 
       setCustomer: (customer) => set({ customer, lastFetched: Date.now() }),
 
       setAddress: (address) => set({ address, lastFetched: Date.now() }),
+
+      setAddresses: (addresses) => set({ addresses, lastFetched: Date.now() }),
 
       updateCustomer: (updates) =>
         set((state) => ({
@@ -73,7 +78,12 @@ export const useCustomerStore = create<CustomerStore>()(
         })),
 
       clearCache: () =>
-        set({ customer: null, address: null, lastFetched: null }),
+        set({
+          customer: null,
+          address: null,
+          addresses: [],
+          lastFetched: null,
+        }),
 
       setHydrated: (state) => set({ isHydrated: state }),
 
@@ -97,8 +107,10 @@ export function useCustomer(userId: string | undefined) {
   const {
     customer,
     address,
+    addresses,
     setCustomer,
     setAddress,
+    setAddresses,
     updateCustomer,
     updateAddress,
     isCacheValid,
@@ -107,11 +119,12 @@ export function useCustomer(userId: string | undefined) {
   } = useCustomerStore();
 
   const fetchCustomerData = async (forceRefresh = false) => {
-    if (!userId) return { customer: null, address: null };
+    if (!userId)
+      return { customer: null, address: null, addresses: [] as Address[] };
 
     // Use cache if valid and not forcing refresh
     if (!forceRefresh && isCacheValid() && customer?.user_id === userId) {
-      return { customer, address };
+      return { customer, address, addresses };
     }
 
     try {
@@ -127,13 +140,22 @@ export function useCustomer(userId: string | undefined) {
           setAddress({ ...data.address, user_id: userId });
         }
 
-        return { customer: data.customer, address: data.address };
+        const fetchedAddresses: Address[] = (data.addresses || []).map(
+          (a: Address) => ({ ...a, user_id: userId }),
+        );
+        setAddresses(fetchedAddresses);
+
+        return {
+          customer: data.customer,
+          address: data.address,
+          addresses: fetchedAddresses,
+        };
       }
     } catch (error) {
       console.error("Error fetching customer data:", error);
     }
 
-    return { customer: null, address: null };
+    return { customer: null, address: null, addresses: [] as Address[] };
   };
 
   const saveCustomer = async (customerData: Partial<Customer>) => {
@@ -166,6 +188,9 @@ export function useCustomer(userId: string | undefined) {
     return null;
   };
 
+  // Saves an address. If `addressData.id` is provided, the existing address
+  // row is updated in place; otherwise a brand-new address is inserted so
+  // customers can keep multiple saved addresses instead of overwriting one.
   const saveAddress = async (addressData: Partial<Address>) => {
     if (!userId) return null;
 
@@ -177,8 +202,7 @@ export function useCustomer(userId: string | undefined) {
           user_id: userId,
           address: {
             ...addressData,
-            type: "shipping",
-            is_default: true,
+            type: addressData.type || "shipping",
           },
         }),
       });
@@ -201,6 +225,8 @@ export function useCustomer(userId: string | undefined) {
   return {
     customer,
     address,
+    addresses,
+    setAddresses,
     isHydrated,
     fetchCustomerData,
     saveCustomer,

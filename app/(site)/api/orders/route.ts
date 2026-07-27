@@ -29,6 +29,13 @@ export async function POST(request: Request) {
       discount_amount,
       order_items,
       metadata,
+      is_gift,
+      recipient_name,
+      recipient_phone,
+      notify_recipient,
+      gift_message,
+      hide_prices,
+      gift_wrap,
     } = body;
 
     // Get customer_id from customers table or create if doesn't exist
@@ -62,6 +69,11 @@ export async function POST(request: Request) {
     // Resolve payment method from metadata
     const paymentMethod = metadata?.payment_method || null;
 
+    // Gift-related fields: recompute the wrap charge server-side rather
+    // than trusting the client-supplied value, and clamp the message length.
+    const isGift = Boolean(is_gift);
+    const giftWrapCharge = isGift && gift_wrap ? 50 : 0;
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -81,6 +93,18 @@ export async function POST(request: Request) {
         payment_method: paymentMethod,
         payment_status: paymentMethod === "cod" ? "cod_pending" : "pending",
         metadata: metadata || {},
+        is_gift: isGift,
+        recipient_name: isGift ? recipient_name || null : null,
+        recipient_phone: isGift ? recipient_phone || null : null,
+        notify_recipient: isGift ? Boolean(notify_recipient) : false,
+        gift_message: isGift
+          ? typeof gift_message === "string"
+            ? gift_message.slice(0, 300)
+            : null
+          : null,
+        hide_prices: isGift ? Boolean(hide_prices) : false,
+        gift_wrap: isGift ? Boolean(gift_wrap) : false,
+        gift_wrap_charge: giftWrapCharge,
       })
       .select()
       .single();

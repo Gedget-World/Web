@@ -119,6 +119,32 @@ export function isValidCashfreePhoneNumber(phone: string): boolean {
 }
 
 /**
+ * Resolve the public base URL used for Cashfree return/notify URLs.
+ * Only upgrades http -> https for real (non-localhost) hosts — Cashfree's
+ * sandbox redirect must not be forced onto https://localhost, which has no
+ * TLS listener in local dev and results in a blank/failed page right after
+ * a successful sandbox payment.
+ */
+function getAppBaseUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_APP_URL || "").trim();
+  if (!raw) return raw;
+
+  try {
+    const url = new URL(raw);
+    const isLocalHost =
+      url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "0.0.0.0";
+    if (url.protocol === "http:" && !isLocalHost) {
+      url.protocol = "https:";
+    }
+    return url.origin;
+  } catch {
+    return raw;
+  }
+}
+
+/**
  * Create payment session with Cashfree
  */
 export async function createCashfreePaymentSession(paymentData: {
@@ -138,6 +164,8 @@ export async function createCashfreePaymentSession(paymentData: {
     );
   }
 
+  const appBaseUrl = getAppBaseUrl();
+
   const requestBody = {
     order_id: paymentData.order_id,
     order_amount: paymentData.amount,
@@ -149,8 +177,11 @@ export async function createCashfreePaymentSession(paymentData: {
       customer_name: paymentData.customer_name || "Customer",
     },
     order_meta: {
-      return_url: `${(process.env.NEXT_PUBLIC_APP_URL || "").replace(/^http:\/\//, "https://")}/checkout/payment-callback`,
-      notify_url: `${(process.env.NEXT_PUBLIC_APP_URL || "").replace(/^http:\/\//, "https://")}/api/cashfree/webhook`,
+      // {order_id} is a Cashfree template placeholder substituted with the
+      // real order id on redirect, so payment-callback always gets it via
+      // the URL even if sessionStorage is unavailable/cleared.
+      return_url: `${appBaseUrl}/checkout/payment-callback?order_id={order_id}`,
+      notify_url: `${appBaseUrl}/api/cashfree/webhook`,
     },
   };
 

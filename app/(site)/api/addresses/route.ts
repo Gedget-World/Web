@@ -1,6 +1,53 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = request.nextUrl.searchParams.get("user_id");
+
+    if (!userId || userId !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("user_id", userId)
+      .single();
+
+    if (!customer) {
+      return NextResponse.json({ addresses: [] });
+    }
+
+    const { data: addresses, error } = await supabase
+      .from("addresses")
+      .select("*")
+      .eq("customer_id", customer.id)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json({ addresses: addresses || [] });
+  } catch (error) {
+    console.error("Error fetching addresses:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch addresses" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -49,17 +96,21 @@ export async function POST(request: NextRequest) {
       customer = newCustomer;
     }
 
-    // Check if address already exists
-    const { data: existingAddress } = await supabase
-      .from("addresses")
-      .select("id")
-      .eq("customer_id", customer.id)
-      .eq("type", address.type || "shipping")
-      .single();
+    const type = address.type || "shipping";
 
-    let result;
-    if (existingAddress) {
-      // Update existing address
+    // Editing an existing saved address (ownership enforced via customer_id)
+    if (address.id) {
+      const wantsDefault = address.is_default === true;
+
+      if (wantsDefault) {
+        await supabase
+          .from("addresses")
+          .update({ is_default: false })
+          .eq("customer_id", customer.id)
+          .eq("type", type)
+          .neq("id", address.id);
+      }
+
       const { data, error } = await supabase
         .from("addresses")
         .update({
@@ -70,40 +121,64 @@ export async function POST(request: NextRequest) {
           state: address.state,
           postal_code: address.postal_code,
           country: address.country,
+          ...(wantsDefault ? { is_default: true } : {}),
         })
-        .eq("id", existingAddress.id)
+        .eq("id", address.id)
+        .eq("customer_id", customer.id)
         .select()
         .single();
 
       if (error) throw error;
-      result = data;
-    } else {
-      // Create new address
-      const { data, error } = await supabase
-        .from("addresses")
-        .insert({
-          customer_id: customer.id,
-          type: address.type || "shipping",
-          is_default: address.is_default || true,
-          full_name: address.full_name,
-          address_line1: address.address_line1,
-          address_line2: address.address_line2,
-          city: address.city,
-          state: address.state,
-          postal_code: address.postal_code,
-          country: address.country,
-        })
-        .select()
-        .single();
 
-      if (error) throw error;
-      result = data;
+      return NextResponse.json({
+        success: true,
+        address: data,
+        action: "updated",
+      });
     }
+
+    // Creating a brand-new address — customers can now save multiple
+    // addresses per type instead of a single one being overwritten each time.
+    const { count } = await supabase
+      .from("addresses")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customer.id)
+      .eq("type", type);
+
+    // The very first address of a given type is always the default one.
+    const isDefault = address.is_default === true || !count;
+
+    if (isDefault) {
+      await supabase
+        .from("addresses")
+        .update({ is_default: false })
+        .eq("customer_id", customer.id)
+        .eq("type", type);
+    }
+
+    const { data, error } = await supabase
+      .from("addresses")
+      .insert({
+        customer_id: customer.id,
+        type,
+        is_default: isDefault,
+        full_name: address.full_name,
+        address_line1: address.address_line1,
+        address_line2: address.address_line2,
+        city: address.city,
+        state: address.state,
+        postal_code: address.postal_code,
+        country: address.country,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      address: result,
-      action: existingAddress ? "updated" : "created",
+      address: data,
+      action: "created",
     });
   } catch (error) {
     console.error("Error saving address:", error);

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CouponInput } from "@/components/coupon-input";
 import { Badge } from "@/components/ui/badge";
 import { RecommendedProducts } from "@/components/recommended-products";
@@ -39,6 +40,7 @@ export default function CartPage() {
   ]);
   const supabase = useMemo(() => createClient(), []);
   const hasValidatedInitialCart = useRef(false);
+  const [isGift, setIsGift] = useState(false);
 
   useEffect(() => {
     const validateCartOnFirstLoad = async () => {
@@ -285,7 +287,6 @@ export default function CartPage() {
                   Order Summary
                 </h2>
               </div>
-
               <div className="space-y-3 mb-5">
                 <div className="flex justify-between text-slate-600 text-sm">
                   <span>Subtotal ({totalItems} items)</span>
@@ -327,7 +328,6 @@ export default function CartPage() {
                   </p>
                 )}
               </div>
-
               <div className="mb-5">
                 <h3 className="text-sm font-medium text-black mb-2 flex items-center gap-1.5">
                   <Tag className="h-3.5 w-3.5 text-slate-500" />
@@ -335,7 +335,6 @@ export default function CartPage() {
                 </h3>
                 <CouponInput subtotal={subtotal} />
               </div>
-
               {/* COD Information */}
               <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-xs text-amber-800">
@@ -345,18 +344,45 @@ export default function CartPage() {
                 </p>
               </div>
 
+              <label
+                htmlFor="is-gift"
+                className={`mb-5 flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                  isGift
+                    ? "border-pink-300 bg-pink-50"
+                    : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                }`}
+              >
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    isGift
+                      ? "bg-pink-100 text-pink-600"
+                      : "bg-white text-slate-400"
+                  }`}
+                >
+                  <Gift className="h-4.5 w-4.5" />
+                </div>
+                <span className="flex-1 text-sm font-medium text-black">
+                  This order is a gift 🎁
+                </span>
+                <Checkbox
+                  id="is-gift"
+                  checked={isGift}
+                  onCheckedChange={(checked) => setIsGift(checked === true)}
+                  className="data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
+                />
+              </label>
+
               <Button
                 asChild
                 size="lg"
                 className="w-full mb-3 h-12 text-base font-semibold"
               >
-                <Link href="/checkout">
+                <Link href={`/checkout?isGift=${isGift}`}>
                   <Lock className="h-4 w-4 mr-1" />
                   Secure Checkout
                   <ArrowRight className="h-4 w-4 ml-1" />
                 </Link>
               </Button>
-
               <Button
                 asChild
                 variant="outline"
@@ -368,7 +394,6 @@ export default function CartPage() {
                   Continue Shopping
                 </Link>
               </Button>
-
               {/* Trust Badges */}
               <div className="mt-5 pt-5 border-t border-dashed">
                 <div className="grid grid-cols-2 gap-3">
@@ -382,7 +407,6 @@ export default function CartPage() {
                   </div>
                 </div>
               </div>
-
               {/* Payment Methods */}
               <div className="mt-4 pt-4 border-t">
                 <p className="text-xs text-slate-500 text-center mb-2">

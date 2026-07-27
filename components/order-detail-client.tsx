@@ -52,6 +52,9 @@ import {
   Receipt,
   Clock3,
   RefreshCw,
+  ShieldCheck,
+  RotateCcw,
+  Headphones,
 } from "lucide-react";
 import { CancelOrderButton } from "@/components/cancel-order-button";
 import { OrderItemReview } from "@/components/order-item-review";
@@ -286,9 +289,17 @@ export function OrderDetailClient({
     return <OrderDetailSkeleton />;
   }
 
+  const isGift = Boolean(order.is_gift);
+
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-slate-50/50">
+      <div
+        className={`min-h-screen ${
+          isGift
+            ? "bg-linear-to-b from-pink-50 via-purple-50/30 to-white"
+            : "bg-linear-to-b from-emerald-50 via-teal-50/30 to-white"
+        }`}
+      >
         {/* Confetti Animation */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
@@ -349,7 +360,7 @@ export function OrderDetailClient({
           {/* Gradient Hero Banner */}
           <div
             ref={headerRef}
-            className={`relative overflow-hidden rounded-2xl bg-linear-to-r ${getStatusColor(order.status)} p-6 md:p-8 mb-8 text-white`}
+            className={`relative overflow-hidden rounded-2xl bg-linear-to-r ${getStatusColor(order.status)} p-6 md:p-8 mb-8 text-white shadow-lg animate-in fade-in zoom-in-95 duration-500`}
           >
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -437,7 +448,7 @@ export function OrderDetailClient({
 
           {/* Order Progress Timeline - Desktop */}
           {order.status !== "cancelled" && (
-            <Card className="mb-8 overflow-hidden">
+            <Card className="mb-8 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
               <CardContent className="p-6">
                 {/* Desktop Timeline */}
                 <div className="hidden md:block">
@@ -692,7 +703,7 @@ export function OrderDetailClient({
           )}
 
           {order.status === "cancelled" && (
-            <Card className="mb-8 border-red-200 bg-red-50">
+            <Card className="mb-8 border-red-200 bg-red-50 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
               <CardContent className="p-6 flex items-center justify-center gap-3">
                 <X className="h-5 w-5 text-red-500" />
                 <p className="text-red-600 font-medium">
@@ -704,7 +715,8 @@ export function OrderDetailClient({
 
           <div className="space-y-6">
             {/* Order Items */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+              <div className="h-1.5 w-full bg-linear-to-r from-green-400 to-emerald-500" />
               <CardHeader className="border-b bg-slate-50/50">
                 <CardTitle className="text-base flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -937,7 +949,8 @@ export function OrderDetailClient({
 
             {/* Shipping Address */}
             {order.shipping_address && (
-              <Card className="overflow-hidden">
+              <Card className="overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                <div className="h-1.5 w-full bg-linear-to-r from-blue-400 to-indigo-500" />
                 <CardHeader className="border-b bg-slate-50/50">
                   <CardTitle className="text-base flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -1026,7 +1039,11 @@ export function OrderDetailClient({
 
             {/* Order Activity - Collapsible */}
             {statusHistory && statusHistory.length > 0 && (
-              <Card className="overflow-hidden" ref={timelineRef}>
+              <Card
+                className="overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400"
+                ref={timelineRef}
+              >
+                <div className="h-1.5 w-full bg-linear-to-r from-purple-400 to-fuchsia-500" />
                 <Collapsible
                   open={isHistoryOpen}
                   onOpenChange={setIsHistoryOpen}
@@ -1143,7 +1160,8 @@ export function OrderDetailClient({
 
             {/* Tracking Info */}
             {order.tracking_number && (
-              <Card className="overflow-hidden">
+              <Card className="overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
+                <div className="h-1.5 w-full bg-linear-to-r from-orange-400 to-amber-500" />
                 <CardHeader className="border-b bg-slate-50/50">
                   <CardTitle className="text-base flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
@@ -1224,7 +1242,8 @@ export function OrderDetailClient({
             )}
 
             {/* Email Notification Preferences */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
+              <div className="h-1.5 w-full bg-linear-to-r from-indigo-400 to-violet-500" />
               <CardHeader className="border-b bg-slate-50/50">
                 <CardTitle className="text-base flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -1270,6 +1289,46 @@ export function OrderDetailClient({
                 </div>
               </CardContent>
             </Card>
+
+            {/* Trust badges */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-700">
+              <div className="flex flex-col items-center gap-1 rounded-xl border bg-white p-3 text-center shadow-sm">
+                <ShieldCheck className="h-5 w-5 text-green-600" />
+                <span className="text-[10px] sm:text-xs font-medium text-slate-600">
+                  Secure Payment
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1 rounded-xl border bg-white p-3 text-center shadow-sm">
+                <RotateCcw className="h-5 w-5 text-purple-600" />
+                <span className="text-[10px] sm:text-xs font-medium text-slate-600">
+                  Easy Returns
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1 rounded-xl border bg-white p-3 text-center shadow-sm">
+                <Headphones className="h-5 w-5 text-blue-600" />
+                <span className="text-[10px] sm:text-xs font-medium text-slate-600">
+                  24/7 Support
+                </span>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex gap-3 justify-center flex-wrap pt-2 pb-4 animate-in fade-in duration-700 delay-700">
+              <Button
+                asChild
+                size="lg"
+                className={`gap-1.5 bg-linear-to-r ${
+                  isGift
+                    ? "from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                    : "from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                }`}
+              >
+                <Link href="/products">Continue Shopping</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/orders">Back to Orders</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
