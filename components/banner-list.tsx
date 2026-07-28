@@ -20,7 +20,7 @@ type BannerItem = {
 // Widths are the max viewport width (in px) each banner size applies to,
 // except desktop which applies from DESKTOP.minWidth upward.
 const BANNER_SIZES = {
-  mobile: { width: 800, height: 1000, maxWidth: 767 },
+  mobile: { width: 800, height: 835, maxWidth: 767 },
   tablet: { width: 1920, height: 700, minWidth: 768, maxWidth: 1023 },
   desktop: { width: 1920, height: 700, minWidth: 1024 },
 };
