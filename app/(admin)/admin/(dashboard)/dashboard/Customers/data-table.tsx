@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
 import { MoreHorizontalIcon, CheckCircle, XCircle } from "lucide-react";
 
 interface Customer {
@@ -41,34 +40,25 @@ export default function DataTable() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const limit = 10;
-  const supabase = createClient();
-
-  useEffect(() => {
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("customers")
-        .select("id", { count: "exact", head: true });
-      setTotalCount(count || 0);
-    };
-    fetchCount();
-  }, [supabase]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("customers")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(page * limit, page * limit + limit - 1);
-
-      if (!error && data) {
-        setData(data);
+      try {
+        const res = await fetch(
+          `/api/admin/customers?page=${page}&limit=${limit}`,
+        );
+        const json = await res.json();
+        if (res.ok) {
+          setData(json.customers || []);
+          setTotalCount(json.totalCount || 0);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchData();
-  }, [supabase, page]);
+  }, [page]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";

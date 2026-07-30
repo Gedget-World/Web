@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ArrowLeft,
   User,
   Phone,
@@ -26,6 +31,7 @@ import {
   ShoppingBag,
   Copy,
   Check,
+  ChevronRight,
 } from "lucide-react";
 
 interface Customer {
@@ -80,7 +86,7 @@ export default function CustomerDetailPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
-  const supabase = createClient();
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -90,45 +96,22 @@ export default function CustomerDetailPage() {
 
   useEffect(() => {
     const fetchCustomerData = async () => {
-      // Fetch customer
-      const { data: customerData, error: customerError } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("id", customerId)
-        .single();
+      try {
+        const res = await fetch(`/api/admin/customers?id=${customerId}`);
+        const json = await res.json();
 
-      if (!customerError && customerData) {
-        setCustomer(customerData);
-
-        // Fetch addresses
-        const { data: addressData } = await supabase
-          .from("addresses")
-          .select("*")
-          .eq("customer_id", customerId)
-          .order("is_default", { ascending: false });
-
-        if (addressData) {
-          setAddresses(addressData);
+        if (res.ok) {
+          setCustomer(json.customer);
+          setAddresses(json.addresses || []);
+          setOrders(json.orders || []);
         }
-
-        // Fetch orders for this user
-        const { data: orderData } = await supabase
-          .from("orders")
-          .select("id, total, status, created_at, customer_email")
-          .eq("user_id", customerData.user_id)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (orderData) {
-          setOrders(orderData);
-        }
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchCustomerData();
-  }, [supabase, customerId]);
+  }, [customerId]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -351,15 +334,18 @@ export default function CustomerDetailPage() {
         </CardHeader>
         <CardContent>
           {addresses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="divide-y border rounded-lg">
               {addresses.map((address) => (
-                <div
+                <button
                   key={address.id}
-                  className="border rounded-lg p-4 space-y-2"
+                  onClick={() => setSelectedAddress(address)}
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{address.full_name}</span>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">
+                        {address.full_name}
+                      </span>
                       {address.is_default && (
                         <Badge variant="outline">Default</Badge>
                       )}
@@ -373,91 +359,15 @@ export default function CustomerDetailPage() {
                         {address.type}
                       </Badge>
                     </div>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {address.address_line1}
+                      {address.address_line2 &&
+                        `, ${address.address_line2}`}, {address.city},{" "}
+                      {address.state} {address.postal_code}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {address.address_line1}
-                    {address.address_line2 && `, ${address.address_line2}`}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {address.city}, {address.state} {address.postal_code}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {address.country}
-                  </p>
-
-                  {/* Copy individual fields */}
-                  <div className="border-t pt-2 mt-2 space-y-1.5">
-                    {[
-                      { label: "Address Line 1", value: address.address_line1 },
-                      { label: "Address Line 2", value: address.address_line2 },
-                      { label: "City", value: address.city },
-                      { label: "State", value: address.state },
-                      { label: "Postal Code", value: address.postal_code },
-                      { label: "Country", value: address.country },
-                    ]
-                      .filter((field) => field.value)
-                      .map((field) => {
-                        const fieldKey = `address-${address.id}-${field.label}`;
-                        return (
-                          <div
-                            key={field.label}
-                            className="flex items-center justify-between gap-2"
-                          >
-                            <div className="min-w-0">
-                              <span className="text-xs text-muted-foreground">
-                                {field.label}
-                              </span>
-                              <p className="text-sm truncate">{field.value}</p>
-                            </div>
-                            <button
-                              onClick={() =>
-                                copyToClipboard(field.value as string, fieldKey)
-                              }
-                              className="p-1 hover:bg-gray-100 rounded transition-all shrink-0"
-                              title={`Copy ${field.label}`}
-                            >
-                              {copied === fieldKey ? (
-                                <Check className="h-3.5 w-3.5 text-green-500" />
-                              ) : (
-                                <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                              )}
-                            </button>
-                          </div>
-                        );
-                      })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => {
-                      const fullAddress = [
-                        address.address_line1,
-                        address.address_line2,
-                        address.city,
-                        address.state,
-                        address.postal_code,
-                        address.country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ");
-                      copyToClipboard(fullAddress, `address-${address.id}`);
-                    }}
-                  >
-                    {copied === `address-${address.id}` ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5 mr-1" />
-                        Copy Address
-                      </>
-                    )}
-                  </Button>
-                </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
               ))}
             </div>
           ) : (
@@ -465,6 +375,119 @@ export default function CustomerDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Address Details Dialog */}
+      <Dialog
+        open={!!selectedAddress}
+        onOpenChange={(open) => !open && setSelectedAddress(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Address Details</DialogTitle>
+          </DialogHeader>
+          {selectedAddress && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                {selectedAddress.is_default && (
+                  <Badge variant="outline">Default</Badge>
+                )}
+                <Badge
+                  className={
+                    selectedAddress.type === "shipping"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-purple-100 text-purple-800"
+                  }
+                >
+                  {selectedAddress.type}
+                </Badge>
+              </div>
+
+              <div className="space-y-1.5">
+                {[
+                  { label: "Full Name", value: selectedAddress.full_name },
+                  {
+                    label: "Address Line 1",
+                    value: selectedAddress.address_line1,
+                  },
+                  {
+                    label: "Address Line 2",
+                    value: selectedAddress.address_line2,
+                  },
+                  { label: "City", value: selectedAddress.city },
+                  { label: "State", value: selectedAddress.state },
+                  {
+                    label: "Postal Code",
+                    value: selectedAddress.postal_code,
+                  },
+                  { label: "Country", value: selectedAddress.country },
+                ]
+                  .filter((field) => field.value)
+                  .map((field) => {
+                    const fieldKey = `address-${selectedAddress.id}-${field.label}`;
+                    return (
+                      <div
+                        key={field.label}
+                        className="flex items-center justify-between gap-2 border-b pb-1.5 last:border-b-0"
+                      >
+                        <div className="min-w-0">
+                          <span className="text-xs text-muted-foreground">
+                            {field.label}
+                          </span>
+                          <p className="text-sm truncate">{field.value}</p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(field.value as string, fieldKey)
+                          }
+                          className="p-1 hover:bg-gray-100 rounded transition-all shrink-0"
+                          title={`Copy ${field.label}`}
+                        >
+                          {copied === fieldKey ? (
+                            <Check className="h-3.5 w-3.5 text-green-500" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const fullAddress = [
+                    selectedAddress.full_name,
+                    selectedAddress.address_line1,
+                    selectedAddress.address_line2,
+                    selectedAddress.city,
+                    selectedAddress.state,
+                    selectedAddress.postal_code,
+                    selectedAddress.country,
+                  ]
+                    .filter(Boolean)
+                    .join(", ");
+                  copyToClipboard(fullAddress, `address-${selectedAddress.id}`);
+                }}
+              >
+                {copied === `address-${selectedAddress.id}` ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    Copy Full Address
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Recent Orders */}
       <Card>

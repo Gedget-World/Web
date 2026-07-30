@@ -6,6 +6,15 @@ import {
   verifyCashfreeWebhookSignature,
 } from "@/lib/cashfree";
 
+// Maps Cashfree's raw payment status to our business-facing orders.status.
+// Unlike the old version, USER_DROPPED / VOID / FLAGGED no longer silently
+// collapse into "pending" indistinguishably from a brand-new order:
+//  - USER_DROPPED / FLAGGED / PENDING / NOT_ATTEMPTED: order stays
+//    "pending" (customer can still retry, or it needs manual review for
+//    FLAGGED) — the distinct signal lives in payment_status instead.
+//  - FAILED / TERMINATED / EXPIRED / VOID / CANCELLED: the payment attempt
+//    is dead, so the order moves to "payment_failed" (distinct from the
+//    user/admin-initiated "cancelled" status used by /api/orders/[id]/cancel).
 function mapCashfreeStatusToOrderStatus(status?: string) {
   const normalized = (status || "").toUpperCase();
 
@@ -18,10 +27,41 @@ function mapCashfreeStatusToOrderStatus(status?: string) {
     return "processing";
   }
 
-  if (["FAILED", "CANCELLED", "TERMINATED", "EXPIRED"].includes(normalized)) {
-    return "cancelled";
+  if (
+    ["FAILED", "TERMINATED", "EXPIRED", "VOID", "CANCELLED"].includes(
+      normalized,
+    )
+  ) {
+    return "payment_failed";
   }
 
+  // FLAGGED (held for risk review), USER_DROPPED, PENDING, NOT_ATTEMPTED
+  return "pending";
+}
+
+// Normalizes Cashfree's raw payment status (plus our own COD advance
+// concept) into the lowercase enum enforced by the
+// orders_payment_status_check constraint. This is what actually fixes the
+// "everything looks the same" problem — FLAGGED, USER_DROPPED and VOID
+// each get their own distinct, queryable value instead of being
+// overwritten with an ambiguous raw string.
+function mapCashfreePaymentStatus(
+  status: string | undefined,
+  isCod: boolean,
+): string {
+  const normalized = (status || "").toUpperCase();
+
+  if (["PAID", "CAPTURED", "SUCCESS"].includes(normalized)) {
+    return isCod ? "advance_paid" : "paid";
+  }
+  if (["FAILED", "TERMINATED", "EXPIRED"].includes(normalized)) {
+    return "failed";
+  }
+  if (normalized === "USER_DROPPED") return "user_dropped";
+  if (normalized === "VOID") return "void";
+  if (normalized === "FLAGGED") return "flagged";
+  if (normalized === "CANCELLED") return "cancelled";
+  // NOT_ATTEMPTED / PENDING / anything unrecognized
   return "pending";
 }
 
@@ -101,12 +141,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const mappedStatus = mapCashfreeStatusToOrderStatus(order_status);
-
-    // Load existing order to merge metadata + enforce idempotency.
+    // Load existing order to merge metadata + enforce idempotency, and to
+    // know whether this is a COD order (advance_paid) or a fully-online one
+    // (paid).
     const { data: existingOrder } = await supabase
       .from("orders")
-      .select("id, status, payment_status, metadata, paid_at")
+      .select("id, status, payment_status, payment_method, metadata, paid_at")
       .eq("id", order_id)
       .single();
 
@@ -116,11 +156,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, ignored: true });
     }
 
+    const isCod = existingOrder.payment_method === "cod";
+    const mappedStatus = mapCashfreeStatusToOrderStatus(order_status);
+    const mappedPaymentStatus = mapCashfreePaymentStatus(order_status, isCod);
+
     // Idempotency: skip if already in a terminal state matching this update.
     if (
       existingOrder.status === mappedStatus &&
-      existingOrder.payment_status === order_status &&
-      (mappedStatus === "processing" || mappedStatus === "cancelled")
+      existingOrder.payment_status === mappedPaymentStatus &&
+      (mappedStatus === "processing" || mappedStatus === "payment_failed")
     ) {
       return NextResponse.json({ success: true, duplicate: true });
     }
@@ -137,7 +181,7 @@ export async function POST(request: Request) {
     // Update order with normalized payment details
     const updatePayload: Record<string, any> = {
       status: mappedStatus,
-      payment_status: order_status,
+      payment_status: mappedPaymentStatus,
       payment_gateway: "cashfree",
       metadata: mergedMetadata,
     };
@@ -233,12 +277,19 @@ export async function GET(request: Request) {
         paymentStatus?.payment_status ||
         "PENDING";
       const mappedOrderStatus = mapCashfreeStatusToOrderStatus(cashfreeStatus);
+      const mappedPaymentStatus = mapCashfreePaymentStatus(
+        cashfreeStatus,
+        order.payment_method === "cod",
+      );
 
       // Keep DB order state in sync even if webhook is delayed/missed.
-      if (order.status !== mappedOrderStatus) {
+      if (
+        order.status !== mappedOrderStatus ||
+        order.payment_status !== mappedPaymentStatus
+      ) {
         const reconcilePayload: Record<string, any> = {
           status: mappedOrderStatus,
-          payment_status: cashfreeStatus,
+          payment_status: mappedPaymentStatus,
           payment_gateway: "cashfree",
           metadata: {
             ...(order.metadata || {}),

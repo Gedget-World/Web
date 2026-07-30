@@ -93,15 +93,71 @@ interface Order {
   order_items: OrderItem[];
 }
 
+// Full orders.status lifecycle (kept in sync with
+// scripts/029_expand_order_status_and_shipment_tracking.sql's
+// orders_status_check constraint).
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
+  payment_failed: "bg-orange-100 text-orange-800",
   processing: "bg-blue-100 text-blue-800",
+  packed: "bg-indigo-100 text-indigo-800",
   shipped: "bg-purple-100 text-purple-800",
+  out_for_delivery: "bg-cyan-100 text-cyan-800",
   delivered: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
+  return_requested: "bg-pink-100 text-pink-800",
+  return_approved: "bg-pink-100 text-pink-800",
+  return_rejected: "bg-red-100 text-red-800",
+  return_in_transit: "bg-pink-100 text-pink-800",
+  returned: "bg-gray-200 text-gray-800",
+  rto: "bg-rose-100 text-rose-800",
+  rto_received: "bg-rose-100 text-rose-800",
+  refunded: "bg-teal-100 text-teal-800",
 };
 
-const statusFlow = ["pending", "processing", "shipped", "delivered"];
+const formatStatusLabel = (status: string) =>
+  status
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+// The linear "happy path" the stepper/"move to next status" button walks
+// through. Branch/exception states (payment_failed, cancelled, returns,
+// rto, refunded) are handled separately below, not as stepper points.
+const statusFlow = [
+  "pending",
+  "processing",
+  "packed",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+];
+
+// Statuses where the order has left the normal fulfillment path — the
+// stepper is dimmed and a dedicated banner is shown instead of the
+// next-status/cancel actions.
+const OFF_TRACK_STATUSES = [
+  "payment_failed",
+  "cancelled",
+  "return_requested",
+  "return_approved",
+  "return_rejected",
+  "return_in_transit",
+  "returned",
+  "rto",
+  "rto_received",
+  "refunded",
+];
+
+// Terminal statuses: no further admin action (next-status/cancel) applies.
+const TERMINAL_STATUSES = [
+  "delivered",
+  "cancelled",
+  "returned",
+  "refunded",
+  "rto_received",
+  "return_rejected",
+];
 
 const getNextStatus = (currentStatus: string): string | null => {
   const currentIndex = statusFlow.indexOf(currentStatus);
@@ -110,9 +166,14 @@ const getNextStatus = (currentStatus: string): string | null => {
   return statusFlow[currentIndex + 1];
 };
 
-const canCancel = (currentStatus: string): boolean => {
-  return currentStatus === "pending";
-};
+const isTerminalStatus = (status: string): boolean =>
+  TERMINAL_STATUSES.includes(status);
+
+// Cancel stays available for as long as the order hasn't reached a
+// terminal state — in particular, all the way up to (but not including)
+// "delivered", not just from "pending" like before.
+const canCancel = (currentStatus: string): boolean =>
+  !isTerminalStatus(currentStatus);
 
 const getPaymentChannelLabel = (channel: string | null): string => {
   const value = (channel || "").toLowerCase();
@@ -200,6 +261,16 @@ export default function OrderDetailPage() {
     setUpdating(false);
   };
 
+  const handleCancelOrder = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to cancel this order? This cannot be undone.",
+      )
+    ) {
+      updateStatus("cancelled");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -248,7 +319,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
         <Badge className={statusColors[order.status] || "bg-gray-100"}>
-          {order.status}
+          {formatStatusLabel(order.status)}
         </Badge>
       </div>
 
@@ -481,62 +552,67 @@ export default function OrderDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Status Progress */}
-            <div className="flex items-center justify-between mb-4">
-              {statusFlow.map((status, index) => {
-                const currentIndex = statusFlow.indexOf(order.status);
-                const isCompleted =
-                  order.status !== "cancelled" && index < currentIndex;
-                const isCurrent = order.status === status;
-                const isCancelled = order.status === "cancelled";
+            {(() => {
+              const isOffTrack = OFF_TRACK_STATUSES.includes(order.status);
+              const currentIndex = statusFlow.indexOf(order.status);
+              return (
+                <div className="flex flex-wrap items-center gap-y-3 mb-4">
+                  {statusFlow.map((status, index) => {
+                    const isCompleted = !isOffTrack && index < currentIndex;
+                    const isCurrent = order.status === status;
 
-                return (
-                  <div key={status} className="flex items-center">
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                          isCancelled
-                            ? "bg-gray-200 text-gray-400"
-                            : isCompleted
-                              ? "bg-green-500 text-white"
-                              : isCurrent
-                                ? statusColors[status]
-                                : "bg-gray-200 text-gray-500"
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          index + 1
+                    return (
+                      <div key={status} className="flex items-center">
+                        <div className="flex flex-col items-center w-16">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                              isOffTrack
+                                ? "bg-gray-200 text-gray-400"
+                                : isCompleted
+                                  ? "bg-green-500 text-white"
+                                  : isCurrent
+                                    ? statusColors[status]
+                                    : "bg-gray-200 text-gray-500"
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              index + 1
+                            )}
+                          </div>
+                          <span
+                            className={`text-[11px] mt-1 text-center leading-tight ${isCurrent ? "font-semibold" : ""}`}
+                          >
+                            {formatStatusLabel(status)}
+                          </span>
+                        </div>
+                        {index < statusFlow.length - 1 && (
+                          <ChevronRight
+                            className={`h-4 w-4 mx-1 shrink-0 ${
+                              isCompleted ? "text-green-500" : "text-gray-300"
+                            }`}
+                          />
                         )}
                       </div>
-                      <span
-                        className={`text-xs mt-1 capitalize ${isCurrent ? "font-semibold" : ""}`}
-                      >
-                        {status}
-                      </span>
-                    </div>
-                    {index < statusFlow.length - 1 && (
-                      <ChevronRight
-                        className={`h-4 w-4 mx-1 ${
-                          isCompleted ? "text-green-500" : "text-gray-300"
-                        }`}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Current Status Badge */}
             <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
               <span className="text-sm text-gray-600">Current:</span>
               <Badge className={statusColors[order.status] || "bg-gray-100"}>
-                {order.status}
+                {formatStatusLabel(order.status)}
               </Badge>
             </div>
 
-            {/* Action Buttons */}
-            {order.status !== "delivered" && order.status !== "cancelled" && (
+            {/* Action Buttons — shown for any non-terminal status, so Cancel
+                stays available all the way up to (but not including)
+                "delivered", not just while "pending". */}
+            {!isTerminalStatus(order.status) && (
               <div className="space-y-2">
                 {getNextStatus(order.status) && (
                   <Button
@@ -549,8 +625,8 @@ export default function OrderDetailPage() {
                     ) : (
                       <>
                         Move to{" "}
-                        <span className="capitalize ml-1">
-                          {getNextStatus(order.status)}
+                        <span className="ml-1">
+                          {formatStatusLabel(getNextStatus(order.status)!)}
                         </span>
                         <ChevronRight className="h-4 w-4 ml-1" />
                       </>
@@ -562,7 +638,7 @@ export default function OrderDetailPage() {
                   <Button
                     variant="destructive"
                     className="w-full"
-                    onClick={() => updateStatus("cancelled")}
+                    onClick={handleCancelOrder}
                     disabled={updating}
                   >
                     <X className="h-4 w-4 mr-1" />
@@ -586,6 +662,19 @@ export default function OrderDetailPage() {
                 <X className="h-5 w-5 text-red-600 mx-auto mb-1" />
                 <p className="text-sm text-red-700 font-medium">
                   Order Cancelled
+                </p>
+              </div>
+            )}
+
+            {[
+              "returned",
+              "refunded",
+              "rto_received",
+              "return_rejected",
+            ].includes(order.status) && (
+              <div className="p-3 bg-gray-100 rounded-lg text-center">
+                <p className="text-sm text-gray-700 font-medium">
+                  {formatStatusLabel(order.status)}
                 </p>
               </div>
             )}
@@ -835,11 +924,19 @@ export default function OrderDetailPage() {
                 <strong>Payment Status:</strong>{" "}
                 <Badge
                   className={
-                    order.payment_status.toUpperCase() === "PAID" ||
-                    order.payment_status.toUpperCase() === "SUCCESS" ||
-                    order.payment_status.toUpperCase() === "CAPTURED"
+                    ["paid", "advance_paid", "cod_collected"].includes(
+                      order.payment_status,
+                    )
                       ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
+                      : ["failed", "void", "cancelled"].includes(
+                            order.payment_status,
+                          )
+                        ? "bg-red-100 text-red-800"
+                        : ["flagged", "user_dropped"].includes(
+                              order.payment_status,
+                            )
+                          ? "bg-orange-100 text-orange-800"
+                          : "bg-yellow-100 text-yellow-800"
                   }
                 >
                   {order.payment_status.toUpperCase()}

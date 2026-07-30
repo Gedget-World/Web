@@ -45,6 +45,8 @@ import {
   Tag,
   AlertCircle,
   PackageCheck,
+  PackageX,
+  Navigation,
   Home,
   X,
   Sparkles,
@@ -239,13 +241,27 @@ export function OrderDetailClient({
     }
   };
 
+  // Full orders.status lifecycle (kept in sync with
+  // scripts/029_expand_order_status_and_shipment_tracking.sql's
+  // orders_status_check constraint).
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: "from-amber-500 to-orange-500",
+      payment_failed: "from-red-500 to-rose-500",
       processing: "from-blue-500 to-indigo-500",
+      packed: "from-indigo-500 to-violet-500",
       shipped: "from-purple-500 to-pink-500",
+      out_for_delivery: "from-cyan-500 to-blue-500",
       delivered: "from-green-500 to-emerald-500",
       cancelled: "from-red-500 to-rose-500",
+      return_requested: "from-pink-500 to-rose-500",
+      return_approved: "from-pink-500 to-rose-500",
+      return_rejected: "from-red-500 to-rose-500",
+      return_in_transit: "from-pink-500 to-rose-500",
+      returned: "from-slate-500 to-gray-500",
+      rto: "from-rose-500 to-red-500",
+      rto_received: "from-rose-500 to-red-500",
+      refunded: "from-teal-500 to-cyan-500",
     };
     return colors[status] || colors.pending;
   };
@@ -253,10 +269,21 @@ export function OrderDetailClient({
   const getStatusBgColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: "bg-amber-100 text-amber-700 border-amber-200",
+      payment_failed: "bg-red-100 text-red-700 border-red-200",
       processing: "bg-blue-100 text-blue-700 border-blue-200",
+      packed: "bg-indigo-100 text-indigo-700 border-indigo-200",
       shipped: "bg-purple-100 text-purple-700 border-purple-200",
+      out_for_delivery: "bg-cyan-100 text-cyan-700 border-cyan-200",
       delivered: "bg-green-100 text-green-700 border-green-200",
       cancelled: "bg-red-100 text-red-700 border-red-200",
+      return_requested: "bg-pink-100 text-pink-700 border-pink-200",
+      return_approved: "bg-pink-100 text-pink-700 border-pink-200",
+      return_rejected: "bg-red-100 text-red-700 border-red-200",
+      return_in_transit: "bg-pink-100 text-pink-700 border-pink-200",
+      returned: "bg-slate-200 text-slate-700 border-slate-300",
+      rto: "bg-rose-100 text-rose-700 border-rose-200",
+      rto_received: "bg-rose-100 text-rose-700 border-rose-200",
+      refunded: "bg-teal-100 text-teal-700 border-teal-200",
     };
     return colors[status] || colors.pending;
   };
@@ -264,13 +291,30 @@ export function OrderDetailClient({
   const getStatusIcon = (status: string) => {
     const icons: Record<string, React.ReactNode> = {
       pending: <Clock className="h-4 w-4" />,
+      payment_failed: <X className="h-4 w-4" />,
       processing: <Package className="h-4 w-4" />,
+      packed: <PackageCheck className="h-4 w-4" />,
       shipped: <Truck className="h-4 w-4" />,
+      out_for_delivery: <Navigation className="h-4 w-4" />,
       delivered: <CheckCircle2 className="h-4 w-4" />,
       cancelled: <X className="h-4 w-4" />,
+      return_requested: <RotateCcw className="h-4 w-4" />,
+      return_approved: <RotateCcw className="h-4 w-4" />,
+      return_rejected: <X className="h-4 w-4" />,
+      return_in_transit: <RotateCcw className="h-4 w-4" />,
+      returned: <PackageX className="h-4 w-4" />,
+      rto: <RotateCcw className="h-4 w-4" />,
+      rto_received: <RotateCcw className="h-4 w-4" />,
+      refunded: <Banknote className="h-4 w-4" />,
     };
     return icons[status] || icons.pending;
   };
+
+  const formatStatusLabel = (status: string) =>
+    status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 
   const getEstimatedDelivery = () => {
     const orderDate = new Date(order.created_at);
@@ -282,8 +326,14 @@ export function OrderDetailClient({
       case "processing":
         deliveryDate.setDate(orderDate.getDate() + 5);
         break;
+      case "packed":
+        deliveryDate.setDate(orderDate.getDate() + 4);
+        break;
       case "shipped":
         deliveryDate.setDate(orderDate.getDate() + 3);
+        break;
+      case "out_for_delivery":
+        deliveryDate.setDate(orderDate.getDate() + 1);
         break;
       case "delivered":
         return null;
@@ -326,9 +376,40 @@ export function OrderDetailClient({
     0,
   );
 
-  const statusOrder = ["pending", "processing", "shipped", "delivered"];
+  const statusOrder = [
+    "pending",
+    "processing",
+    "packed",
+    "shipped",
+    "out_for_delivery",
+    "delivered",
+  ];
   const currentIndex = statusOrder.indexOf(order.status);
   const estimatedDelivery = getEstimatedDelivery();
+
+  // Statuses where the order has left the normal fulfillment path — the
+  // step timeline doesn't apply and a dedicated banner is shown instead.
+  const OFF_TRACK_STATUSES = [
+    "payment_failed",
+    "cancelled",
+    "return_requested",
+    "return_approved",
+    "return_rejected",
+    "return_in_transit",
+    "returned",
+    "rto",
+    "rto_received",
+    "refunded",
+  ];
+  const isOffTrackStatus = OFF_TRACK_STATUSES.includes(order.status);
+
+  // Customer can cancel any time before the order actually ships.
+  const canCancelOrder = [
+    "pending",
+    "payment_failed",
+    "processing",
+    "packed",
+  ].includes(order.status);
 
   if (isLoading) {
     return <OrderDetailSkeleton />;
@@ -372,7 +453,9 @@ export function OrderDetailClient({
               <div className="flex items-center gap-3">
                 <Badge className={`${getStatusBgColor(order.status)} border`}>
                   {getStatusIcon(order.status)}
-                  <span className="ml-1 capitalize">{order.status}</span>
+                  <span className="ml-1">
+                    {formatStatusLabel(order.status)}
+                  </span>
                 </Badge>
                 <span className="text-sm font-medium text-slate-700">
                   #{order.id.slice(0, 8).toUpperCase()}
@@ -421,10 +504,10 @@ export function OrderDetailClient({
                     ) : (
                       getStatusIcon(order.status)
                     )}
-                    <span className="font-semibold capitalize">
+                    <span className="font-semibold">
                       {order.status === "delivered"
                         ? "Order Delivered! 🎉"
-                        : `Order ${order.status}`}
+                        : `Order ${formatStatusLabel(order.status)}`}
                     </span>
                   </div>
 
@@ -464,7 +547,7 @@ export function OrderDetailClient({
                   </p>
 
                   {/* Estimated Delivery */}
-                  {estimatedDelivery && order.status !== "cancelled" && (
+                  {estimatedDelivery && !isOffTrackStatus && (
                     <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
                       <Clock3 className="h-4 w-4" />
                       <span className="text-sm">
@@ -480,19 +563,34 @@ export function OrderDetailClient({
                     </div>
                   )}
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2">
-                  {order.status === "pending" && (
-                    <CancelOrderButton orderId={order.id} />
-                  )}
-                </div>
               </div>
             </div>
           </div>
 
+          {/* Cancel Order — available any time before the order ships,
+              shown as its own card below the hero banner instead of
+              cramped inside it. */}
+          {canCancelOrder && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50/60 px-4 py-3 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <X className="h-4 w-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">
+                    Need to cancel?
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    You can cancel this order anytime before it ships.
+                  </p>
+                </div>
+              </div>
+              <CancelOrderButton orderId={order.id} />
+            </div>
+          )}
+
           {/* Order Progress Timeline - Desktop */}
-          {order.status !== "cancelled" && (
+          {!isOffTrackStatus && (
             <Card className="mb-8 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
               <CardContent className="p-6">
                 {/* Desktop Timeline */}
@@ -504,7 +602,7 @@ export function OrderDetailClient({
                     <div
                       className={`absolute top-5 left-0 h-1.5 bg-linear-to-r ${getStatusColor(order.status)} rounded-full transition-all duration-1000 ease-out`}
                       style={{
-                        width: `${(currentIndex / 3) * 100}%`,
+                        width: `${(currentIndex / (statusOrder.length - 1)) * 100}%`,
                       }}
                     >
                       {/* Pulse effect */}
@@ -543,13 +641,15 @@ export function OrderDetailClient({
                                       : "text-slate-400"
                                   }`}
                                 >
-                                  {step.charAt(0).toUpperCase() + step.slice(1)}
+                                  {formatStatusLabel(step)}
                                 </span>
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="bottom" className="max-w-xs">
                               <div className="text-center">
-                                <p className="font-medium capitalize">{step}</p>
+                                <p className="font-medium">
+                                  {formatStatusLabel(step)}
+                                </p>
                                 {stepHistory ? (
                                   <p className="text-xs text-slate-500 mt-1">
                                     {new Date(
@@ -643,7 +743,7 @@ export function OrderDetailClient({
                                         : "text-slate-400"
                                   }`}
                                 >
-                                  {step.charAt(0).toUpperCase() + step.slice(1)}
+                                  {formatStatusLabel(step)}
                                 </p>
                                 {isCurrent && (
                                   <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 animate-pulse">
@@ -663,7 +763,11 @@ export function OrderDetailClient({
                                   "Order received & being reviewed"}
                                 {step === "processing" &&
                                   "Preparing your order"}
+                                {step === "packed" &&
+                                  "Packed and ready to ship"}
                                 {step === "shipped" && "On the way to you"}
+                                {step === "out_for_delivery" &&
+                                  "Out for delivery, arriving soon"}
                                 {step === "delivered" &&
                                   "Successfully delivered"}
                               </p>
@@ -700,7 +804,7 @@ export function OrderDetailClient({
 
                   {/* Estimated Delivery Card for Mobile */}
                   {estimatedDelivery &&
-                    order.status !== "cancelled" &&
+                    !isOffTrackStatus &&
                     order.status !== "delivered" && (
                       <div className="mt-5 p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
                         <div className="flex items-center gap-3">
@@ -753,6 +857,37 @@ export function OrderDetailClient({
                 <X className="h-5 w-5 text-red-500" />
                 <p className="text-red-600 font-medium">
                   This order has been cancelled
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {order.status === "payment_failed" && (
+            <Card className="mb-8 border-orange-200 bg-orange-50 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+              <CardContent className="p-6 flex items-center justify-center gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-500" />
+                <p className="text-orange-600 font-medium">
+                  Payment failed for this order
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {[
+            "return_requested",
+            "return_approved",
+            "return_rejected",
+            "return_in_transit",
+            "returned",
+            "rto",
+            "rto_received",
+            "refunded",
+          ].includes(order.status) && (
+            <Card className="mb-8 border-slate-200 bg-slate-50 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+              <CardContent className="p-6 flex items-center justify-center gap-3">
+                {getStatusIcon(order.status)}
+                <p className="text-slate-700 font-medium">
+                  {formatStatusLabel(order.status)}
                 </p>
               </CardContent>
             </Card>
@@ -1304,13 +1439,13 @@ export function OrderDetailClient({
                             <div className="flex-1 pb-6">
                               <div className="flex items-center gap-2">
                                 <p
-                                  className={`font-medium text-sm capitalize ${
+                                  className={`font-medium text-sm ${
                                     index === 0
                                       ? "text-green-600"
                                       : "text-slate-700"
                                   }`}
                                 >
-                                  {history.status}
+                                  {formatStatusLabel(history.status)}
                                 </p>
                                 {index === 0 && (
                                   <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200">

@@ -30,6 +30,9 @@ import {
   IndianRupee,
   Filter,
   PackageX,
+  AlertTriangle,
+  PackageCheck,
+  Navigation,
 } from "lucide-react";
 
 type Order = {
@@ -65,11 +68,33 @@ interface OrdersClientProps {
 const STATUS_FILTERS = [
   { value: "all", label: "All Orders", icon: Package },
   { value: "pending", label: "Pending", icon: Clock },
+  { value: "payment_failed", label: "Payment Failed", icon: AlertTriangle },
   { value: "processing", label: "Processing", icon: RefreshCw },
+  { value: "packed", label: "Packed", icon: PackageCheck },
   { value: "shipped", label: "Shipped", icon: Truck },
+  { value: "out_for_delivery", label: "Out for Delivery", icon: Navigation },
   { value: "delivered", label: "Delivered", icon: CheckCircle2 },
+  { value: "returns", label: "Returns", icon: RotateCcw },
+  { value: "refunded", label: "Refunded", icon: IndianRupee },
   { value: "cancelled", label: "Cancelled", icon: XCircle },
 ];
+
+// Statuses grouped under the single "Returns" filter pill/badge.
+const RETURN_STATUSES = [
+  "return_requested",
+  "return_approved",
+  "return_rejected",
+  "return_in_transit",
+  "returned",
+  "rto",
+  "rto_received",
+];
+
+const formatStatusLabel = (status: string) =>
+  status
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest First" },
@@ -104,7 +129,9 @@ export function OrdersClient({
     let result = [...orders];
 
     // Status filter
-    if (statusFilter !== "all") {
+    if (statusFilter === "returns") {
+      result = result.filter((order) => RETURN_STATUSES.includes(order.status));
+    } else if (statusFilter !== "all") {
       result = result.filter((order) => order.status === statusFilter);
     }
 
@@ -168,14 +195,33 @@ export function OrdersClient({
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "payment_failed":
+        return "bg-orange-100 text-orange-800 border-orange-200";
       case "processing":
         return "bg-blue-100 text-blue-800 border-blue-200";
+      case "packed":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
       case "shipped":
         return "bg-purple-100 text-purple-800 border-purple-200";
+      case "out_for_delivery":
+        return "bg-cyan-100 text-cyan-800 border-cyan-200";
       case "delivered":
         return "bg-green-100 text-green-800 border-green-200";
       case "cancelled":
         return "bg-red-100 text-red-800 border-red-200";
+      case "return_requested":
+      case "return_approved":
+      case "return_in_transit":
+        return "bg-pink-100 text-pink-800 border-pink-200";
+      case "return_rejected":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "returned":
+        return "bg-slate-200 text-slate-800 border-slate-300";
+      case "rto":
+      case "rto_received":
+        return "bg-rose-100 text-rose-800 border-rose-200";
+      case "refunded":
+        return "bg-teal-100 text-teal-800 border-teal-200";
       default:
         return "bg-slate-100 text-slate-800 border-slate-200";
     }
@@ -185,14 +231,33 @@ export function OrdersClient({
     switch (status) {
       case "pending":
         return "border-l-yellow-500";
+      case "payment_failed":
+        return "border-l-orange-500";
       case "processing":
         return "border-l-blue-500";
+      case "packed":
+        return "border-l-indigo-500";
       case "shipped":
         return "border-l-purple-500";
+      case "out_for_delivery":
+        return "border-l-cyan-500";
       case "delivered":
         return "border-l-green-500";
       case "cancelled":
         return "border-l-red-500";
+      case "return_requested":
+      case "return_approved":
+      case "return_in_transit":
+        return "border-l-pink-500";
+      case "return_rejected":
+        return "border-l-red-500";
+      case "returned":
+        return "border-l-slate-400";
+      case "rto":
+      case "rto_received":
+        return "border-l-rose-500";
+      case "refunded":
+        return "border-l-teal-500";
       default:
         return "border-l-slate-500";
     }
@@ -202,14 +267,33 @@ export function OrdersClient({
     switch (status) {
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-600" />;
+      case "payment_failed":
+        return <AlertTriangle className="h-4 w-4 text-orange-600" />;
       case "processing":
         return <RefreshCw className="h-4 w-4 text-blue-600" />;
+      case "packed":
+        return <PackageCheck className="h-4 w-4 text-indigo-600" />;
       case "shipped":
         return <Truck className="h-4 w-4 text-purple-600" />;
+      case "out_for_delivery":
+        return <Navigation className="h-4 w-4 text-cyan-600" />;
       case "delivered":
         return <CheckCircle2 className="h-4 w-4 text-green-600" />;
       case "cancelled":
         return <XCircle className="h-4 w-4 text-red-600" />;
+      case "return_requested":
+      case "return_approved":
+      case "return_in_transit":
+        return <RotateCcw className="h-4 w-4 text-pink-600" />;
+      case "return_rejected":
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      case "returned":
+        return <PackageX className="h-4 w-4 text-slate-600" />;
+      case "rto":
+      case "rto_received":
+        return <RotateCcw className="h-4 w-4 text-rose-600" />;
+      case "refunded":
+        return <IndianRupee className="h-4 w-4 text-teal-600" />;
       default:
         return <Package className="h-4 w-4 text-slate-600" />;
     }
@@ -379,8 +463,7 @@ export function OrdersClient({
                           variant="outline"
                           className={`text-xs ${getStatusColor(order.status)}`}
                         >
-                          {order.status.charAt(0).toUpperCase() +
-                            order.status.slice(1)}
+                          {formatStatusLabel(order.status)}
                         </Badge>
                       </div>
                       <p className="text-xs text-slate-500">
