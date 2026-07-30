@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useCart } from "@/hooks/use-cart";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -27,18 +24,12 @@ import {
   Clock,
   XCircle,
   RefreshCw,
-  Star,
-  AlertTriangle,
   RotateCcw,
   ArrowUpDown,
   Calendar,
-  TrendingUp,
   IndianRupee,
-  PackageCheck,
-  Eye,
   Filter,
   PackageX,
-  Timer,
 } from "lucide-react";
 
 type Order = {
@@ -64,9 +55,6 @@ type Order = {
 
 interface OrdersClientProps {
   orders: Order[];
-  totalOrders: number;
-  totalSpent: number;
-  inTransitCount: number;
   deliveredThisMonth: number;
   pendingReviewCount: number;
   currencySymbol: string;
@@ -100,9 +88,6 @@ const DATE_FILTERS = [
 
 export function OrdersClient({
   orders,
-  totalOrders,
-  totalSpent,
-  inTransitCount,
   deliveredThisMonth,
   pendingReviewCount,
   currencySymbol,
@@ -113,50 +98,6 @@ export function OrdersClient({
   const [sortBy, setSortBy] = useState("newest");
   const [dateFilter, setDateFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [reorderingId, setReorderingId] = useState<string | null>(null);
-
-  const { addItem } = useCart();
-  const { toast } = useToast();
-
-  const handleReorder = (order: Order) => {
-    setReorderingId(order.id);
-    let addedCount = 0;
-    let failedCount = 0;
-
-    for (const item of order.order_items) {
-      if (item.products) {
-        for (let i = 0; i < item.quantity; i++) {
-          const success = addItem({
-            id: item.products.id,
-            name: item.products.name,
-            price: item.products.price,
-            image_url: item.products.image_url,
-            stock: item.products.stock,
-          });
-          if (success) {
-            addedCount++;
-          } else {
-            failedCount++;
-          }
-        }
-      }
-    }
-
-    setReorderingId(null);
-
-    if (addedCount > 0) {
-      toast({
-        title: "Items added to cart",
-        description: `${addedCount} item${addedCount > 1 ? "s" : ""} added to your cart${failedCount > 0 ? `. ${failedCount} item${failedCount > 1 ? "s" : ""} couldn't be added (out of stock).` : "."}`,
-      });
-    } else {
-      toast({
-        title: "Unable to reorder",
-        description: "All items are currently out of stock.",
-        variant: "destructive",
-      });
-    }
-  };
 
   // Filter and sort orders
   const filteredOrders = useMemo(() => {
@@ -223,8 +164,6 @@ export function OrdersClient({
     return result;
   }, [orders, statusFilter, sortBy, dateFilter, searchQuery]);
 
-  const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -276,23 +215,6 @@ export function OrdersClient({
     }
   };
 
-  const getProgressValue = (status: string) => {
-    switch (status) {
-      case "pending":
-        return 25;
-      case "processing":
-        return 50;
-      case "shipped":
-        return 75;
-      case "delivered":
-        return 100;
-      case "cancelled":
-        return 0;
-      default:
-        return 0;
-    }
-  };
-
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-IN", {
       month: "short",
@@ -301,36 +223,14 @@ export function OrdersClient({
     });
   };
 
-  const getEstimatedDelivery = (order: Order) => {
-    if (order.status === "delivered" || order.status === "cancelled")
-      return null;
-    if (order.estimated_delivery) return new Date(order.estimated_delivery);
-    // Mock: 5-7 days from order date
-    const orderDate = new Date(order.created_at);
-    orderDate.setDate(orderDate.getDate() + 5);
-    return orderDate;
-  };
-
-  const isReturnWindowClosing = (order: Order) => {
-    if (order.status !== "delivered") return false;
-    const deliveredDate = new Date(order.created_at); // Assuming delivered same day for mock
-    const daysSinceDelivery = Math.floor(
-      (Date.now() - deliveredDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
-    return daysSinceDelivery >= 25 && daysSinceDelivery <= 30;
-  };
-
-  // Mini sparkline data (mock)
-  const sparklineData = [30, 45, 35, 50, 40, 60, 55];
-
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-white">
       <div className="container max-w-4xl mx-auto py-6 md:py-12 px-4 md:px-8">
         {/* Gradient Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-indigo-600 via-purple-600 to-pink-500 p-6 md:p-8 mb-8 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-indigo-600 via-purple-600 to-pink-500 p-4 md:p-5 mb-4 text-white">
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
           <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4">
               <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <ShoppingBag className="h-7 w-7" />
               </div>
@@ -341,128 +241,10 @@ export function OrdersClient({
                 </p>
               </div>
             </div>
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <p className="text-xs text-white/70">Total Orders</p>
-                <p className="text-xl font-bold">{totalOrders}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <p className="text-xs text-white/70">Total Spent</p>
-                <p className="text-xl font-bold">
-                  {currencySymbol}
-                  {totalSpent.toLocaleString("en-IN")}
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <p className="text-xs text-white/70">Avg Order Value</p>
-                <p className="text-xl font-bold">
-                  {currencySymbol}
-                  {Math.round(avgOrderValue).toLocaleString("en-IN")}
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <p className="text-xs text-white/70">In Transit</p>
-                <p className="text-xl font-bold">{inTransitCount}</p>
-              </div>
-            </div>
           </div>
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                <Package className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {totalOrders}
-                </p>
-                <p className="text-xs text-slate-500">Total Orders</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <Truck className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {inTransitCount}
-                </p>
-                <p className="text-xs text-slate-500">In Transit</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                <PackageCheck className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">
-                  {deliveredThisMonth}
-                </p>
-                <p className="text-xs text-slate-500">Delivered</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all hover:-translate-y-0.5 border-slate-200">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <Star className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="flex items-center gap-2">
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {pendingReviewCount}
-                  </p>
-                  <p className="text-xs text-slate-500">To Review</p>
-                </div>
-                {pendingReviewCount > 0 && (
-                  <Badge className="bg-amber-500 text-white text-[10px] h-5">
-                    New
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Monthly Spending Mini Chart */}
-        <Card className="mb-6 border-slate-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-slate-600" />
-                <span className="font-medium text-slate-900">
-                  Monthly Spending
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Mini Sparkline */}
-                <div className="flex items-end gap-0.5 h-8">
-                  {sparklineData.map((value, i) => (
-                    <div
-                      key={i}
-                      className="w-2 bg-linear-to-t from-indigo-500 to-purple-500 rounded-t"
-                      style={{ height: `${value}%` }}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-semibold text-green-600">
-                  +12%
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Filters Section */}
         <div className="space-y-4 mb-6">
@@ -573,232 +355,45 @@ export function OrdersClient({
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden bg-white">
             {filteredOrders.map((order) => {
               const itemCount = order.order_items.reduce(
                 (sum, item) => sum + item.quantity,
                 0,
               );
-              const firstProduct = order.order_items[0]?.products;
-              const estimatedDelivery = getEstimatedDelivery(order);
-              const returnWindowClosing = isReturnWindowClosing(order);
-              const progressValue = getProgressValue(order.status);
 
               return (
-                <Card
+                <Link
                   key={order.id}
-                  className={`hover:shadow-lg transition-all hover:-translate-y-0.5 border-l-4 ${getStatusBorderColor(order.status)} overflow-hidden group`}
+                  href={`/orders/${order.id}`}
+                  className={`flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-l-4 ${getStatusBorderColor(order.status)}`}
                 >
-                  <CardContent className="p-0">
-                    {/* Return Window Alert */}
-                    {returnWindowClosing && (
-                      <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        <span className="text-xs text-amber-800 font-medium">
-                          Return window closing soon! Only a few days left.
+                  <div className="flex items-center gap-3 min-w-0">
+                    {getStatusIcon(order.status)}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900 text-sm">
+                          #{order.id.slice(0, 8).toUpperCase()}
                         </span>
-                      </div>
-                    )}
-
-                    {/* Review Pending Badge */}
-                    {order.has_pending_review && (
-                      <div className="bg-indigo-50 border-b border-indigo-200 px-4 py-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Star className="h-4 w-4 text-indigo-600" />
-                          <span className="text-xs text-indigo-800 font-medium">
-                            Review this order and earn rewards!
-                          </span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs text-indigo-600"
-                          asChild
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${getStatusColor(order.status)}`}
                         >
-                          <Link href={`/orders/${order.id}`}>Write Review</Link>
-                        </Button>
+                          {order.status.charAt(0).toUpperCase() +
+                            order.status.slice(1)}
+                        </Badge>
                       </div>
-                    )}
-
-                    <div className="p-4">
-                      <div className="flex flex-col gap-4">
-                        {/* Order Header */}
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(order.status)}
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-slate-900">
-                                  #{order.id.slice(0, 8).toUpperCase()}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${getStatusColor(order.status)}`}
-                                >
-                                  {order.status.charAt(0).toUpperCase() +
-                                    order.status.slice(1)}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-slate-500">
-                                {formatDate(order.created_at)} · {itemCount}{" "}
-                                item
-                                {itemCount !== 1 ? "s" : ""}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-bold text-slate-900 text-lg">
-                              {currencySymbol}
-                              {Number(order.total).toLocaleString("en-IN")}
-                            </span>
-                            {estimatedDelivery && (
-                              <div className="flex items-center gap-1 mt-1 justify-end">
-                                <Timer className="h-3 w-3 text-slate-400" />
-                                <span className="text-xs text-slate-500">
-                                  Est.{" "}
-                                  {estimatedDelivery.toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      month: "short",
-                                      day: "numeric",
-                                    },
-                                  )}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Progress Tracker */}
-                        {order.status !== "cancelled" && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-slate-500">
-                              <span
-                                className={
-                                  progressValue >= 25
-                                    ? "text-indigo-600 font-medium"
-                                    : ""
-                                }
-                              >
-                                Ordered
-                              </span>
-                              <span
-                                className={
-                                  progressValue >= 50
-                                    ? "text-indigo-600 font-medium"
-                                    : ""
-                                }
-                              >
-                                Processing
-                              </span>
-                              <span
-                                className={
-                                  progressValue >= 75
-                                    ? "text-indigo-600 font-medium"
-                                    : ""
-                                }
-                              >
-                                Shipped
-                              </span>
-                              <span
-                                className={
-                                  progressValue >= 100
-                                    ? "text-green-600 font-medium"
-                                    : ""
-                                }
-                              >
-                                Delivered
-                              </span>
-                            </div>
-                            <Progress
-                              value={progressValue}
-                              className="h-2 bg-slate-100 *:bg-linear-to-r *:from-indigo-500 *:to-purple-500"
-                            />
-                          </div>
-                        )}
-
-                        {/* Product Preview */}
-                        <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
-                          <div className="flex -space-x-2">
-                            {order.order_items.slice(0, 3).map((item) => (
-                              <div
-                                key={item.id}
-                                className="relative h-12 w-12 rounded-lg overflow-hidden bg-white border-2 border-white shadow-sm"
-                              >
-                                <img
-                                  src={
-                                    item.products?.image_url ||
-                                    "/placeholder.svg"
-                                  }
-                                  alt={item.products?.name || "Product"}
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
-                            ))}
-                            {order.order_items.length > 3 && (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-200 border-2 border-white text-xs font-medium text-slate-600">
-                                +{order.order_items.length - 3}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">
-                              {firstProduct?.name || "Product"}
-                            </p>
-                            {order.order_items.length > 1 && (
-                              <p className="text-xs text-slate-500">
-                                +{order.order_items.length - 1} more item
-                                {order.order_items.length > 2 ? "s" : ""}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            asChild
-                          >
-                            <Link href={`/orders/${order.id}`}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              View Details
-                            </Link>
-                          </Button>
-
-                          {order.status === "shipped" && (
-                            <Button
-                              size="sm"
-                              className="flex-1 bg-purple-600 hover:bg-purple-700"
-                            >
-                              <Truck className="h-4 w-4 mr-1" />
-                              Track Order
-                            </Button>
-                          )}
-
-                          {order.status === "delivered" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleReorder(order)}
-                              disabled={reorderingId === order.id}
-                            >
-                              <RefreshCw
-                                className={`h-4 w-4 mr-1 ${reorderingId === order.id ? "animate-spin" : ""}`}
-                              />
-                              {reorderingId === order.id
-                                ? "Adding..."
-                                : "Reorder"}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                      <p className="text-xs text-slate-500">
+                        {formatDate(order.created_at)} · {itemCount} item
+                        {itemCount !== 1 ? "s" : ""}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <span className="font-bold text-slate-900 shrink-0">
+                    {currencySymbol}
+                    {Number(order.total).toLocaleString("en-IN")}
+                  </span>
+                </Link>
               );
             })}
           </div>

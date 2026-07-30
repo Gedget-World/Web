@@ -68,20 +68,6 @@ export default async function OrdersPage({
       currentPage * ORDERS_PER_PAGE - 1,
     );
 
-  // Calculate total spent
-  const { data: allOrders } = await supabase
-    .from("orders")
-    .select("total, status")
-    .eq("user_id", user.id)
-    .neq("status", "cancelled");
-
-  const totalSpent =
-    allOrders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
-
-  // Count in-transit orders
-  const inTransitCount =
-    allOrders?.filter((o) => o.status === "shipped").length || 0;
-
   // Count delivered this month
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -129,9 +115,6 @@ export default async function OrdersPage({
   return (
     <OrdersClient
       orders={ordersWithReviewStatus as any}
-      totalOrders={totalOrders || 0}
-      totalSpent={totalSpent}
-      inTransitCount={inTransitCount}
       deliveredThisMonth={deliveredThisMonth || 0}
       pendingReviewCount={pendingReviewCount}
       currencySymbol={currencySymbol}
