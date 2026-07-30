@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       status,
       customer_name,
       customer_email,
+      customer_phone,
       shipping_address,
       shipping_city,
       shipping_postal_code,
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
       gift_message,
       hide_prices,
       gift_wrap,
+      delivery_notes,
     } = body;
 
     // Get customer_id from customers table or create if doesn't exist
@@ -72,7 +74,20 @@ export async function POST(request: Request) {
     // Gift-related fields: recompute the wrap charge server-side rather
     // than trusting the client-supplied value, and clamp the message length.
     const isGift = Boolean(is_gift);
-    const giftWrapCharge = isGift && gift_wrap ? 50 : 0;
+    const giftWrapCharge = isGift && gift_wrap ? 89 : 0;
+
+    // COD orders require a 20% advance payment online, with the remaining
+    // 80% collected as cash on delivery. Always recompute this split
+    // server-side from `total` — never trust a client-supplied split, since
+    // that would let a malicious client shrink the mandatory online advance.
+    const isCod = paymentMethod === "cod";
+    const ADVANCE_PERCENT = 0.2;
+    const advanceAmount = isCod
+      ? Math.round(Number(total) * ADVANCE_PERCENT * 100) / 100
+      : null;
+    const codAmount = isCod
+      ? Math.round((Number(total) - (advanceAmount || 0)) * 100) / 100
+      : null;
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -84,6 +99,7 @@ export async function POST(request: Request) {
         status: status || "pending",
         customer_name,
         customer_email,
+        customer_phone: customer_phone || null,
         shipping_address,
         shipping_city,
         shipping_postal_code,
@@ -91,7 +107,9 @@ export async function POST(request: Request) {
         discount_amount: discount_amount || 0,
         coupon_code: coupon_code || null,
         payment_method: paymentMethod,
-        payment_status: paymentMethod === "cod" ? "cod_pending" : "pending",
+        payment_status: isCod ? "advance_pending" : "pending",
+        advance_amount: advanceAmount,
+        cod_amount: codAmount,
         metadata: metadata || {},
         is_gift: isGift,
         recipient_name: isGift ? recipient_name || null : null,
@@ -105,6 +123,10 @@ export async function POST(request: Request) {
         hide_prices: isGift ? Boolean(hide_prices) : false,
         gift_wrap: isGift ? Boolean(gift_wrap) : false,
         gift_wrap_charge: giftWrapCharge,
+        delivery_notes:
+          typeof delivery_notes === "string" && delivery_notes.trim()
+            ? delivery_notes.trim().slice(0, 300)
+            : null,
       })
       .select()
       .single();

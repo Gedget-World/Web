@@ -47,6 +47,7 @@ import {
   ExternalLink,
   PackageCheck,
   PackageX,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -70,6 +71,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Customer = {
   id?: string;
@@ -157,7 +168,15 @@ export function ProfileClient({
   pendingReviewCount,
 }: ProfileClientProps) {
   const { toast } = useToast();
-  const { saveAddress, address: cachedAddress } = useCustomer(user.id);
+  const {
+    saveAddress,
+    deleteAddress,
+    address: cachedAddress,
+    addresses: cachedAddresses,
+    isHydrated,
+    isCacheValid,
+    fetchCustomerData,
+  } = useCustomer(user.id);
 
   const [newsletterEnabled, setNewsletterEnabled] = useState(
     customer?.marketing_consent || false,
@@ -169,31 +188,102 @@ export function ProfileClient({
   const [cities, setCities] = useState<any[]>([]);
   const INDIA_CODE = "IN";
 
-  // Use cached address if available, otherwise use initial
-  const currentAddress = cachedAddress || initialAddress;
+  // All saved addresses for this customer (edit/delete supported below)
+  const [addressList, setAddressList] = useState<Address[]>(
+    initialAddress ? [initialAddress] : [],
+  );
+  // Id of the address currently loaded in the edit dialog (null = adding new)
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  // Id of the address currently being deleted (spinner state)
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(
+    null,
+  );
+  // Id of the address pending delete confirmation (drives the AlertDialog)
+  const [addressPendingDeletion, setAddressPendingDeletion] = useState<
+    string | null
+  >(null);
 
   const [addressForm, setAddressForm] = useState({
-    address_line1: currentAddress?.address_line1 || "",
-    address_line2: currentAddress?.address_line2 || "",
-    city: currentAddress?.city || "",
-    state: currentAddress?.state || "",
-    postal_code: currentAddress?.postal_code || "",
-    country: currentAddress?.country || "India",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    country: "India",
   });
 
-  // Sync form when address changes
+  // Load the full saved-address list (cache first, then refresh from API)
   useEffect(() => {
-    if (currentAddress) {
-      setAddressForm({
-        address_line1: currentAddress.address_line1 || "",
-        address_line2: currentAddress.address_line2 || "",
-        city: currentAddress.city || "",
-        state: currentAddress.state || "",
-        postal_code: currentAddress.postal_code || "",
-        country: "India",
+    if (!isHydrated) return;
+
+    const loadAddresses = async () => {
+      if (isCacheValid() && cachedAddresses.length > 0) {
+        setAddressList(cachedAddresses as Address[]);
+        return;
+      }
+
+      const { addresses } = await fetchCustomerData();
+      if (addresses && addresses.length > 0) {
+        setAddressList(addresses as Address[]);
+      } else if (cachedAddress) {
+        setAddressList([cachedAddress as Address]);
+      }
+    };
+
+    loadAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated, user.id]);
+
+  const openAddAddressDialog = () => {
+    setEditingAddressId(null);
+    setAddressForm({
+      address_line1: "",
+      address_line2: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      country: "India",
+    });
+    setIsEditingAddress(true);
+  };
+
+  const openEditAddressDialog = (addr: Address) => {
+    setEditingAddressId(addr.id);
+    setAddressForm({
+      address_line1: addr.address_line1 || "",
+      address_line2: addr.address_line2 || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      postal_code: addr.postal_code || "",
+      country: addr.country || "India",
+    });
+    setIsEditingAddress(true);
+  };
+
+  const handleDeleteAddress = async (addressId: string) => {
+    setDeletingAddressId(addressId);
+    try {
+      const ok = await deleteAddress(addressId);
+      if (!ok) throw new Error("Failed to delete address");
+
+      const refreshed = await fetchCustomerData(true);
+      setAddressList((refreshed.addresses as Address[]) || []);
+
+      toast({
+        title: "Address Deleted",
+        description: "The saved address has been removed.",
       });
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete address. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAddressId(null);
     }
-  }, [currentAddress]);
+  };
 
   // Load Indian states on mount
   useEffect(() => {
@@ -235,15 +325,25 @@ export function ProfileClient({
     }`.trim();
 
     setIsSavingAddress(true);
-    const result = await saveAddress({ ...addressForm, full_name });
+    const result = await saveAddress({
+      ...addressForm,
+      full_name,
+      ...(editingAddressId ? { id: editingAddressId } : {}),
+    });
     setIsSavingAddress(false);
 
     if (result) {
+      const refreshed = await fetchCustomerData(true);
+      setAddressList((refreshed.addresses as Address[]) || [result]);
+
       toast({
-        title: "Address Saved",
-        description: "Your address has been updated successfully.",
+        title: editingAddressId ? "Address Updated" : "Address Saved",
+        description: editingAddressId
+          ? "Your address has been updated successfully."
+          : "Your new address has been saved.",
       });
       setIsEditingAddress(false);
+      setEditingAddressId(null);
     } else {
       toast({
         title: "Error",
@@ -267,7 +367,7 @@ export function ProfileClient({
     { label: "Add your last name", done: !!customer?.last_name },
     { label: "Add a phone number", done: !!customer?.phone },
     { label: "Add your date of birth", done: !!customer?.date_of_birth },
-    { label: "Save a delivery address", done: !!currentAddress },
+    { label: "Save a delivery address", done: addressList.length > 0 },
     { label: "Verify your phone number", done: !!user.phone_confirmed_at },
   ];
 
@@ -524,59 +624,93 @@ export function ProfileClient({
               </CardContent>
             </Card>
 
-            {/* Saved Address */}
+            {/* Saved Addresses */}
             <Card className="hover:shadow-md transition-all border-slate-200">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <MapPin className="h-5 w-5 text-slate-600" />
-                      Delivery Address
+                      Delivery Addresses
                     </CardTitle>
                     <CardDescription>
-                      Your default shipping address
+                      Manage your saved shipping addresses
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditingAddress(true)}
-                  >
-                    <Edit3 className="h-4 w-4 mr-1" />{" "}
-                    {currentAddress ? "Edit" : "Add"}
-                  </Button>
+                  {addressList.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={openAddAddressDialog}
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Add
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                {currentAddress ? (
-                  <div className="p-4 rounded-xl border-2 border-blue-200 bg-blue-50/50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-slate-900">
-                            {currentAddress.full_name}
-                          </p>
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] bg-blue-100 text-blue-700"
-                          >
-                            Default
-                          </Badge>
+                {addressList.length > 0 ? (
+                  <div className="space-y-3">
+                    {addressList.map((addr) => (
+                      <div
+                        key={addr.id}
+                        className="p-4 rounded-xl border-2 border-blue-200 bg-blue-50/50"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <p className="font-medium text-slate-900">
+                                {addr.full_name}
+                              </p>
+                              {addr.is_default && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px] bg-blue-100 text-blue-700"
+                                >
+                                  Default
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600">
+                              {addr.address_line1}
+                              {addr.address_line2 && `, ${addr.address_line2}`}
+                            </p>
+                            <p className="text-sm text-slate-600">
+                              {addr.city}, {addr.state} - {addr.postal_code}
+                            </p>
+                            <p className="text-sm text-slate-600">
+                              {addr.country}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEditAddressDialog(addr)}
+                              disabled={deletingAddressId === addr.id}
+                              title="Edit address"
+                            >
+                              <Edit3 className="h-4 w-4 text-slate-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setAddressPendingDeletion(addr.id)}
+                              disabled={deletingAddressId === addr.id}
+                              title="Delete address"
+                            >
+                              {deletingAddressId === addr.id ? (
+                                <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-600">
-                          {currentAddress.address_line1}
-                          {currentAddress.address_line2 &&
-                            `, ${currentAddress.address_line2}`}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          {currentAddress.city}, {currentAddress.state} -{" "}
-                          {currentAddress.postal_code}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          {currentAddress.country}
-                        </p>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-6">
@@ -587,7 +721,7 @@ export function ProfileClient({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsEditingAddress(true)}
+                      onClick={openAddAddressDialog}
                     >
                       <Plus className="h-4 w-4 mr-1" /> Add Address
                     </Button>
@@ -596,20 +730,27 @@ export function ProfileClient({
               </CardContent>
             </Card>
 
-            {/* Address Edit Dialog */}
-            <Dialog open={isEditingAddress} onOpenChange={setIsEditingAddress}>
+            {/* Address Add/Edit Dialog */}
+            <Dialog
+              open={isEditingAddress}
+              onOpenChange={(open) => {
+                setIsEditingAddress(open);
+                if (!open) setEditingAddressId(null);
+              }}
+            >
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
-                    {currentAddress ? "Edit Address" : "Add Address"}
+                    {editingAddressId ? "Edit Address" : "Add Address"}
                   </DialogTitle>
                   <DialogDescription>
-                    {currentAddress
-                      ? "Update your delivery address"
+                    {editingAddressId
+                      ? "Update this saved delivery address"
                       : "Add a new delivery address"}
                   </DialogDescription>
                 </DialogHeader>
+
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="address_line1">Address Line 1 *</Label>
@@ -1009,6 +1150,38 @@ export function ProfileClient({
           </div>
         </div>
       </div>
+
+      {/* Delete saved address confirmation */}
+      <AlertDialog
+        open={addressPendingDeletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setAddressPendingDeletion(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this address?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This saved address will be permanently removed from your account.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus-visible:ring-red-600"
+              onClick={() => {
+                if (addressPendingDeletion) {
+                  handleDeleteAddress(addressPendingDeletion);
+                }
+                setAddressPendingDeletion(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

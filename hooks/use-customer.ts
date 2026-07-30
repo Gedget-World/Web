@@ -222,6 +222,27 @@ export function useCustomer(userId: string | undefined) {
     return null;
   };
 
+  // Deletes a saved address. Returns true on success.
+  const deleteAddress = async (addressId: string) => {
+    if (!userId) return false;
+
+    try {
+      const response = await fetch("/api/addresses", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          address_id: addressId,
+        }),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      return false;
+    }
+  };
+
   return {
     customer,
     address,
@@ -231,6 +252,7 @@ export function useCustomer(userId: string | undefined) {
     fetchCustomerData,
     saveCustomer,
     saveAddress,
+    deleteAddress,
     updateCustomer,
     updateAddress,
     clearCache,

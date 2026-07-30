@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/use-cart";
 import {
@@ -55,6 +56,11 @@ import {
   ShieldCheck,
   RotateCcw,
   Headphones,
+  StickyNote,
+  Pencil,
+  Loader2,
+  Save,
+  Gift,
 } from "lucide-react";
 import { CancelOrderButton } from "@/components/cancel-order-button";
 import { OrderItemReview } from "@/components/order-item-review";
@@ -79,7 +85,6 @@ export function OrderDetailClient({
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
-  const [emailNotifyEnabled, setEmailNotifyEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiItems, setConfettiItems] = useState<
@@ -96,6 +101,13 @@ export function OrderDetailClient({
   const headerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const [timelineVisible, setTimelineVisible] = useState(false);
+  const [deliveryNotes, setDeliveryNotes] = useState<string>(
+    order.delivery_notes || "",
+  );
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(deliveryNotes);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const canEditNotes = ["pending", "processing"].includes(order.status);
 
   // Simulate loading
   useEffect(() => {
@@ -176,6 +188,39 @@ export function OrderDetailClient({
       title: "Copied!",
       description: `${type === "id" ? "Order ID" : type === "address" ? "Address" : "Tracking number"} copied to clipboard`,
     });
+  };
+
+  const handleSaveDeliveryNotes = async () => {
+    const trimmed = notesDraft.trim().slice(0, 300);
+    setIsSavingNotes(true);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/delivery-notes`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delivery_notes: trimmed }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to update delivery notes");
+      }
+
+      setDeliveryNotes(trimmed);
+      setIsEditingNotes(false);
+      toast({
+        title: "Delivery notes updated",
+        description: "Your delivery instructions have been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Couldn't save delivery notes",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNotes(false);
+    }
   };
 
   const handleBuyAgain = (item: any) => {
@@ -854,6 +899,20 @@ export function OrderDetailClient({
                     <span className="text-slate-600">Included</span>
                   </div>
 
+                  {/* Gift Wrap Charge */}
+                  {isGift && order.gift_wrap && order.gift_wrap_charge > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 flex items-center gap-1.5">
+                        <Gift className="h-3.5 w-3.5 text-pink-500" />
+                        Gift Wrap
+                      </span>
+                      <span className="text-slate-900">
+                        {currencySymbol}
+                        {Number(order.gift_wrap_charge).toFixed(0)}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Discount with Animation */}
                   {order.discount_amount > 0 && (
                     <div className="flex justify-between text-sm bg-green-50 -mx-4 px-4 py-2 rounded-lg animate-pulse">
@@ -906,35 +965,56 @@ export function OrderDetailClient({
                     </Badge>
                   </div>
 
-                  {/* Payment Status */}
-                  {order.payment_status && (
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>Payment Status</span>
-                      <span className="font-medium uppercase">
-                        {order.payment_status}
-                      </span>
-                    </div>
-                  )}
+                  {/* Payment Status / Transaction ID / Paid At — for COD
+                      orders these describe the mandatory 20% online advance
+                      payment, not the full order, so label them clearly. */}
+                  {(() => {
+                    const isCodOrder =
+                      (order.payment_method || "").toLowerCase() === "cod";
+                    const hasAdvance =
+                      isCodOrder && Number(order.advance_amount) > 0;
 
-                  {/* Transaction ID */}
-                  {(order.transaction_id || order.cf_payment_id) && (
-                    <div className="flex justify-between text-xs text-slate-500 gap-2">
-                      <span className="shrink-0">Transaction ID</span>
-                      <span className="font-mono text-slate-700 truncate text-right">
-                        {order.transaction_id || order.cf_payment_id}
-                      </span>
-                    </div>
-                  )}
+                    return (
+                      <>
+                        {order.payment_status && (
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>
+                              {hasAdvance
+                                ? "Advance Payment Status"
+                                : "Payment Status"}
+                            </span>
+                            <span className="font-medium uppercase">
+                              {order.payment_status}
+                            </span>
+                          </div>
+                        )}
 
-                  {/* Paid At */}
-                  {order.paid_at && (
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>Paid On</span>
-                      <span className="text-slate-700">
-                        {new Date(order.paid_at).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
+                        {(order.transaction_id || order.cf_payment_id) && (
+                          <div className="flex justify-between text-xs text-slate-500 gap-2">
+                            <span className="shrink-0">
+                              {hasAdvance
+                                ? "Advance Transaction ID"
+                                : "Transaction ID"}
+                            </span>
+                            <span className="font-mono text-slate-700 truncate text-right">
+                              {order.transaction_id || order.cf_payment_id}
+                            </span>
+                          </div>
+                        )}
+
+                        {order.paid_at && (
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>
+                              {hasAdvance ? "Advance Paid On" : "Paid On"}
+                            </span>
+                            <span className="text-slate-700">
+                              {new Date(order.paid_at).toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   <div className="flex justify-between font-bold text-lg pt-3 border-t-2">
                     <span className="text-slate-900">Total</span>
@@ -943,6 +1023,31 @@ export function OrderDetailClient({
                       {Number(order.total).toFixed(0)}
                     </span>
                   </div>
+
+                  {/* COD advance / due breakdown */}
+                  {(order.payment_method || "").toLowerCase() === "cod" &&
+                    Number(order.advance_amount) > 0 && (
+                      <div className="mt-1 p-2.5 bg-blue-50 border border-blue-200 rounded-lg space-y-1.5">
+                        <p className="text-[11px] font-medium text-blue-800 flex items-center gap-1">
+                          <CreditCard className="h-3 w-3" />
+                          Online payment was required to confirm this COD order
+                        </p>
+                        <div className="flex justify-between text-sm text-blue-700 font-medium">
+                          <span>Paid Online (Advance)</span>
+                          <span>
+                            {currencySymbol}
+                            {Number(order.advance_amount).toFixed(0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm text-slate-600">
+                          <span>Due on Delivery (Cash)</span>
+                          <span>
+                            {currencySymbol}
+                            {Number(order.cod_amount).toFixed(0)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -1008,7 +1113,99 @@ export function OrderDetailClient({
                     )}
                   </div>
 
-                  {/* Contact & Delivery Info */}
+                  {/* Delivery Notes */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                        <StickyNote className="h-3.5 w-3.5" />
+                        Delivery Notes
+                      </p>
+                      {canEditNotes && !isEditingNotes && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700"
+                          onClick={() => {
+                            setNotesDraft(deliveryNotes);
+                            setIsEditingNotes(true);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          {deliveryNotes ? "Edit" : "Add"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {isEditingNotes ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={notesDraft}
+                          onChange={(e) =>
+                            setNotesDraft(e.target.value.slice(0, 300))
+                          }
+                          maxLength={300}
+                          placeholder="e.g. Leave at the doorstep, call before delivery, nearby landmark..."
+                          className="min-h-20 text-sm"
+                          disabled={isSavingNotes}
+                        />
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-400">
+                            {notesDraft.length}/300
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={isSavingNotes}
+                              onClick={() => {
+                                setIsEditingNotes(false);
+                                setNotesDraft(deliveryNotes);
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={isSavingNotes}
+                              onClick={handleSaveDeliveryNotes}
+                            >
+                              {isSavingNotes ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-3 w-3 mr-1" />
+                                  Save
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : deliveryNotes ? (
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                        {deliveryNotes}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">
+                        No delivery notes added
+                        {canEditNotes ? "" : " for this order"}.
+                      </p>
+                    )}
+
+                    {!canEditNotes && (
+                      <p className="text-[11px] text-slate-400 mt-1.5">
+                        Delivery notes can no longer be updated — this order has
+                        already been dispatched.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Contact Info */}
                   <div className="mt-4 pt-4 border-t space-y-2">
                     {order.customer_email && (
                       <p className="text-sm text-slate-600 flex items-center gap-2">
@@ -1021,16 +1218,6 @@ export function OrderDetailClient({
                         <Phone className="h-4 w-4 text-slate-400" />
                         {order.customer_phone}
                       </p>
-                    )}
-                    {order.delivery_instructions && (
-                      <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                        <p className="text-xs text-amber-700 font-medium mb-1">
-                          Delivery Instructions
-                        </p>
-                        <p className="text-sm text-amber-800">
-                          {order.delivery_instructions}
-                        </p>
-                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -1240,55 +1427,6 @@ export function OrderDetailClient({
                 </CardContent>
               </Card>
             )}
-
-            {/* Email Notification Preferences */}
-            <Card className="overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
-              <div className="h-1.5 w-full bg-linear-to-r from-indigo-400 to-violet-500" />
-              <CardHeader className="border-b bg-slate-50/50">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <Bell className="h-4 w-4 text-indigo-600" />
-                  </div>
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-slate-400" />
-                      <div>
-                        <p className="font-medium text-sm">Email Updates</p>
-                        <p className="text-xs text-slate-500">
-                          Receive order updates via email
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={emailNotifyEnabled}
-                      onCheckedChange={setEmailNotifyEnabled}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Bell className="h-5 w-5 text-slate-400" />
-                      <div>
-                        <p className="font-medium text-sm">
-                          Push Notifications
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Get instant updates on your device
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={notifyEnabled}
-                      onCheckedChange={setNotifyEnabled}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-700">

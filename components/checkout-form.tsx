@@ -13,6 +13,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -51,6 +61,8 @@ import {
   Loader2,
   Tag,
   Gift,
+  StickyNote,
+  Trash2,
 } from "lucide-react";
 import ContactForm, { type ContactFormHandle } from "./contact-form";
 import { RecentlyViewedProducts } from "./recently-viewed-products";
@@ -59,7 +71,7 @@ import { useCustomer } from "@/hooks/use-customer";
 const INDIA_CODE = "IN";
 
 export function CheckoutForm({ user }: { user: User }) {
-  const { items, clearCart, appliedCoupon } = useCart();
+  const { items, appliedCoupon } = useCart();
   const { getSetting } = useStoreSettings(["currency_symbol", "store_country"]);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,6 +95,7 @@ export function CheckoutForm({ user }: { user: User }) {
     isHydrated,
     fetchCustomerData,
     saveAddress,
+    deleteAddress,
     isCacheValid,
   } = useCustomer(user.id);
 
@@ -120,6 +133,7 @@ export function CheckoutForm({ user }: { user: User }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [orderReviewOpen, setOrderReviewOpen] = useState(true);
   const [cardNumber, setCardNumber] = useState("");
+  const [deliveryNotes, setDeliveryNotes] = useState("");
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [shippingInfo, setShippingInfo] = useState({
@@ -141,6 +155,63 @@ export function CheckoutForm({ user }: { user: User }) {
   const [selectedAddressId, setSelectedAddressId] = useState<
     string | "new" | null
   >(null);
+  // Id of the saved address currently being edited (null when not editing)
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  // Id of the saved address currently being deleted (null when idle)
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(
+    null,
+  );
+  // Id of the saved address pending confirmation for deletion (drives the
+  // AlertDialog below; null means the dialog is closed)
+  const [addressPendingDeletion, setAddressPendingDeletion] = useState<
+    string | null
+  >(null);
+
+  const handleDeleteAddress = async (addressId: string) => {
+    setDeletingAddressId(addressId);
+    try {
+      const ok = await deleteAddress(addressId);
+      if (!ok) throw new Error("Failed to delete address");
+
+      const refreshed = await fetchCustomerData(true);
+      const newList = refreshed.addresses || [];
+      setAddressList(newList);
+
+      if (editingAddressId === addressId) {
+        setEditingAddressId(null);
+      }
+
+      if (selectedAddressId === addressId) {
+        const next = newList.find((a: any) => a.is_default) || newList[0];
+        if (next) {
+          setSelectedAddressId(next.id ?? null);
+          setShippingInfo({
+            address_line1: next.address_line1 || "",
+            address_line2: next.address_line2 || "",
+            city: next.city || "",
+            state: next.state || "",
+            postal_code: next.postal_code || "",
+            country: next.country || defaultCountry,
+          });
+        } else {
+          setSelectedAddressId("new");
+          setShippingInfo({
+            address_line1: "",
+            address_line2: "",
+            city: "",
+            state: "",
+            postal_code: "",
+            country: defaultCountry,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      alert("Failed to delete address. Please try again.");
+    } finally {
+      setDeletingAddressId(null);
+    }
+  };
 
   // Gift recipient details (only relevant when isGift is true)
   const [recipientName, setRecipientName] = useState("");
@@ -159,8 +230,17 @@ export function CheckoutForm({ user }: { user: User }) {
   const [hidePrices, setHidePrices] = useState(false);
   const [giftWrap, setGiftWrap] = useState(false);
 
-  const giftWrapCharge = isGift && giftWrap ? 50 : 0;
+  const giftWrapCharge = isGift && giftWrap ? 89 : 0;
   const total = subtotal + shipping - discount + giftWrapCharge;
+
+  // COD orders require a 20% advance payment online (via Cashfree); the
+  // remaining 80% is collected as cash on delivery. This mirrors the
+  // server-side calculation in app/(site)/api/orders/route.ts, which is
+  // the authoritative source — these client values are for display only.
+  const ADVANCE_PERCENT = 0.2;
+  const isCod = paymentMethod === "cod";
+  const advanceAmount = isCod ? Math.round(total * ADVANCE_PERCENT) : total;
+  const codDueAmount = isCod ? Math.round(total - advanceAmount) : 0;
 
   // Full name is always derived from the customer's first/last name
   // (collected in the Contact step) rather than a separate editable field.
@@ -298,16 +378,17 @@ export function CheckoutForm({ user }: { user: User }) {
     setIsLoading(true);
     setError(null);
 
-    // Pre-validate phone for online payment BEFORE creating an order to
-    // avoid leaving ghost "pending" orders in the DB.
-    if (paymentMethod === "online") {
+    // Pre-validate phone BEFORE creating an order to avoid leaving ghost
+    // "pending" orders in the DB. Both COD (20% advance) and online (full
+    // amount) payments now go through Cashfree, so both need a valid phone.
+    if (paymentMethod === "online" || paymentMethod === "cod") {
       const rawPhone = (customerInfo?.phone || "").trim();
       const normalized = rawPhone.replace(/[\s()-]/g, "");
       const isValidPhone = /^(\+\d{10,15}|\d{10,15})$/.test(normalized);
       if (!isValidPhone) {
         setIsLoading(false);
         setError(
-          "A valid phone number is required for online payment. Please update your contact details.",
+          "A valid phone number is required for payment. Please update your contact details.",
         );
         setTab("contact");
         return;
@@ -322,18 +403,20 @@ export function CheckoutForm({ user }: { user: User }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Order details
+          // Customer information
           user_id: user.id,
           total,
-          // "processing" (not "confirmed") — the only fulfillment-stage
-          // statuses recognized across the app are pending/processing/
-          // shipped/delivered/cancelled. COD orders are accepted immediately
-          // (no payment to wait for), so they start at "processing".
-          status: paymentMethod === "cod" ? "processing" : "pending",
+          // Every order now requires an online payment step before it's
+          // confirmed — the full amount for "online", or a 20% advance for
+          // "cod" (remaining 80% collected on delivery). Orders start as
+          // "pending" and only move to "processing" once the Cashfree
+          // webhook confirms that payment succeeded.
+          status: "pending",
 
           // Customer information
           customer_name: fullName,
           customer_email: user.email,
+          customer_phone: customerInfo?.phone || null,
 
           // Shipping address details (flattened to match schema).
           // For gift orders, ship to the recipient instead of the buyer.
@@ -376,6 +459,9 @@ export function CheckoutForm({ user }: { user: User }) {
           hide_prices: isGift ? hidePrices : false,
           gift_wrap: isGift ? giftWrap : false,
 
+          // Delivery instructions for the courier (optional)
+          delivery_notes: deliveryNotes.trim().slice(0, 300) || null,
+
           // Additional metadata
           metadata: {
             payment_method: paymentMethod,
@@ -398,63 +484,57 @@ export function CheckoutForm({ user }: { user: User }) {
         throw new Error("Order created but no ID returned");
       }
 
-      // Step 2: Handle payment based on method
-      if (paymentMethod === "cod") {
-        // For COD, order is already confirmed
-        setOrderPlaced(true);
-        clearCart();
-        router.push(`/checkout/success?orderId=${orderId}`);
-      } else if (paymentMethod === "online") {
-        // For online payment, initiate Cashfree payment
-        const phoneNumber = customerInfo?.phone?.trim() || "";
+      // Step 2: Handle payment via Cashfree. COD orders only charge the 20%
+      // advance now; online orders charge the full amount. Either way, the
+      // order is NOT confirmed until this payment succeeds.
+      const phoneNumber = customerInfo?.phone?.trim() || "";
 
-        if (!phoneNumber) {
-          throw new Error("Phone number is required for online payment");
-        }
+      if (!phoneNumber) {
+        throw new Error("Phone number is required for payment");
+      }
 
-        // Stash orderId so /checkout/payment-callback can recover it if
-        // Cashfree doesn't append order_id back to the return URL.
-        if (typeof window !== "undefined") {
-          try {
-            sessionStorage.setItem("pending_order_id", orderId);
-          } catch {
-            /* ignore */
-          }
-        }
-
+      // Stash orderId so /checkout/payment-callback can recover it if
+      // Cashfree doesn't append order_id back to the return URL.
+      if (typeof window !== "undefined") {
         try {
-          await initiateCashfreePayment({
-            orderId,
-            amount: total,
-            customerEmail: user.email || "",
-            customerPhone: phoneNumber,
-            customerName: fullName,
-          });
-
-          // With redirectTarget=_self the line below is rarely reached
-          // because Cashfree navigates the user away. Kept as a safety net.
-          setOrderPlaced(true);
-        } catch (paymentError) {
-          // Payment session creation / SDK failure: mark order cancelled to
-          // prevent ghost pending orders.
-          try {
-            await fetch(`/api/orders/${orderId}/cancel`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                reason: "payment_initiation_failed",
-              }),
-            });
-          } catch {
-            /* best-effort */
-          }
-
-          setError(
-            paymentError instanceof Error
-              ? paymentError.message
-              : "Payment failed. Please try again.",
-          );
+          sessionStorage.setItem("pending_order_id", orderId);
+        } catch {
+          /* ignore */
         }
+      }
+
+      try {
+        await initiateCashfreePayment({
+          orderId,
+          amount: isCod ? advanceAmount : total,
+          customerEmail: user.email || "",
+          customerPhone: phoneNumber,
+          customerName: fullName,
+        });
+
+        // With redirectTarget=_self the line below is rarely reached
+        // because Cashfree navigates the user away. Kept as a safety net.
+        setOrderPlaced(true);
+      } catch (paymentError) {
+        // Payment session creation / SDK failure: mark order cancelled to
+        // prevent ghost pending orders.
+        try {
+          await fetch(`/api/orders/${orderId}/cancel`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              reason: "payment_initiation_failed",
+            }),
+          });
+        } catch {
+          /* best-effort */
+        }
+
+        setError(
+          paymentError instanceof Error
+            ? paymentError.message
+            : "Payment failed. Please try again.",
+        );
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -897,7 +977,7 @@ export function CheckoutForm({ user }: { user: User }) {
                       <span className="text-xs sm:text-sm text-slate-700">
                         Gift wrap this order{" "}
                         <span className="font-medium text-pink-600">
-                          (+{currencySymbol}50)
+                          (+{currencySymbol}89)
                         </span>
                       </span>
                     </label>
@@ -977,10 +1057,10 @@ export function CheckoutForm({ user }: { user: User }) {
                 {addressList.length > 0 && (
                   <div className="space-y-2">
                     {addressList.map((addr) => (
-                      <button
+                      <div
                         key={addr.id}
-                        type="button"
                         onClick={() => {
+                          if (editingAddressId) return;
                           setSelectedAddressId(addr.id);
                           setShippingInfo({
                             address_line1: addr.address_line1 || "",
@@ -991,10 +1071,13 @@ export function CheckoutForm({ user }: { user: User }) {
                             country: addr.country || defaultCountry,
                           });
                         }}
-                        className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                          selectedAddressId === addr.id
+                        className={`w-full text-left p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                          selectedAddressId === addr.id &&
+                          editingAddressId !== addr.id
                             ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
+                            : editingAddressId === addr.id
+                              ? "border-amber-400 bg-amber-50"
+                              : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -1009,6 +1092,11 @@ export function CheckoutForm({ user }: { user: User }) {
                                   Default
                                 </Badge>
                               )}
+                              {editingAddressId === addr.id && (
+                                <Badge className="text-[9px] px-1.5 bg-amber-100 text-amber-700 hover:bg-amber-100 border border-amber-200">
+                                  Editing
+                                </Badge>
+                              )}
                             </p>
                             <p className="text-xs text-slate-500 mt-0.5">
                               {addr.address_line1}
@@ -1018,15 +1106,56 @@ export function CheckoutForm({ user }: { user: User }) {
                               , {addr.city}, {addr.state} {addr.postal_code}
                             </p>
                           </div>
-                          {selectedAddressId === addr.id && (
-                            <Check className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                          )}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedAddressId(addr.id);
+                                setEditingAddressId(addr.id);
+                                setShippingInfo({
+                                  address_line1: addr.address_line1 || "",
+                                  address_line2: addr.address_line2 || "",
+                                  city: addr.city || "",
+                                  state: addr.state || "",
+                                  postal_code: addr.postal_code || "",
+                                  country: addr.country || defaultCountry,
+                                });
+                              }}
+                              disabled={deletingAddressId === addr.id}
+                              className="p-1 hover:bg-white/60 rounded transition-colors disabled:opacity-50"
+                              title="Edit address"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAddressPendingDeletion(addr.id);
+                              }}
+                              disabled={deletingAddressId === addr.id}
+                              className="p-1 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                              title="Delete address"
+                            >
+                              {deletingAddressId === addr.id ? (
+                                <Loader2 className="h-3.5 w-3.5 text-red-500 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5 text-red-400 hover:text-red-600" />
+                              )}
+                            </button>
+                            {selectedAddressId === addr.id &&
+                              editingAddressId !== addr.id && (
+                                <Check className="h-4 w-4 text-blue-600 mt-0.5" />
+                              )}
+                          </div>
                         </div>
-                      </button>
+                      </div>
                     ))}
                     <button
                       type="button"
                       onClick={() => {
+                        setEditingAddressId(null);
                         setSelectedAddressId("new");
                         setShippingInfo({
                           address_line1: "",
@@ -1038,7 +1167,7 @@ export function CheckoutForm({ user }: { user: User }) {
                         });
                       }}
                       className={`w-full text-left p-3 rounded-lg border-2 border-dashed transition-all ${
-                        selectedAddressId === "new"
+                        selectedAddressId === "new" && !editingAddressId
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
@@ -1050,8 +1179,40 @@ export function CheckoutForm({ user }: { user: User }) {
                   </div>
                 )}
 
-                {(selectedAddressId === "new" || addressList.length === 0) && (
+                {(selectedAddressId === "new" ||
+                  addressList.length === 0 ||
+                  editingAddressId) && (
                   <>
+                    {editingAddressId && (
+                      <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                        <span className="text-xs sm:text-sm text-amber-800 font-medium">
+                          Editing saved address
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const defaultAddr =
+                              addressList.find((a) => a.is_default) ||
+                              addressList[0];
+                            setEditingAddressId(null);
+                            if (defaultAddr) {
+                              setSelectedAddressId(defaultAddr.id);
+                              setShippingInfo({
+                                address_line1: defaultAddr.address_line1 || "",
+                                address_line2: defaultAddr.address_line2 || "",
+                                city: defaultAddr.city || "",
+                                state: defaultAddr.state || "",
+                                postal_code: defaultAddr.postal_code || "",
+                                country: defaultAddr.country || defaultCountry,
+                              });
+                            }
+                          }}
+                          className="text-xs sm:text-sm text-amber-700 underline hover:text-amber-900"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                     <div className="grid gap-1.5 sm:gap-2">
                       <Label
                         htmlFor="address_line1"
@@ -1213,9 +1374,66 @@ export function CheckoutForm({ user }: { user: User }) {
                   </Button>
                   <Button
                     onClick={async () => {
+                      if (editingAddressId) {
+                        if (
+                          !fullName ||
+                          !shippingInfo.address_line1 ||
+                          !shippingInfo.city ||
+                          !shippingInfo.state ||
+                          !shippingInfo.postal_code ||
+                          !shippingInfo.country
+                        ) {
+                          alert("Please fill in all required shipping fields.");
+                          return;
+                        }
+
+                        try {
+                          setIsLoading(true);
+                          const result = await saveAddress({
+                            id: editingAddressId,
+                            full_name: fullName,
+                            address_line1: shippingInfo.address_line1,
+                            address_line2: shippingInfo.address_line2,
+                            city: shippingInfo.city,
+                            state: shippingInfo.state,
+                            postal_code: shippingInfo.postal_code,
+                            country: shippingInfo.country,
+                          });
+
+                          if (!result) {
+                            throw new Error("Failed to update address");
+                          }
+
+                          const refreshed = await fetchCustomerData(true);
+                          setAddressList(
+                            refreshed.addresses &&
+                              refreshed.addresses.length > 0
+                              ? refreshed.addresses
+                              : [result],
+                          );
+                          setSelectedAddressId(result.id);
+                          setEditingAddressId(null);
+
+                          setTab("payment");
+                        } catch (error) {
+                          console.error("Error updating address:", error);
+                          alert("Failed to update address. Please try again.");
+                        } finally {
+                          setIsLoading(false);
+                        }
+                        return;
+                      }
+
                       if (selectedAddressId && selectedAddressId !== "new") {
                         // Reusing an already-saved address, nothing new to persist
                         setTab("payment");
+                        return;
+                      }
+
+                      if (addressList.length > 0 && !selectedAddressId) {
+                        alert(
+                          "Please select a saved address or add a new one to continue.",
+                        );
                         return;
                       }
 
@@ -1317,7 +1535,7 @@ export function CheckoutForm({ user }: { user: User }) {
                         Cash on Delivery
                       </p>
                       <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block">
-                        Pay when you receive
+                        Pay 20% now, rest on delivery
                       </p>
                       {!isCodAvailable && (
                         <Badge
@@ -1383,23 +1601,44 @@ export function CheckoutForm({ user }: { user: User }) {
                       </span>{" "}
                       {isGift
                         ? "Not available for gift orders — gift orders must be paid online."
-                        : `Available only for orders between ₹${COD_MIN_AMOUNT} and ₹${COD_MAX_AMOUNT.toLocaleString()} without any coupon applied.`}
+                        : `Available only for orders between ₹${COD_MIN_AMOUNT} and ₹${COD_MAX_AMOUNT.toLocaleString()} without any coupon applied. A 20% advance payment is required online to confirm the order.`}
+                    </p>
+                  </div>
+
+                  {isCod && isCodAvailable && (
+                    <div className="p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-[10px] sm:text-xs text-blue-800">
+                        <span className="font-semibold">Pay in two parts:</span>{" "}
+                        {currencySymbol}
+                        {advanceAmount.toLocaleString("en-IN")} (20%) online now
+                        to confirm your order, and the remaining{" "}
+                        {currencySymbol}
+                        {codDueAmount.toLocaleString("en-IN")} (80%) in cash on
+                        delivery.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs sm:text-sm text-blue-800">
+                      <span className="font-semibold">Secure Checkout:</span>{" "}
+                      You will be redirected to Cashfree's secure payment
+                      gateway to complete your {isCod ? "advance " : ""}
+                      payment. All transactions are encrypted and safe.
+                    </p>
+                  </div>
+                  <div className="p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs sm:text-sm text-amber-800">
+                      <span className="font-semibold">
+                        Cancellation Policy:
+                      </span>{" "}
+                      After the order is dispatched, a 50% cancellation penalty
+                      applies on advance (prepaid) payments.
                     </p>
                   </div>
                 </div>
-
-                {paymentMethod === "online" && (
-                  <div className="space-y-4">
-                    <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-xs sm:text-sm text-blue-800">
-                        <span className="font-semibold">Secure Checkout:</span>{" "}
-                        You will be redirected to Cashfree's secure payment
-                        gateway to complete your payment. All transactions are
-                        encrypted and safe.
-                      </p>
-                    </div>
-                  </div>
-                )}
 
                 {(error || cashfreeError) && (
                   <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -1409,6 +1648,35 @@ export function CheckoutForm({ user }: { user: User }) {
                     </p>
                   </div>
                 )}
+
+                {/* Delivery Notes */}
+                <div className="grid gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="delivery_notes"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <StickyNote className="h-3.5 w-3.5 text-slate-500" />
+                      Delivery Notes{" "}
+                      <span className="text-[10px] sm:text-xs text-slate-400 font-normal">
+                        (Optional)
+                      </span>
+                    </Label>
+                    <span className="text-[10px] sm:text-xs text-slate-400">
+                      {deliveryNotes.length}/300
+                    </span>
+                  </div>
+                  <Textarea
+                    id="delivery_notes"
+                    placeholder="e.g. Leave at the doorstep, call before delivery, nearby landmark..."
+                    value={deliveryNotes}
+                    onChange={(e) =>
+                      setDeliveryNotes(e.target.value.slice(0, 300))
+                    }
+                    maxLength={300}
+                    className="min-h-16 text-sm"
+                  />
+                </div>
 
                 {/* Order Review Accordion */}
                 <Collapsible
@@ -1461,6 +1729,24 @@ export function CheckoutForm({ user }: { user: User }) {
                             {total.toLocaleString("en-IN")}
                           </span>
                         </p>
+                        {isCod && (
+                          <>
+                            <p className="text-xs sm:text-sm flex justify-between text-blue-700">
+                              <span>Pay Online Now (20%):</span>
+                              <span>
+                                {currencySymbol}
+                                {advanceAmount.toLocaleString("en-IN")}
+                              </span>
+                            </p>
+                            <p className="text-xs sm:text-sm flex justify-between text-slate-600">
+                              <span>Due on Delivery (80%):</span>
+                              <span>
+                                {currencySymbol}
+                                {codDueAmount.toLocaleString("en-IN")}
+                              </span>
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </CollapsibleContent>
@@ -1518,15 +1804,16 @@ export function CheckoutForm({ user }: { user: User }) {
                       {isLoading || cashfreeLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          {paymentMethod === "online"
-                            ? "Processing..."
-                            : "Processing..."}
+                          Processing...
                         </>
                       ) : (
                         <>
                           <Lock className="h-4 w-4 mr-2" />
                           Pay {currencySymbol}
-                          {total.toLocaleString("en-IN")}
+                          {(isCod ? advanceAmount : total).toLocaleString(
+                            "en-IN",
+                          )}
+                          {isCod ? " Now" : ""}
                         </>
                       )}
                     </Button>
@@ -1645,6 +1932,24 @@ export function CheckoutForm({ user }: { user: User }) {
                     {total.toLocaleString("en-IN")}
                   </span>
                 </div>
+                {isCod && (
+                  <>
+                    <div className="flex justify-between text-xs sm:text-sm text-blue-700 font-medium">
+                      <span>Pay Online Now (20%)</span>
+                      <span>
+                        {currencySymbol}
+                        {advanceAmount.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm text-slate-600">
+                      <span>Due on Delivery (80%)</span>
+                      <span>
+                        {currencySymbol}
+                        {codDueAmount.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Savings Highlight */}
@@ -1698,6 +2003,38 @@ export function CheckoutForm({ user }: { user: User }) {
       <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
         <RecentlyViewedProducts />
       </div>
+
+      {/* Delete saved address confirmation */}
+      <AlertDialog
+        open={addressPendingDeletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setAddressPendingDeletion(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this address?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This saved address will be permanently removed from your account.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus-visible:ring-red-600"
+              onClick={() => {
+                if (addressPendingDeletion) {
+                  handleDeleteAddress(addressPendingDeletion);
+                }
+                setAddressPendingDeletion(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

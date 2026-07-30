@@ -22,6 +22,7 @@ import {
   Home,
   ArrowRight,
   ClipboardCheck,
+  StickyNote,
 } from "lucide-react";
 
 const CONFETTI_COLORS = [
@@ -165,6 +166,9 @@ export default async function CheckoutSuccessPage({
   const discount = Number(order.discount_amount) || 0;
   const giftWrapCharge = Number(order.gift_wrap_charge) || 0;
   const total = Number(order.total) || 0;
+  const isCodOrder = order.payment_method === "cod";
+  const advanceAmount = Number(order.advance_amount) || 0;
+  const codDueAmount = Number(order.cod_amount) || 0;
 
   return (
     <main
@@ -372,6 +376,36 @@ export default async function CheckoutSuccessPage({
                 </p>
               </div>
             </div>
+            {order.delivery_notes && (
+              <div className="mt-3 flex items-start gap-2 rounded-lg bg-white/70 border border-emerald-100 p-3">
+                <StickyNote className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-emerald-700 mb-0.5">
+                    Delivery Notes
+                  </p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {order.delivery_notes}
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {isGift && order.delivery_notes && (
+        <Card className="border-pink-200 bg-linear-to-br from-pink-50 to-purple-50/60 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+          <div className="h-1.5 w-full bg-linear-to-r from-pink-400 to-purple-500" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg text-pink-700">
+              <StickyNote className="h-5 w-5" />
+              Delivery Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <p className="text-slate-700 whitespace-pre-wrap rounded-lg bg-white/70 border border-pink-100 p-3">
+              {order.delivery_notes}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -458,6 +492,24 @@ export default async function CheckoutSuccessPage({
                 {total.toFixed(2)}
               </span>
             </div>
+            {isCodOrder && advanceAmount > 0 && (
+              <>
+                <div className="flex justify-between text-blue-700 font-medium">
+                  <span>Paid Online (Advance)</span>
+                  <span>
+                    {currencySymbol}
+                    {advanceAmount.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Due on Delivery</span>
+                  <span>
+                    {currencySymbol}
+                    {codDueAmount.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">

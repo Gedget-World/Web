@@ -199,35 +199,33 @@ const ContactForm = forwardRef<ContactFormHandle, ContactFormProps>(
               id="phone"
               type="tel"
               value={tempData.phone}
-              onChange={(e) => updateField("phone", e.target.value)}
               placeholder="Enter phone number"
               required
-              disabled={isSaving}
-              className="text-sm flex-1"
+              disabled
+              className="text-sm flex-1 disabled:opacity-100 disabled:cursor-not-allowed bg-slate-50 text-slate-600"
             />
-            {customer?.phone && tempData.phone === customer.phone && (
+            {customer?.phone && (
               <div className="flex items-center shrink-0">
                 {customer.phone_verified ? (
-                  <Badge
-                    variant="default"
-                    className="bg-green-600 text-[10px] sm:text-xs"
-                  >
-                    <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                  <Badge className="gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[10px] font-medium text-green-700 shadow-none sm:text-xs">
+                    <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Verified
                   </Badge>
                 ) : (
                   <Badge
-                    variant="outline"
-                    className="cursor-pointer hover:bg-slate-50 text-[10px] sm:text-xs"
                     onClick={handlePhoneVerification}
+                    className="cursor-pointer gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-medium text-amber-700 shadow-none transition-colors hover:bg-amber-100 sm:text-xs"
                   >
-                    <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                    <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Verify
                   </Badge>
                 )}
               </div>
             )}
           </div>
+          <p className="text-[11px] text-slate-400">
+            Your phone number is verified via OTP and can't be edited here.
+          </p>
         </div>
 
         {error && (

@@ -70,7 +70,13 @@ export async function POST(request: Request) {
       payment?.payment_status ||
       data?.order_status ||
       body?.order_status;
-    const payment_method =
+    // The specific channel Cashfree used to process the payment (e.g.
+    // "upi", "credit_card", "net_banking"). This must NOT be written to
+    // `orders.payment_method`, which stores our own "cod"/"online" order
+    // type and is relied on elsewhere to detect COD orders — overwriting
+    // it here previously broke that detection once a COD advance payment
+    // was confirmed.
+    const payment_channel =
       payment?.payment_group ||
       payment?.payment_method ||
       data?.payment_method ||
@@ -121,7 +127,7 @@ export async function POST(request: Request) {
 
     const mergedMetadata = {
       ...(existingOrder?.metadata || {}),
-      payment_method: payment_method,
+      payment_channel: payment_channel,
       transaction_id: transaction_id,
       cf_payment_id: cf_payment_id,
       cashfree_status: order_status,
@@ -136,7 +142,7 @@ export async function POST(request: Request) {
       metadata: mergedMetadata,
     };
 
-    if (payment_method) updatePayload.payment_method = payment_method;
+    if (payment_channel) updatePayload.payment_channel = payment_channel;
     if (transaction_id) updatePayload.transaction_id = transaction_id;
     if (cf_payment_id) updatePayload.cf_payment_id = cf_payment_id;
     if (mappedStatus === "processing") {

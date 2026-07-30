@@ -188,3 +188,90 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { user_id, address_id } = await request.json();
+
+    if (!user_id || user_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!address_id) {
+      return NextResponse.json(
+        { error: "address_id is required" },
+        { status: 400 },
+      );
+    }
+
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("user_id", user_id)
+      .single();
+
+    if (!customer) {
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 },
+      );
+    }
+
+    // Confirm the address belongs to this customer before deleting
+    const { data: addressToDelete } = await supabase
+      .from("addresses")
+      .select("id, type, is_default")
+      .eq("id", address_id)
+      .eq("customer_id", customer.id)
+      .single();
+
+    if (!addressToDelete) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    const { error: deleteError } = await supabase
+      .from("addresses")
+      .delete()
+      .eq("id", address_id)
+      .eq("customer_id", customer.id);
+
+    if (deleteError) throw deleteError;
+
+    // If the deleted address was the default, promote the most recent
+    // remaining address of the same type to be the new default.
+    if (addressToDelete.is_default) {
+      const { data: remaining } = await supabase
+        .from("addresses")
+        .select("id")
+        .eq("customer_id", customer.id)
+        .eq("type", addressToDelete.type)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (remaining && remaining.length > 0) {
+        await supabase
+          .from("addresses")
+          .update({ is_default: true })
+          .eq("id", remaining[0].id);
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting address:", error);
+    return NextResponse.json(
+      { error: "Failed to delete address" },
+      { status: 500 },
+    );
+  }
+}
