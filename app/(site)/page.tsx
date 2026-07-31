@@ -53,6 +53,14 @@ export default async function HomePage() {
       });
     }
 
+    await logger.info("Homepage viewed", {
+      source: LOG_SOURCE,
+      context: {
+        featuredCount: featuredProducts?.length || 0,
+        arrivalCount: arrivalProducts?.length || 0,
+      },
+    });
+
     return (
       <main className="min-h-screen">
         {/* <HeroSection /> */}
