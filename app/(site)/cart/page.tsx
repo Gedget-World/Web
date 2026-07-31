@@ -10,6 +10,7 @@ import { CouponInput } from "@/components/coupon-input";
 import { Badge } from "@/components/ui/badge";
 import { RecommendedProducts } from "@/components/recommended-products";
 import { createClient } from "@/lib/supabase/client";
+import { clientLogger } from "@/lib/client-logger";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -32,6 +33,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
+const LOG_SOURCE = "cart/page";
+
 export default function CartPage() {
   const { items, updateQuantity, updateItemStock, removeItem, appliedCoupon } =
     useCart();
@@ -51,44 +54,106 @@ export default function CartPage() {
       hasValidatedInitialCart.current = true;
 
       const productIds = items.map((item) => item.id);
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, stock, is_out_of_stock, is_active")
-        .in("id", productIds);
 
-      if (error) {
-        console.error("Error validating cart items:", error);
-        return;
-      }
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, stock, is_out_of_stock, is_active")
+          .in("id", productIds);
 
-      const productsById = new Map(
-        data?.map((product) => [product.id, product]),
-      );
-
-      items.forEach((item) => {
-        const product = productsById.get(item.id);
-
-        if (!product || product.is_active === false) {
-          removeItem(item.id);
+        if (error) {
+          clientLogger.error("Failed to validate cart items", {
+            source: LOG_SOURCE,
+            context: { error: error.message, productIds },
+          });
           return;
         }
 
-        if (product.is_out_of_stock || (product.stock ?? 0) <= 0) {
-          removeItem(item.id);
-          return;
-        }
+        const productsById = new Map(
+          data?.map((product) => [product.id, product]),
+        );
 
-        if (item.quantity > (product.stock ?? 0)) {
+        items.forEach((item) => {
+          const product = productsById.get(item.id);
+
+          if (!product || product.is_active === false) {
+            clientLogger.warn("Cart item removed: product unavailable", {
+              source: LOG_SOURCE,
+              context: {
+                productId: item.id,
+                reason: !product ? "not_found" : "inactive",
+              },
+            });
+            removeItem(item.id);
+            return;
+          }
+
+          if (product.is_out_of_stock || (product.stock ?? 0) <= 0) {
+            clientLogger.warn("Cart item removed: out of stock", {
+              source: LOG_SOURCE,
+              context: { productId: item.id },
+            });
+            removeItem(item.id);
+            return;
+          }
+
+          if (item.quantity > (product.stock ?? 0)) {
+            clientLogger.warn(
+              "Cart item quantity reduced to match available stock",
+              {
+                source: LOG_SOURCE,
+                context: {
+                  productId: item.id,
+                  requestedQuantity: item.quantity,
+                  availableStock: product.stock ?? 0,
+                },
+              },
+            );
+            updateItemStock(item.id, product.stock ?? 0);
+            return;
+          }
+
           updateItemStock(item.id, product.stock ?? 0);
-          return;
-        }
-
-        updateItemStock(item.id, product.stock ?? 0);
-      });
+        });
+      } catch (err) {
+        clientLogger.error("Unexpected error validating cart items", {
+          source: LOG_SOURCE,
+          context: {
+            error: err instanceof Error ? err.message : String(err),
+            productIds,
+          },
+        });
+      }
     };
 
     validateCartOnFirstLoad();
   }, [items, removeItem, supabase, updateItemStock]);
+
+  const handleQuantityChange = (
+    item: (typeof items)[number],
+    newQuantity: number,
+  ) => {
+    const success = updateQuantity(item.id, newQuantity, item.stock);
+
+    if (!success) {
+      clientLogger.warn("Cart quantity change blocked: exceeds stock", {
+        source: LOG_SOURCE,
+        context: {
+          productId: item.id,
+          requestedQuantity: newQuantity,
+          availableStock: item.stock,
+        },
+      });
+      return;
+    }
+
+    if (newQuantity <= 0) {
+      clientLogger.info("Cart item removed via quantity decrement", {
+        source: LOG_SOURCE,
+        context: { productId: item.id },
+      });
+    }
+  };
 
   const currencySymbol = getSetting("currency_symbol", "₹");
 
@@ -222,7 +287,7 @@ export default function CartPage() {
                           size="icon"
                           className="h-7 w-7 rounded-md hover:bg-slate-200"
                           onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
+                            handleQuantityChange(item, item.quantity - 1)
                           }
                         >
                           <Minus className="h-3.5 w-3.5" />
@@ -239,11 +304,7 @@ export default function CartPage() {
                             item.quantity >= item.stock
                           }
                           onClick={() =>
-                            updateQuantity(
-                              item.id,
-                              item.quantity + 1,
-                              item.stock,
-                            )
+                            handleQuantityChange(item, item.quantity + 1)
                           }
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -265,7 +326,16 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => {
+                        clientLogger.info("Cart item removed by user", {
+                          source: LOG_SOURCE,
+                          context: {
+                            productId: item.id,
+                            quantity: item.quantity,
+                          },
+                        });
+                        removeItem(item.id);
+                      }}
                       className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -367,7 +437,14 @@ export default function CartPage() {
                 <Checkbox
                   id="is-gift"
                   checked={isGift}
-                  onCheckedChange={(checked) => setIsGift(checked === true)}
+                  onCheckedChange={(checked) => {
+                    const nextIsGift = checked === true;
+                    setIsGift(nextIsGift);
+                    clientLogger.info("Gift option toggled", {
+                      source: LOG_SOURCE,
+                      context: { isGift: nextIsGift },
+                    });
+                  }}
                   className="data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
                 />
               </label>
@@ -377,7 +454,21 @@ export default function CartPage() {
                 size="lg"
                 className="w-full mb-3 h-12 text-base font-semibold"
               >
-                <Link href={`/checkout?isGift=${isGift}`}>
+                <Link
+                  href={`/checkout?isGift=${isGift}`}
+                  onClick={() =>
+                    clientLogger.info("Proceeded to checkout from cart", {
+                      source: LOG_SOURCE,
+                      context: {
+                        itemCount: totalItems,
+                        subtotal,
+                        total,
+                        isGift,
+                        couponApplied: Boolean(appliedCoupon),
+                      },
+                    })
+                  }
+                >
                   <Lock className="h-4 w-4 mr-1" />
                   Secure Checkout
                   <ArrowRight className="h-4 w-4 ml-1" />

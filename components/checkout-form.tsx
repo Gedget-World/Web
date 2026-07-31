@@ -67,8 +67,10 @@ import {
 import ContactForm, { type ContactFormHandle } from "./contact-form";
 import { RecentlyViewedProducts } from "./recently-viewed-products";
 import { useCustomer } from "@/hooks/use-customer";
+import { clientLogger } from "@/lib/client-logger";
 
 const INDIA_CODE = "IN";
+const LOG_SOURCE = "checkout-form";
 
 export function CheckoutForm({ user }: { user: User }) {
   const { items, appliedCoupon } = useCart();
@@ -129,6 +131,7 @@ export function CheckoutForm({ user }: { user: User }) {
   const [tab, setTab] = useState<"contact" | "shipping" | "payment">("contact");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
   const contactFormRef = useRef<ContactFormHandle>(null);
+  const hasLoggedPageView = useRef(false);
   const [isSavingContact, setIsSavingContact] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [orderReviewOpen, setOrderReviewOpen] = useState(true);
@@ -173,6 +176,11 @@ export function CheckoutForm({ user }: { user: User }) {
       const ok = await deleteAddress(addressId);
       if (!ok) throw new Error("Failed to delete address");
 
+      clientLogger.info("Saved address deleted", {
+        source: LOG_SOURCE,
+        context: { addressId },
+      });
+
       const refreshed = await fetchCustomerData(true);
       const newList = refreshed.addresses || [];
       setAddressList(newList);
@@ -207,6 +215,13 @@ export function CheckoutForm({ user }: { user: User }) {
       }
     } catch (error) {
       console.error("Error deleting address:", error);
+      clientLogger.error("Failed to delete saved address", {
+        source: LOG_SOURCE,
+        context: {
+          addressId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
       alert("Failed to delete address. Please try again.");
     } finally {
       setDeletingAddressId(null);
@@ -387,6 +402,10 @@ export function CheckoutForm({ user }: { user: User }) {
       const isValidPhone = /^(\+\d{10,15}|\d{10,15})$/.test(normalized);
       if (!isValidPhone) {
         setIsLoading(false);
+        clientLogger.warn("Checkout blocked: invalid phone number", {
+          source: LOG_SOURCE,
+          context: { paymentMethod },
+        });
         setError(
           "A valid phone number is required for payment. Please update your contact details.",
         );
@@ -394,6 +413,17 @@ export function CheckoutForm({ user }: { user: User }) {
         return;
       }
     }
+
+    clientLogger.info("Placing order", {
+      source: LOG_SOURCE,
+      context: {
+        paymentMethod,
+        isGift,
+        itemCount: totalItems,
+        total,
+        couponApplied: Boolean(appliedCoupon),
+      },
+    });
 
     try {
       // Step 1: Create order in database
@@ -474,6 +504,13 @@ export function CheckoutForm({ user }: { user: User }) {
 
       if (!orderResponse.ok) {
         const errorData = await orderResponse.json();
+        clientLogger.error("Order creation failed", {
+          source: LOG_SOURCE,
+          context: {
+            status: orderResponse.status,
+            error: errorData.message || "Unknown error",
+          },
+        });
         throw new Error(errorData.message || "Failed to create order");
       }
 
@@ -481,8 +518,16 @@ export function CheckoutForm({ user }: { user: User }) {
       const orderId = orderData.orderId;
 
       if (!orderId) {
+        clientLogger.error("Order created but no orderId returned", {
+          source: LOG_SOURCE,
+        });
         throw new Error("Order created but no ID returned");
       }
+
+      clientLogger.info("Order created successfully", {
+        source: LOG_SOURCE,
+        context: { orderId, paymentMethod, isGift, total },
+      });
 
       // Step 2: Handle payment via Cashfree. COD orders only charge the 20%
       // advance now; online orders charge the full amount. Either way, the
@@ -490,6 +535,13 @@ export function CheckoutForm({ user }: { user: User }) {
       const phoneNumber = customerInfo?.phone?.trim() || "";
 
       if (!phoneNumber) {
+        clientLogger.error(
+          "Payment blocked: missing phone number after order creation",
+          {
+            source: LOG_SOURCE,
+            context: { orderId },
+          },
+        );
         throw new Error("Phone number is required for payment");
       }
 
@@ -504,6 +556,15 @@ export function CheckoutForm({ user }: { user: User }) {
       }
 
       try {
+        clientLogger.info("Initiating payment", {
+          source: LOG_SOURCE,
+          context: {
+            orderId,
+            amount: isCod ? advanceAmount : total,
+            paymentMethod,
+          },
+        });
+
         await initiateCashfreePayment({
           orderId,
           amount: isCod ? advanceAmount : total,
@@ -516,6 +577,17 @@ export function CheckoutForm({ user }: { user: User }) {
         // because Cashfree navigates the user away. Kept as a safety net.
         setOrderPlaced(true);
       } catch (paymentError) {
+        clientLogger.error("Payment initiation failed", {
+          source: LOG_SOURCE,
+          context: {
+            orderId,
+            error:
+              paymentError instanceof Error
+                ? paymentError.message
+                : String(paymentError),
+          },
+        });
+
         // Payment session creation / SDK failure: mark order cancelled to
         // prevent ghost pending orders.
         try {
@@ -526,8 +598,24 @@ export function CheckoutForm({ user }: { user: User }) {
               reason: "payment_initiation_failed",
             }),
           });
-        } catch {
-          /* best-effort */
+          clientLogger.warn("Order auto-cancelled after payment failure", {
+            source: LOG_SOURCE,
+            context: { orderId },
+          });
+        } catch (cancelError) {
+          clientLogger.error(
+            "Failed to auto-cancel order after payment failure",
+            {
+              source: LOG_SOURCE,
+              context: {
+                orderId,
+                error:
+                  cancelError instanceof Error
+                    ? cancelError.message
+                    : String(cancelError),
+              },
+            },
+          );
         }
 
         setError(
@@ -537,15 +625,36 @@ export function CheckoutForm({ user }: { user: User }) {
         );
       }
     } catch (error) {
+      clientLogger.error("Checkout failed", {
+        source: LOG_SOURCE,
+        context: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Log once that the checkout page was opened with items in the cart.
+  useEffect(() => {
+    if (hasLoggedPageView.current || items.length === 0) return;
+    hasLoggedPageView.current = true;
+    clientLogger.info("Checkout page viewed", {
+      source: LOG_SOURCE,
+      context: { itemCount: totalItems, total, isGift },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
+
   // Redirect to cart if empty (must be in useEffect to avoid render-time state updates)
   useEffect(() => {
     if (items.length === 0 && !orderPlaced) {
+      clientLogger.info(
+        "Redirected to cart: checkout opened with an empty cart",
+        { source: LOG_SOURCE },
+      );
       router.push("/cart");
     }
   }, [items.length, orderPlaced, router]);
@@ -693,7 +802,14 @@ export function CheckoutForm({ user }: { user: User }) {
                   <Checkbox
                     id="is-gift-checkout"
                     checked={isGift}
-                    onCheckedChange={(checked) => setIsGift(checked === true)}
+                    onCheckedChange={(checked) => {
+                      const nextIsGift = checked === true;
+                      setIsGift(nextIsGift);
+                      clientLogger.info("Gift option toggled at checkout", {
+                        source: LOG_SOURCE,
+                        context: { isGift: nextIsGift },
+                      });
+                    }}
                     className="data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
                   />
                 </label>
@@ -1004,12 +1120,20 @@ export function CheckoutForm({ user }: { user: User }) {
                           !recipientAddress.state ||
                           !recipientAddress.postal_code.trim()
                         ) {
+                          clientLogger.warn(
+                            "Checkout contact step blocked: incomplete gift recipient details",
+                            { source: LOG_SOURCE },
+                          );
                           alert(
                             "Please fill in all required recipient details.",
                           );
                           return;
                         }
                         if (recipientPhone.length !== 10) {
+                          clientLogger.warn(
+                            "Checkout contact step blocked: invalid recipient phone",
+                            { source: LOG_SOURCE },
+                          );
                           alert(
                             "Recipient phone number must be exactly 10 digits.",
                           );
@@ -1021,7 +1145,14 @@ export function CheckoutForm({ user }: { user: User }) {
                       const ok =
                         (await contactFormRef.current?.save()) ?? false;
                       setIsSavingContact(false);
-                      if (ok) setTab(isGift ? "payment" : "shipping");
+                      if (ok) {
+                        setTab(isGift ? "payment" : "shipping");
+                      } else {
+                        clientLogger.warn(
+                          "Checkout contact step blocked: contact form save failed",
+                          { source: LOG_SOURCE },
+                        );
+                      }
                     }}
                     disabled={isSavingContact}
                     className="order-1 sm:order-2"
@@ -1383,6 +1514,10 @@ export function CheckoutForm({ user }: { user: User }) {
                           !shippingInfo.postal_code ||
                           !shippingInfo.country
                         ) {
+                          clientLogger.warn(
+                            "Checkout shipping step blocked: incomplete address fields",
+                            { source: LOG_SOURCE, context: { editing: true } },
+                          );
                           alert("Please fill in all required shipping fields.");
                           return;
                         }
@@ -1404,6 +1539,11 @@ export function CheckoutForm({ user }: { user: User }) {
                             throw new Error("Failed to update address");
                           }
 
+                          clientLogger.info("Saved address updated", {
+                            source: LOG_SOURCE,
+                            context: { addressId: editingAddressId },
+                          });
+
                           const refreshed = await fetchCustomerData(true);
                           setAddressList(
                             refreshed.addresses &&
@@ -1417,6 +1557,16 @@ export function CheckoutForm({ user }: { user: User }) {
                           setTab("payment");
                         } catch (error) {
                           console.error("Error updating address:", error);
+                          clientLogger.error("Failed to update saved address", {
+                            source: LOG_SOURCE,
+                            context: {
+                              addressId: editingAddressId,
+                              error:
+                                error instanceof Error
+                                  ? error.message
+                                  : String(error),
+                            },
+                          });
                           alert("Failed to update address. Please try again.");
                         } finally {
                           setIsLoading(false);
@@ -1431,6 +1581,10 @@ export function CheckoutForm({ user }: { user: User }) {
                       }
 
                       if (addressList.length > 0 && !selectedAddressId) {
+                        clientLogger.warn(
+                          "Checkout shipping step blocked: no address selected",
+                          { source: LOG_SOURCE },
+                        );
                         alert(
                           "Please select a saved address or add a new one to continue.",
                         );
@@ -1445,6 +1599,10 @@ export function CheckoutForm({ user }: { user: User }) {
                         !shippingInfo.postal_code ||
                         !shippingInfo.country
                       ) {
+                        clientLogger.warn(
+                          "Checkout shipping step blocked: incomplete address fields",
+                          { source: LOG_SOURCE, context: { editing: false } },
+                        );
                         alert("Please fill in all required shipping fields.");
                         return;
                       }
@@ -1466,6 +1624,11 @@ export function CheckoutForm({ user }: { user: User }) {
                           throw new Error("Failed to save address");
                         }
 
+                        clientLogger.info("New address saved at checkout", {
+                          source: LOG_SOURCE,
+                          context: { addressId: result.id },
+                        });
+
                         const refreshed = await fetchCustomerData(true);
                         setAddressList(
                           refreshed.addresses && refreshed.addresses.length > 0
@@ -1477,6 +1640,15 @@ export function CheckoutForm({ user }: { user: User }) {
                         setTab("payment");
                       } catch (error) {
                         console.error("Error saving address:", error);
+                        clientLogger.error("Failed to save new address", {
+                          source: LOG_SOURCE,
+                          context: {
+                            error:
+                              error instanceof Error
+                                ? error.message
+                                : String(error),
+                          },
+                        });
                         alert("Failed to save address. Please try again.");
                       } finally {
                         setIsLoading(false);
@@ -1511,7 +1683,14 @@ export function CheckoutForm({ user }: { user: User }) {
                     {/* COD Option */}
                     <button
                       type="button"
-                      onClick={() => isCodAvailable && setPaymentMethod("cod")}
+                      onClick={() => {
+                        if (!isCodAvailable) return;
+                        setPaymentMethod("cod");
+                        clientLogger.info("Payment method selected", {
+                          source: LOG_SOURCE,
+                          context: { paymentMethod: "cod" },
+                        });
+                      }}
                       disabled={!isCodAvailable}
                       className={`relative p-3 sm:p-4 rounded-lg border-2 transition-all text-left ${
                         paymentMethod === "cod" && isCodAvailable
@@ -1550,7 +1729,13 @@ export function CheckoutForm({ user }: { user: User }) {
                     {/* Online Payment Option */}
                     <button
                       type="button"
-                      onClick={() => setPaymentMethod("online")}
+                      onClick={() => {
+                        setPaymentMethod("online");
+                        clientLogger.info("Payment method selected", {
+                          source: LOG_SOURCE,
+                          context: { paymentMethod: "online" },
+                        });
+                      }}
                       className={`relative p-3 sm:p-4 rounded-lg border-2 transition-all text-left ${
                         paymentMethod === "online"
                           ? "border-blue-500 bg-blue-50"

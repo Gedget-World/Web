@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { clientLogger } from "@/lib/client-logger";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +38,13 @@ import { BrandName } from "@/components/brand-name";
 import Image from "next/image";
 
 const RESEND_SECONDS = 60;
+const LOG_SOURCE = "auth/login";
+
+// Never log a full phone number (PII) — only the last 2 digits.
+function maskPhone(rawPhone: string) {
+  if (rawPhone.length < 2) return "+91**********";
+  return `+91${"*".repeat(Math.max(rawPhone.length - 2, 0))}${rawPhone.slice(-2)}`;
+}
 
 export default function LoginPage() {
   const [phone, setPhone] = useState("");
@@ -53,6 +61,15 @@ export default function LoginPage() {
   const phoneInputRef = useRef<HTMLInputElement>(null);
 
   const isPhoneValid = phone.length === 10;
+
+  // Page view — fires once on mount, regardless of how the user arrived here.
+  useEffect(() => {
+    clientLogger.info("Login page viewed", {
+      source: LOG_SOURCE,
+      context: { redirect },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Keep the phone input disabled until the page (and all its scripts) has
   // fully finished loading, so users can't type into it before hydration.
@@ -82,10 +99,20 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  const sendOtp = async () => {
-    if (!isPhoneValid) return;
+  const sendOtp = async (isResend = false) => {
+    if (!isPhoneValid) {
+      clientLogger.warn("OTP send blocked: invalid phone number", {
+        source: LOG_SOURCE,
+        context: { phoneLength: phone.length, isResend },
+      });
+      return;
+    }
     setError(null);
     setIsSendingOtp(true);
+    clientLogger.info(isResend ? "Resending OTP" : "Sending OTP", {
+      source: LOG_SOURCE,
+      context: { phone: maskPhone(phone), isResend },
+    });
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
@@ -95,8 +122,18 @@ export default function LoginPage() {
       setOtp("");
       setOtpSent(true);
       setResendTimer(RESEND_SECONDS);
+      clientLogger.info("OTP sent successfully", {
+        source: LOG_SOURCE,
+        context: { phone: maskPhone(phone), isResend },
+      });
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Failed to send OTP");
+      const message =
+        error instanceof Error ? error.message : "Failed to send OTP";
+      setError(message);
+      clientLogger.error("Failed to send OTP", {
+        source: LOG_SOURCE,
+        context: { phone: maskPhone(phone), isResend, error: message },
+      });
     } finally {
       setIsSendingOtp(false);
     }
@@ -104,12 +141,18 @@ export default function LoginPage() {
 
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    void sendOtp();
+    void sendOtp(false);
   };
 
   const handleResendOtp = () => {
-    if (resendTimer > 0 || isSendingOtp) return;
-    void sendOtp();
+    if (resendTimer > 0 || isSendingOtp) {
+      clientLogger.debug("Resend OTP blocked: cooldown active", {
+        source: LOG_SOURCE,
+        context: { resendTimer, isSendingOtp },
+      });
+      return;
+    }
+    void sendOtp(true);
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -117,6 +160,10 @@ export default function LoginPage() {
     if (otp.length !== 6) return;
     setError(null);
     setIsVerifying(true);
+    clientLogger.info("Verifying OTP", {
+      source: LOG_SOURCE,
+      context: { phone: maskPhone(phone) },
+    });
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.verifyOtp({
@@ -125,10 +172,19 @@ export default function LoginPage() {
         type: "sms",
       });
       if (error) throw error;
+      clientLogger.info("Login successful", {
+        source: LOG_SOURCE,
+        context: { phone: maskPhone(phone), redirect },
+      });
       router.push(redirect);
       router.refresh();
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Invalid OTP");
+      const message = error instanceof Error ? error.message : "Invalid OTP";
+      setError(message);
+      clientLogger.error("OTP verification failed", {
+        source: LOG_SOURCE,
+        context: { phone: maskPhone(phone), error: message },
+      });
     } finally {
       setIsVerifying(false);
     }

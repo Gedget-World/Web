@@ -81,6 +81,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { clientLogger } from "@/lib/client-logger";
+
+const LOG_SOURCE = "profile-client";
 
 type Customer = {
   id?: string;
@@ -222,17 +225,41 @@ export function ProfileClient({
         return;
       }
 
-      const { addresses } = await fetchCustomerData();
-      if (addresses && addresses.length > 0) {
-        setAddressList(addresses as Address[]);
-      } else if (cachedAddress) {
-        setAddressList([cachedAddress as Address]);
+      try {
+        const { addresses } = await fetchCustomerData();
+        if (addresses && addresses.length > 0) {
+          setAddressList(addresses as Address[]);
+        } else if (cachedAddress) {
+          setAddressList([cachedAddress as Address]);
+        }
+      } catch (error) {
+        clientLogger.error("Failed to load saved addresses", {
+          source: LOG_SOURCE,
+          context: {
+            userId: user.id,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
       }
     };
 
     loadAddresses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHydrated, user.id]);
+
+  // Page view
+  useEffect(() => {
+    clientLogger.info("Profile page viewed", {
+      source: LOG_SOURCE,
+      context: {
+        userId: user.id,
+        orderCount,
+        wishlistCount: wishlistItems.length,
+        pendingReviewCount,
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openAddAddressDialog = () => {
     setEditingAddressId(null);
@@ -269,12 +296,23 @@ export function ProfileClient({
       const refreshed = await fetchCustomerData(true);
       setAddressList((refreshed.addresses as Address[]) || []);
 
+      clientLogger.info("Address deleted", {
+        source: LOG_SOURCE,
+        context: { userId: user.id, addressId },
+      });
       toast({
         title: "Address Deleted",
         description: "The saved address has been removed.",
       });
     } catch (error) {
-      console.error("Error deleting address:", error);
+      clientLogger.error("Failed to delete address", {
+        source: LOG_SOURCE,
+        context: {
+          userId: user.id,
+          addressId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
       toast({
         title: "Error",
         description: "Failed to delete address. Please try again.",
@@ -312,6 +350,10 @@ export function ProfileClient({
       !addressForm.state ||
       !addressForm.postal_code
     ) {
+      clientLogger.warn("Address save blocked: missing required fields", {
+        source: LOG_SOURCE,
+        context: { userId: user.id, isEdit: !!editingAddressId },
+      });
       toast({
         title: "Missing Fields",
         description: "Please fill in all required fields.",
@@ -336,6 +378,13 @@ export function ProfileClient({
       const refreshed = await fetchCustomerData(true);
       setAddressList((refreshed.addresses as Address[]) || [result]);
 
+      clientLogger.info(
+        editingAddressId ? "Address updated" : "Address saved",
+        {
+          source: LOG_SOURCE,
+          context: { userId: user.id, isEdit: !!editingAddressId },
+        },
+      );
       toast({
         title: editingAddressId ? "Address Updated" : "Address Saved",
         description: editingAddressId
@@ -345,6 +394,10 @@ export function ProfileClient({
       setIsEditingAddress(false);
       setEditingAddressId(null);
     } else {
+      clientLogger.error("Failed to save address", {
+        source: LOG_SOURCE,
+        context: { userId: user.id, isEdit: !!editingAddressId },
+      });
       toast({
         title: "Error",
         description: "Failed to save address. Please try again.",

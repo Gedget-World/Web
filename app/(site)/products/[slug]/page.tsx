@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -30,6 +31,8 @@ import { StickyAddToCart } from "@/components/sticky-add-to-cart";
 import { RecentlyViewedProducts } from "@/components/recently-viewed-products";
 import InstagramAndYoutubePreview from "@/components/insta-and-youtube-preview";
 
+const LOG_SOURCE = "app/(site)/products/[slug]/page";
+
 // lucide-react's brand icons (Instagram/Youtube) are deprecated, so we use
 // small inline SVGs for these brand logos instead.
 function InstagramIcon({ className }: { className?: string }) {
@@ -56,7 +59,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: product } = await supabase
+  const { data: product, error: productError } = await supabase
     .from("products")
     .select(
       "name, description, price, image_url, discount_percentage, specifications, collections(name), instagram_url, youtube_url",
@@ -66,6 +69,17 @@ export async function generateMetadata({
     .single();
 
   if (!product) {
+    if (productError && productError.code !== "PGRST116") {
+      await logger.error("Failed to fetch product for metadata", {
+        source: LOG_SOURCE,
+        context: { slug, error: productError.message },
+      });
+    } else {
+      await logger.warn("Metadata generation: product not found", {
+        source: LOG_SOURCE,
+        context: { slug },
+      });
+    }
     return { title: "Product Not Found" };
   }
 
@@ -112,14 +126,65 @@ export default async function ProductDetailPage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: product } = await supabase
-    .from("products")
-    .select(
-      "*, collections(name, slug, parent_id, parent:parent_id(name, slug))",
-    )
-    .eq("slug", slug)
-    .eq("is_active", true)
-    .single();
+  let product: any = null;
+  let reviewStats: { rating: number }[] | null = null;
+  let user: any = null;
+
+  try {
+    const { data: productData, error: productError } = await supabase
+      .from("products")
+      .select(
+        "*, collections(name, slug, parent_id, parent:parent_id(name, slug))",
+      )
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .single();
+
+    if (productError && productError.code !== "PGRST116") {
+      await logger.error("Failed to fetch product detail", {
+        source: LOG_SOURCE,
+        context: { slug, error: productError.message },
+      });
+    }
+
+    product = productData;
+
+    if (!product) {
+      await logger.warn("Product detail page: product not found", {
+        source: LOG_SOURCE,
+        context: { slug },
+      });
+    } else {
+      // Fetch review stats
+      const { data: reviewStatsData, error: reviewStatsError } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("product_id", product.id)
+        .eq("is_active", true);
+
+      if (reviewStatsError) {
+        await logger.error("Failed to fetch review stats for product", {
+          source: LOG_SOURCE,
+          context: { productId: product.id, error: reviewStatsError.message },
+        });
+      }
+      reviewStats = reviewStatsData;
+
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      user = authUser;
+    }
+  } catch (err) {
+    await logger.fatal("Unexpected error loading product detail page data", {
+      source: LOG_SOURCE,
+      context: {
+        slug,
+        error: err instanceof Error ? err.message : String(err),
+      },
+    });
+    throw err;
+  }
 
   if (!product) {
     return (
@@ -147,13 +212,6 @@ export default async function ProductDetailPage({
     );
   }
 
-  // Fetch review stats
-  const { data: reviewStats } = await supabase
-    .from("reviews")
-    .select("rating")
-    .eq("product_id", product.id)
-    .eq("is_active", true);
-
   const reviewCount = reviewStats?.length || 0;
   const averageRating =
     reviewCount > 0
@@ -167,10 +225,6 @@ export default async function ProductDetailPage({
     ? Math.round(product.price / (1 - product.discount_percentage / 100))
     : null;
   const savingsAmount = originalPrice ? originalPrice - product.price : 0;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   return (
     <main className="min-h-screen py-8 md:py-12 px-4 md:px-8 max-w-7xl mx-auto">

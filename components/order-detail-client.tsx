@@ -66,6 +66,9 @@ import {
 } from "lucide-react";
 import { CancelOrderButton } from "@/components/cancel-order-button";
 import { OrderItemReview } from "@/components/order-item-review";
+import { clientLogger } from "@/lib/client-logger";
+
+const LOG_SOURCE = "order-detail-client";
 
 interface OrderDetailClientProps {
   order: any;
@@ -110,6 +113,18 @@ export function OrderDetailClient({
   const [notesDraft, setNotesDraft] = useState(deliveryNotes);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const canEditNotes = ["pending", "processing"].includes(order.status);
+
+  useEffect(() => {
+    clientLogger.info("Order detail page viewed", {
+      source: LOG_SOURCE,
+      context: {
+        orderId: order.id,
+        status: order.status,
+        isGift: Boolean(order.is_gift),
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Simulate loading
   useEffect(() => {
@@ -175,7 +190,24 @@ export function OrderDetailClient({
     text: string,
     type: "id" | "address" | "tracking",
   ) => {
-    await navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      clientLogger.warn("Failed to copy to clipboard", {
+        source: LOG_SOURCE,
+        context: {
+          orderId: order.id,
+          type,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+      toast({
+        title: "Couldn't copy",
+        description: "Please copy it manually.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (type === "id") {
       setCopiedId(true);
       setTimeout(() => setCopiedId(false), 2000);
@@ -209,11 +241,22 @@ export function OrderDetailClient({
 
       setDeliveryNotes(trimmed);
       setIsEditingNotes(false);
+      clientLogger.info("Delivery notes updated", {
+        source: LOG_SOURCE,
+        context: { orderId: order.id, length: trimmed.length },
+      });
       toast({
         title: "Delivery notes updated",
         description: "Your delivery instructions have been saved.",
       });
     } catch (error) {
+      clientLogger.error("Failed to update delivery notes", {
+        source: LOG_SOURCE,
+        context: {
+          orderId: order.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
       toast({
         title: "Couldn't save delivery notes",
         description:
@@ -234,9 +277,18 @@ export function OrderDetailClient({
         image_url: item.products.image_url,
         stock: 999, // Assume available
       });
+      clientLogger.info("Buy again: item added to cart", {
+        source: LOG_SOURCE,
+        context: { orderId: order.id, productId: item.products.id },
+      });
       toast({
         title: "Added to cart!",
         description: `${item.products.name} has been added to your cart`,
+      });
+    } else {
+      clientLogger.warn("Buy again blocked: missing product data", {
+        source: LOG_SOURCE,
+        context: { orderId: order.id, orderItemId: item.id },
       });
     }
   };
