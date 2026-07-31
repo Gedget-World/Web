@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,6 @@ import {
 import Link from "next/link";
 import FAQSections from "@/components/faq-sections";
 import { useStoreSettings } from "@/hooks/use-store-settings";
-import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
 
 export default function ContactUsPage() {
   const { getSetting } = useStoreSettings([
@@ -49,52 +47,15 @@ export default function ContactUsPage() {
   const storePincode = getSetting("store_pincode", "462044");
   const storeCountry = getSetting("store_country", "India");
 
-  const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
     phone: "",
     message: "",
   });
-
-  // Check if user is logged in and pre-fill data
-  useEffect(() => {
-    const supabase = createClient();
-
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        setFormData((prev) => ({ ...prev, email: user.email || "" }));
-
-        // Fetch customer data for name
-        try {
-          const response = await fetch(`/api/customers?user_id=${user.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data) {
-              setFormData((prev) => ({
-                ...prev,
-                firstName: data.first_name || "",
-                lastName: data.last_name || "",
-                phone: data.phone || prev.phone,
-              }));
-            }
-          }
-        } catch (err) {
-          console.error("Error fetching customer data:", err);
-        }
-      }
-    };
-
-    checkUser();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,16 +81,15 @@ export default function ContactUsPage() {
 
       setIsSubmitted(true);
 
-      // Reset form after 3 seconds but keep user info
+      // Reset form after 3 seconds
       setTimeout(() => {
         setIsSubmitted(false);
-        setFormData((prev) => ({
-          firstName: user ? prev.firstName : "",
-          lastName: user ? prev.lastName : "",
-          email: user?.email || "",
-          phone: user ? prev.phone : "",
+        setFormData({
+          firstName: "",
+          lastName: "",
+          phone: "",
           message: "",
-        }));
+        });
       }, 3000);
     } catch (err) {
       setError(
@@ -367,32 +327,11 @@ export default function ContactUsPage() {
                   </div>
                 </div>
 
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">
-                    Email address <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={!!user}
-                    className={user ? "bg-gray-50 cursor-not-allowed" : ""}
-                  />
-                  {user && (
-                    <p className="text-xs text-gray-500">
-                      Email is pre-filled from your account
-                    </p>
-                  )}
-                </div>
-
                 {/* Phone */}
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone number</Label>
+                  <Label htmlFor="phone">
+                    Phone number <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -400,6 +339,7 @@ export default function ContactUsPage() {
                     placeholder="+91 12345 67890"
                     value={formData.phone}
                     onChange={handleChange}
+                    required
                   />
                 </div>
 

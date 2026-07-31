@@ -75,7 +75,7 @@ interface ContactMessage {
   id: string;
   first_name: string;
   last_name: string;
-  email: string;
+  email: string | null;
   phone_number: string | null;
   message: string;
   status: string;
@@ -402,15 +402,19 @@ export default function QueriesPage() {
                     {message.first_name} {message.last_name}
                   </TableCell>
                   <TableCell>
-                    <a
-                      href={`mailto:${message.email}`}
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      <Mail className="w-3 h-3" />
-                      {message.email.length > 25
-                        ? `${message.email.slice(0, 25)}...`
-                        : message.email}
-                    </a>
+                    {message.email ? (
+                      <a
+                        href={`mailto:${message.email}`}
+                        className="text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        <Mail className="w-3 h-3" />
+                        {message.email.length > 25
+                          ? `${message.email.slice(0, 25)}...`
+                          : message.email}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">Not provided</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-[200px]">
                     <p className="truncate text-gray-600">{message.message}</p>
@@ -439,15 +443,17 @@ export default function QueriesPage() {
                             <MessageSquare className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={() =>
-                              window.open(`mailto:${message.email}`, "_blank")
-                            }
-                          >
-                            <Mail className="w-4 h-4 mr-2" />
-                            Send Email
-                          </DropdownMenuItem>
+                          {message.email && (
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() =>
+                                window.open(`mailto:${message.email}`, "_blank")
+                              }
+                            >
+                              <Mail className="w-4 h-4 mr-2" />
+                              Send Email
+                            </DropdownMenuItem>
+                          )}
                           {message.phone_number && (
                             <DropdownMenuItem
                               className="cursor-pointer"
@@ -546,13 +552,17 @@ export default function QueriesPage() {
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Email</p>
-                  <a
-                    href={`mailto:${viewingMessage.email}`}
-                    className="text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {viewingMessage.email}
-                  </a>
+                  {viewingMessage.email ? (
+                    <a
+                      href={`mailto:${viewingMessage.email}`}
+                      className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {viewingMessage.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">Not provided</span>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Phone</p>
@@ -658,14 +668,16 @@ export default function QueriesPage() {
             <Button variant="outline" onClick={() => setViewingMessage(null)}>
               Close
             </Button>
-            <Button
-              onClick={() =>
-                window.open(`mailto:${viewingMessage?.email}`, "_blank")
-              }
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Reply via Email
-            </Button>
+            {viewingMessage?.email && (
+              <Button
+                onClick={() =>
+                  window.open(`mailto:${viewingMessage.email}`, "_blank")
+                }
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Reply via Email
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

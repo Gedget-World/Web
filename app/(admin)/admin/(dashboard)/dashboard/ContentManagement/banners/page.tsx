@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, GalleryHorizontal } from "lucide-react";
 import DataTable from "./data-table";
 
 export default function BannersPage() {
@@ -15,11 +15,18 @@ export default function BannersPage() {
           </Link>
           <h1 className="text-2xl font-bold">Banners</h1>
         </div>
-        <Link href="/admin/dashboard/ContentManagement/banners/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" /> Add Banner
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/dashboard/ContentManagement/carousels">
+            <Button variant="outline">
+              <GalleryHorizontal className="w-4 h-4 mr-2" /> Manage Carousels
+            </Button>
+          </Link>
+          <Link href="/admin/dashboard/ContentManagement/banners/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" /> Add Banner
+            </Button>
+          </Link>
+        </div>
       </header>
       <main className="mt-4">
         <DataTable />

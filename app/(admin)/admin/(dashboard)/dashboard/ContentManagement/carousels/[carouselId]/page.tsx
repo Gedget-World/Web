@@ -38,6 +38,7 @@ interface Placement {
   id: string;
   name: string;
   description: string | null;
+  max_items: number;
 }
 
 interface Banner {
@@ -86,6 +87,10 @@ export default function EditCarouselPage({ params }: PageProps) {
   });
 
   const [selectedBanners, setSelectedBanners] = useState<Banner[]>([]);
+
+  // Max items for the currently selected placement (content_placements.max_items)
+  const [maxItems, setMaxItems] = useState<number>(1);
+  const [savingMaxItems, setSavingMaxItems] = useState(false);
 
   const [errors, setErrors] = useState({
     name: false,
@@ -137,6 +142,10 @@ export default function EditCarouselPage({ params }: PageProps) {
           if (data.banners) {
             setSelectedBanners(data.banners);
           }
+
+          if (data.content_placements?.max_items != null) {
+            setMaxItems(data.content_placements.max_items);
+          }
         } else {
           router.push("/admin/dashboard/ContentManagement/carousels");
         }
@@ -151,6 +160,43 @@ export default function EditCarouselPage({ params }: PageProps) {
 
   const handleChange = (key: string, value: any) => {
     setCarousel((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Switching placement should reflect that placement's own max_items, not the previous one's
+  const handlePlacementChange = (placementId: string) => {
+    handleChange("placement_id", placementId);
+    const selected = placements.find((p) => p.id === placementId);
+    setMaxItems(selected?.max_items ?? 1);
+  };
+
+  const handleSaveMaxItems = async () => {
+    if (!carousel.placement_id) return;
+
+    setSavingMaxItems(true);
+    try {
+      const res = await fetch(
+        `/api/content/placements/${carousel.placement_id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ max_items: maxItems }),
+        },
+      );
+
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error);
+
+      setPlacements((prev) =>
+        prev.map((p) =>
+          p.id === carousel.placement_id ? { ...p, max_items: maxItems } : p,
+        ),
+      );
+    } catch (error) {
+      console.error("Error updating placement max_items:", error);
+      alert("Failed to update max items. Please try again.");
+    } finally {
+      setSavingMaxItems(false);
+    }
   };
 
   const addBanner = (banner: Banner) => {
@@ -337,7 +383,7 @@ export default function EditCarouselPage({ params }: PageProps) {
               <Select
                 value={carousel.placement_id}
                 onValueChange={(value) =>
-                  handleChange("placement_id", value === "none" ? "" : value)
+                  handlePlacementChange(value === "none" ? "" : value)
                 }
               >
                 <SelectTrigger>
@@ -353,6 +399,41 @@ export default function EditCarouselPage({ params }: PageProps) {
                 </SelectContent>
               </Select>
             </div>
+
+            {carousel.placement_id && (
+              <div className="space-y-2">
+                <Label htmlFor="placement_max_items">
+                  Max Items for this Placement
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="placement_max_items"
+                    type="number"
+                    min="1"
+                    value={maxItems}
+                    onChange={(e) => setMaxItems(parseInt(e.target.value) || 1)}
+                    className="max-w-[120px]"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveMaxItems}
+                    disabled={savingMaxItems}
+                  >
+                    {savingMaxItems && (
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    )}
+                    Save
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Caps how many banners this placement shows on the site
+                  (content_placements.max_items). Saved separately from the
+                  carousel settings below.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Active Status</Label>

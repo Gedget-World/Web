@@ -35,3 +35,4 @@ open-project.bat
 # Supabase
 /supabase
 
+.unlighthouse

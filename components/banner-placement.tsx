@@ -19,6 +19,9 @@ type RawCarouselBannerRow = {
   banners: RawBanner | RawBanner[] | null;
 };
 
+// Fallback when a placement has no max_items set in the DB (matches the admin form's default).
+const DEFAULT_MAX_ITEMS = 10;
+
 async function fetchPlacementCarousel(
   placementName: string,
 ): Promise<PlacementCarousel | null> {
@@ -76,7 +79,7 @@ async function fetchPlacementCarousel(
       return true;
     });
 
-  const maxItems = placement.max_items ?? 0;
+  const maxItems = placement.max_items ?? DEFAULT_MAX_ITEMS;
   const limitedBanners =
     maxItems > 0 ? filteredBanners.slice(0, maxItems) : filteredBanners;
 
@@ -117,7 +120,7 @@ async function fetchPlacementBanners(
     return true;
   });
 
-  const maxItems = placement.max_items ?? 0;
+  const maxItems = placement.max_items ?? DEFAULT_MAX_ITEMS;
   return maxItems > 0 ? active.slice(0, maxItems) : active;
 }
 

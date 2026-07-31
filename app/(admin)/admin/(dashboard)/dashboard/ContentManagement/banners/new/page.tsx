@@ -49,6 +49,10 @@ function BannerFormContent() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  // Client-side-only display metadata (file size in bytes) — not persisted to the DB
+  const [imageSizes, setImageSizes] = useState<
+    Record<"desktop" | "mobile", number | null>
+  >({ desktop: null, mobile: null });
 
   const [banner, setBanner] = useState({
     title: "",
@@ -80,6 +84,27 @@ function BannerFormContent() {
     title: false,
     desktop_image_url: false,
   });
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(2)} MB`;
+  };
+
+  // Best-effort: existing images (loaded from the server) have no File object,
+  // so fetch their size via a HEAD request's Content-Length header.
+  const fetchImageSize = async (type: "desktop" | "mobile", url: string) => {
+    try {
+      const res = await fetch(url, { method: "HEAD" });
+      const length = res.headers.get("content-length");
+      if (length) {
+        setImageSizes((prev) => ({ ...prev, [type]: parseInt(length, 10) }));
+      }
+    } catch {
+      // Metadata is a nice-to-have — ignore failures.
+    }
+  };
 
   // Fetch placements
   useEffect(() => {
@@ -135,6 +160,13 @@ function BannerFormContent() {
               priority: data.priority || 0,
               alt_text: data.alt_text || "",
             });
+
+            if (data.desktop_image_url) {
+              fetchImageSize("desktop", data.desktop_image_url);
+            }
+            if (data.mobile_image_url) {
+              fetchImageSize("mobile", data.mobile_image_url);
+            }
           }
         } catch (error) {
           console.error("Error fetching banner:", error);
@@ -151,12 +183,13 @@ function BannerFormContent() {
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "desktop" | "tablet" | "mobile",
+    type: "desktop" | "mobile",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(type);
+    setImageSizes((prev) => ({ ...prev, [type]: file.size }));
     const bucketName =
       process.env.NEXT_PUBLIC_SUPABASE_BANNERS_BUCKET || "banners";
     const fileName = `${type}_${Date.now()}_${file.name}`;
@@ -192,7 +225,7 @@ function BannerFormContent() {
     }
   };
 
-  const removeImage = async (type: "desktop" | "tablet" | "mobile") => {
+  const removeImage = async (type: "desktop" | "mobile") => {
     const imageUrl = banner[
       `${type}_image_url` as keyof typeof banner
     ] as string;
@@ -218,6 +251,7 @@ function BannerFormContent() {
     handleChange(`${type}_image_url`, "");
     handleChange(`${type}_width`, "");
     handleChange(`${type}_height`, "");
+    setImageSizes((prev) => ({ ...prev, [type]: null }));
   };
 
   const validate = () => {
@@ -292,7 +326,7 @@ function BannerFormContent() {
     label,
     required = false,
   }: {
-    type: "desktop" | "tablet" | "mobile";
+    type: "desktop" | "mobile";
     label: string;
     required?: boolean;
   }) => {
@@ -301,6 +335,7 @@ function BannerFormContent() {
     ] as string;
     const width = banner[`${type}_width` as keyof typeof banner] as string;
     const height = banner[`${type}_height` as keyof typeof banner] as string;
+    const sizeBytes = imageSizes[type];
 
     return (
       <div className="space-y-2">
@@ -324,11 +359,13 @@ function BannerFormContent() {
                 <X className="w-4 h-4 mr-1" /> Remove
               </Button>
             </div>
-            {width && height && (
+            {(width && height) || sizeBytes ? (
               <p className="text-xs text-muted-foreground mt-1">
-                {width} × {height}px
+                {width && height ? `${width} × ${height}px` : null}
+                {width && height && sizeBytes ? " • " : null}
+                {sizeBytes ? formatFileSize(sizeBytes) : null}
               </p>
-            )}
+            ) : null}
           </div>
         ) : (
           <label
@@ -567,20 +604,16 @@ function BannerFormContent() {
             <CardHeader>
               <CardTitle>Responsive Images</CardTitle>
               <CardDescription>
-                Upload different images for desktop, tablet, and mobile devices.
-                Only desktop is required.
+                Upload different images for desktop and mobile devices. Only
+                desktop is required.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ImageUploader
                   type="desktop"
                   label="Desktop Image (1920 × 700) pixels"
                   required
-                />
-                <ImageUploader
-                  type="tablet"
-                  label="Tablet Image (1200 × 700) pixels"
                 />
                 <ImageUploader
                   type="mobile"

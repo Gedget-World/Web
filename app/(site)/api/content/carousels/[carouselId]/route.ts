@@ -18,7 +18,8 @@ export async function GET(
         content_placements (
           id,
           name,
-          description
+          description,
+          max_items
         )
       `,
       )

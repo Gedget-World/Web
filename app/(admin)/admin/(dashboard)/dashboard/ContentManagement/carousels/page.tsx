@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Plus } from "lucide-react";
+import { ArrowLeft, Settings, Plus, Image as ImageIcon } from "lucide-react";
 import CarouselsDataTable from "./data-table";
 
 export default function CarouselsPage() {
@@ -18,6 +18,12 @@ export default function CarouselsPage() {
           <Settings className="h-6 w-6 text-orange-600" />
           Banner Carousels
         </h1>
+        <Link href="/admin/dashboard/ContentManagement/banners">
+          <Button variant="outline">
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Manage Banners
+          </Button>
+        </Link>
         <Link href="/admin/dashboard/ContentManagement/carousels/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
