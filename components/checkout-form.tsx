@@ -1814,7 +1814,7 @@ export function CheckoutForm({ user }: { user: User }) {
                       payment. All transactions are encrypted and safe.
                     </p>
                   </div>
-                  <div className="p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  {/* <div className="p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs sm:text-sm text-amber-800">
                       <span className="font-semibold">
                         Cancellation Policy:
@@ -1822,7 +1822,7 @@ export function CheckoutForm({ user }: { user: User }) {
                       After the order is dispatched, a 50% cancellation penalty
                       applies on advance (prepaid) payments.
                     </p>
-                  </div>
+                  </div> */}
                 </div>
 
                 {(error || cashfreeError) && (

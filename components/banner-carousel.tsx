@@ -23,7 +23,13 @@ type PlacementCarousel = {
   banners: BannerItem[];
 };
 
-export function BannerCarousel({ carousel }: { carousel: PlacementCarousel }) {
+export function BannerCarousel({
+  carousel,
+  priority = false,
+}: {
+  carousel: PlacementCarousel;
+  priority?: boolean;
+}) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
 
@@ -85,9 +91,12 @@ export function BannerCarousel({ carousel }: { carousel: PlacementCarousel }) {
             className="w-full"
           >
             <CarouselContent className="m-0">
-              {carousel.banners.map((banner) => (
+              {carousel.banners.map((banner, index) => (
                 <CarouselItem key={banner.id} className="p-0">
-                  <BannerCard banner={banner} />
+                  <BannerCard
+                    banner={banner}
+                    priority={priority && index === 0}
+                  />
                 </CarouselItem>
               ))}
             </CarouselContent>

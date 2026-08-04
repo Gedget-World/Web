@@ -215,7 +215,10 @@ export default function ProductDetailsPage({
         "product_thumbnail_images";
       const { data, error } = await supabase.storage
         .from(thumbnailBucket) // bucket name
-        .upload(fileName, files[0]);
+        .upload(fileName, files[0], {
+          cacheControl: "31536000",
+          upsert: false,
+        });
 
       if (error) {
         console.error("Upload error:", error);

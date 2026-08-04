@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { HeroSection } from "@/components/hero-section";
 import { HomePageSections } from "@/components/home-page-sections";
 import { BannerPlacement } from "@/components/banner-placement";
+import { BannerSkeleton } from "@/components/banner-list";
 import { SectionSkeleton } from "@/components/lazy-section";
 
 const LOG_SOURCE = "app/(site)/page";
@@ -31,29 +32,31 @@ export default async function HomePage() {
         .limit(5),
     ]);
 
+    // Logging is fire-and-forget — awaiting it would block the response on a
+    // Supabase round-trip (writeLog() already catches its own errors).
     if (featuredError) {
-      await logger.error("Failed to fetch featured products for homepage", {
+      void logger.error("Failed to fetch featured products for homepage", {
         source: LOG_SOURCE,
         context: { error: featuredError.message },
       });
     } else if (!featuredProducts?.length) {
-      await logger.warn("No featured products found for homepage", {
+      void logger.warn("No featured products found for homepage", {
         source: LOG_SOURCE,
       });
     }
 
     if (arrivalError) {
-      await logger.error("Failed to fetch new-arrival products for homepage", {
+      void logger.error("Failed to fetch new-arrival products for homepage", {
         source: LOG_SOURCE,
         context: { error: arrivalError.message },
       });
     } else if (!arrivalProducts?.length) {
-      await logger.warn("No new-arrival products found for homepage", {
+      void logger.warn("No new-arrival products found for homepage", {
         source: LOG_SOURCE,
       });
     }
 
-    await logger.info("Homepage viewed", {
+    void logger.info("Homepage viewed", {
       source: LOG_SOURCE,
       context: {
         featuredCount: featuredProducts?.length || 0,
@@ -66,8 +69,11 @@ export default async function HomePage() {
         {/* <HeroSection /> */}
 
         {/* Streams in independently — page shell renders immediately */}
-        <Suspense fallback={<SectionSkeleton height="220px" />}>
-          <BannerPlacement placementName="home-page-below-hero-section" />
+        <Suspense fallback={<BannerSkeleton />}>
+          <BannerPlacement
+            placementName="home-page-below-hero-section"
+            priority
+          />
         </Suspense>
 
         <HomePageSections

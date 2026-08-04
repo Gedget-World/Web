@@ -126,19 +126,21 @@ async function fetchPlacementBanners(
 
 export async function BannerPlacement({
   placementName,
+  priority = false,
 }: {
   placementName: string;
+  priority?: boolean;
 }) {
   const carousel = await fetchPlacementCarousel(placementName);
 
   if (carousel) {
-    return <BannerCarousel carousel={carousel} />;
+    return <BannerCarousel carousel={carousel} priority={priority} />;
   }
 
   const banners = await fetchPlacementBanners(placementName);
 
   if (banners.length) {
-    return <BannerList banners={banners} />;
+    return <BannerList banners={banners} priority={priority} />;
   }
 
   return null;

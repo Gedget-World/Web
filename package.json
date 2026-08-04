@@ -8,6 +8,10 @@
     "lint": "next lint",
     "start": "next start"
   },
+  "browserslist": [
+    "defaults and fully supports es6-module",
+    "maintained node versions"
+  ],
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.10.0",
@@ -75,6 +79,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.3",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
@@ -91,7 +96,6 @@
     "@types/react": "^19",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^19",
-    "critters": "^0.0.25",
     "postcss": "^8.5",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^4.1.9",

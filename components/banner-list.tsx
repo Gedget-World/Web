@@ -1,3 +1,5 @@
+import { getImageProps } from "next/image";
+
 type BannerItem = {
   id: string;
   title: string;
@@ -41,28 +43,60 @@ const BANNER_ASPECT_RATIO_CSS = `
   }
 `;
 
-export function BannerCard({ banner }: { banner: BannerItem }) {
+export function BannerCard({
+  banner,
+  priority = false,
+}: {
+  banner: BannerItem;
+  priority?: boolean;
+}) {
   const linkUrl = banner.link_url?.trim();
   const hasLink = Boolean(linkUrl);
 
+  // Route each art-directed source through Next's image optimizer (resize +
+  // modern format) while keeping <picture>/<source> so only the matching
+  // breakpoint's image is ever downloaded.
+  const commonImageProps = {
+    alt: banner.alt_text || banner.title,
+    fill: true,
+    sizes: "100vw",
+  };
+
+  const mobileImage = banner.mobile_image_url
+    ? getImageProps({ ...commonImageProps, src: banner.mobile_image_url }).props
+    : null;
+
+  const tabletImage = banner.tablet_image_url
+    ? getImageProps({ ...commonImageProps, src: banner.tablet_image_url }).props
+    : null;
+
+  const { props: desktopImage } = getImageProps({
+    ...commonImageProps,
+    src: banner.desktop_image_url,
+  });
+
   const image = (
     <picture>
-      {banner.mobile_image_url && (
+      {mobileImage && (
         <source
           media={`(max-width: ${BANNER_SIZES.mobile.maxWidth}px)`}
-          srcSet={banner.mobile_image_url}
+          srcSet={mobileImage.srcSet}
         />
       )}
-      {banner.tablet_image_url && (
+      {tabletImage && (
         <source
           media={`(min-width: ${BANNER_SIZES.tablet.minWidth}px) and (max-width: ${BANNER_SIZES.tablet.maxWidth}px)`}
-          srcSet={banner.tablet_image_url}
+          srcSet={tabletImage.srcSet}
         />
       )}
       <img
-        src={banner.desktop_image_url}
-        alt={banner.alt_text || banner.title}
-        loading="lazy"
+        {...desktopImage}
+        alt={desktopImage.alt}
+        // The above-the-fold banner is typically the LCP element — load it
+        // eagerly with a high fetch priority instead of lazy-loading it.
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
+        decoding={priority ? "sync" : "async"}
         className="absolute inset-0 h-full w-full object-cover"
       />
     </picture>
@@ -89,14 +123,38 @@ export function BannerCard({ banner }: { banner: BannerItem }) {
   );
 }
 
-export function BannerList({ banners }: { banners: BannerItem[] }) {
+export function BannerList({
+  banners,
+  priority = false,
+}: {
+  banners: BannerItem[];
+  priority?: boolean;
+}) {
   return (
     <section className="py-8">
       <div className="container max-w-7xl mx-auto px-4">
         <div className="space-y-4">
-          {banners.map((banner) => (
-            <BannerCard key={banner.id} banner={banner} />
+          {banners.map((banner, index) => (
+            <BannerCard
+              key={banner.id}
+              banner={banner}
+              priority={priority && index === 0}
+            />
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Matches BannerCard's aspect ratio so the Suspense fallback occupies the
+// same height as the real banner, preventing layout shift when it streams in.
+export function BannerSkeleton() {
+  return (
+    <section className="py-8">
+      <div className="container max-w-7xl mx-auto px-4">
+        <div className="banner-card w-full animate-pulse rounded-sm bg-muted/50">
+          <style>{BANNER_ASPECT_RATIO_CSS}</style>
         </div>
       </div>
     </section>

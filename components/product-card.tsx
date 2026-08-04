@@ -70,6 +70,7 @@ export function ProductCard({ product }: { product: Product }) {
             src={product.image_url || "/placeholder.svg?height=400&width=400"}
             alt={product.name}
             fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
             className={`object-contain group-hover:scale-105 transition-transform duration-500 ${
               imageLoaded ? "opacity-100" : "opacity-0"
             }`}

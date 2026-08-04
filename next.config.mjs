@@ -18,10 +18,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Inlines above-the-fold CSS and defers the rest to fix render-blocking CSS requests (requires the "critters" package)
-  experimental: {
-    optimizeCss: true,
-  },
   images: {
     minimumCacheTTL: 86400, // Cache images for 1 day (in seconds)
     remotePatterns: [

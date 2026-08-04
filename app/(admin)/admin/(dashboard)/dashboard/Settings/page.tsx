@@ -216,7 +216,7 @@ export default function SettingsPage() {
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(fileName, file, {
-          cacheControl: "3600",
+          cacheControl: "31536000",
           upsert: false,
         });
 
@@ -226,7 +226,7 @@ export default function SettingsPage() {
           await supabase.storage
             .from("product_images")
             .upload(`settings/${fileName}`, file, {
-              cacheControl: "3600",
+              cacheControl: "31536000",
               upsert: false,
             });
 

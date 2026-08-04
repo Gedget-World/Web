@@ -197,7 +197,7 @@ function BannerFormContent() {
     try {
       const { data, error } = await supabase.storage
         .from(bucketName)
-        .upload(fileName, file);
+        .upload(fileName, file, { cacheControl: "31536000", upsert: false });
 
       if (error) throw error;
 
