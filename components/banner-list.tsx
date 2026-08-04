@@ -60,6 +60,7 @@ export function BannerCard({
     alt: banner.alt_text || banner.title,
     fill: true,
     sizes: "100vw",
+    quality: 70,
   };
 
   const mobileImage = banner.mobile_image_url
