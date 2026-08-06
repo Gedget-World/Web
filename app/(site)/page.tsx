@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import { HeroSection } from "@/components/hero-section";
+// import { HeroSection } from "@/components/hero-section";
 import { HomePageSections } from "@/components/home-page-sections";
 import { BannerPlacement } from "@/components/banner-placement";
 import { BannerSkeleton } from "@/components/banner-list";

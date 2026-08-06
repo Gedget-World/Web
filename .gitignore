@@ -7,6 +7,9 @@
 /.next/
 /out/
 
+# lighthouse audit reports
+/.lighthouse/
+
 # production
 /build
 
@@ -36,3 +39,4 @@ open-project.bat
 /supabase
 
 .unlighthouse
+.lighthouse

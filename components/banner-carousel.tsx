@@ -122,18 +122,22 @@ export function BannerCarousel({
           )}
 
           {carousel.show_dots && carousel.banners.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2 rounded-full bg-black/30 px-3 py-2 backdrop-blur-sm">
+            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/30 px-2 backdrop-blur-sm">
               {carousel.banners.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => scrollTo(index)}
-                  className={`h-2 rounded-full transition-all ${
-                    current === index
-                      ? "w-6 bg-white"
-                      : "w-2 bg-white/60 hover:bg-white/80"
-                  }`}
+                  className="group flex h-6 w-6 items-center justify-center"
                   aria-label={`Go to banner ${index + 1}`}
-                />
+                >
+                  <span
+                    className={`h-2 rounded-full transition-all ${
+                      current === index
+                        ? "w-6 bg-white"
+                        : "w-2 bg-white/60 group-hover:bg-white/80"
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           )}

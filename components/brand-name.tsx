@@ -25,7 +25,7 @@ export function BrandName({ size = "md", className }: BrandNameProps) {
       <span className="text-slate-900 tracking-tight">Gadgets</span>
 
       {/* Kabila - Subtle accent */}
-      <span className="text-slate-500 font-medium italic tracking-normal">
+      <span className="text-slate-600 font-medium italic tracking-normal">
         kabila
       </span>
     </span>

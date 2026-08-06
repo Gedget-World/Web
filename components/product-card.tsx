@@ -139,13 +139,13 @@ export function ProductCard({ product }: { product: Product }) {
                 ₹{Math.floor(product.price).toLocaleString("en-IN")}
               </span>
               {originalPrice && (
-                <span className="text-xs text-gray-400 line-through">
+                <span className="text-xs text-gray-500 line-through">
                   ₹{originalPrice.toLocaleString("en-IN")}
                 </span>
               )}
             </div>
             {hasDiscount && (
-              <span className="text-[10px] text-green-600 font-medium">
+              <span className="text-[10px] text-green-700 font-medium">
                 Save ₹{(originalPrice! - product.price).toLocaleString("en-IN")}
               </span>
             )}
@@ -157,6 +157,13 @@ export function ProductCard({ product }: { product: Product }) {
             size="sm"
             onClick={handleAddToCart}
             disabled={isOutOfStock || isAtMaxStock}
+            aria-label={
+              isOutOfStock
+                ? "Out of stock"
+                : added
+                  ? "Added to cart"
+                  : "Add to cart"
+            }
             className={`shrink-0 transition-all duration-300 ${
               added
                 ? "bg-green-600 hover:bg-green-600 text-white border-green-600"

@@ -19,6 +19,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    unoptimized: true, // bypass Vercel Image Optimization (avoids 402 payment required)
     minimumCacheTTL: 86400, // Cache images for 1 day (in seconds)
     remotePatterns: [
       {
