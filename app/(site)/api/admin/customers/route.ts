@@ -39,7 +39,25 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get("id");
+    const userId = searchParams.get("userId");
     const supabase = createServiceClient();
+
+    if (userId) {
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("id, first_name, last_name")
+        .eq("user_id", userId)
+        .single();
+
+      if (customerError || !customer) {
+        return NextResponse.json(
+          { error: customerError?.message || "Customer not found" },
+          { status: 404 },
+        );
+      }
+
+      return NextResponse.json({ customer });
+    }
 
     if (customerId) {
       const { data: customer, error: customerError } = await supabase

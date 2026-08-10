@@ -194,15 +194,13 @@ export default function ReviewsPage() {
     reviewId: string,
     currentStatus: boolean,
   ) => {
-    const { error } = await supabase
-      .from("reviews")
-      .update({
-        is_active: !currentStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", reviewId);
+    const res = await fetch("/api/admin/reviews", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: reviewId, is_active: !currentStatus }),
+    });
 
-    if (!error) {
+    if (res.ok) {
       setReviews((prev) =>
         prev.map((review) =>
           review.id === reviewId
@@ -217,15 +215,13 @@ export default function ReviewsPage() {
     reviewId: string,
     currentStatus: boolean,
   ) => {
-    const { error } = await supabase
-      .from("reviews")
-      .update({
-        is_approved: !currentStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", reviewId);
+    const res = await fetch("/api/admin/reviews", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: reviewId, is_approved: !currentStatus }),
+    });
 
-    if (!error) {
+    if (res.ok) {
       setReviews((prev) =>
         prev.map((review) =>
           review.id === reviewId
@@ -240,15 +236,16 @@ export default function ReviewsPage() {
     setViewingReview(review);
     setViewingCustomer(null);
 
-    // Fetch customer info
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("id, first_name, last_name")
-      .eq("user_id", review.user_id)
-      .single();
-
-    if (customer) {
-      setViewingCustomer(customer);
+    // Fetch customer info (customers RLS is owner-only, so this must go
+    // through the service-role-backed admin API, not the browser client)
+    const res = await fetch(
+      `/api/admin/customers?userId=${encodeURIComponent(review.user_id)}`,
+    );
+    if (res.ok) {
+      const { customer } = await res.json();
+      if (customer) {
+        setViewingCustomer(customer);
+      }
     }
   };
 

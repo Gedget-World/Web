@@ -409,6 +409,22 @@ export default function InstagramAndYoutubePreview({
                   style={{ margin: 0, width: "100%" }}
                 />
               </div>
+
+              {/* Overlay intercepts clicks before they reach the cross-origin iframe */}
+              {igStatus === "valid" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      debouncedInstagram,
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                  className="absolute inset-0 z-10 cursor-pointer"
+                  aria-label="Open this Instagram post in a new tab"
+                />
+              )}
             </div>
           )}
 
@@ -428,13 +444,23 @@ export default function InstagramAndYoutubePreview({
           </div>
 
           {ytStatus === "valid" && ytVideoId && (
-            <div className="aspect-video w-full overflow-hidden rounded-md mb-2">
+            <div className="relative aspect-video w-full overflow-hidden rounded-md mb-2">
               <iframe
                 src={`https://www.youtube.com/embed/${ytVideoId}`}
                 title="YouTube video preview"
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+              />
+
+              {/* Overlay intercepts clicks before they reach the cross-origin iframe */}
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(debouncedYoutube, "_blank", "noopener,noreferrer")
+                }
+                className="absolute inset-0 z-10 cursor-pointer"
+                aria-label="Open this YouTube video in a new tab"
               />
             </div>
           )}
