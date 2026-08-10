@@ -81,13 +81,15 @@ export function BannerCard({
       {mobileImage && (
         <source
           media={`(max-width: ${BANNER_SIZES.mobile.maxWidth}px)`}
-          srcSet={mobileImage.srcSet}
+          // srcSet is undefined when images are unoptimized (no resized variants);
+          // a <source> without a valid srcset is ignored by the browser, so fall back to src.
+          srcSet={mobileImage.srcSet ?? mobileImage.src}
         />
       )}
       {tabletImage && (
         <source
           media={`(min-width: ${BANNER_SIZES.tablet.minWidth}px) and (max-width: ${BANNER_SIZES.tablet.maxWidth}px)`}
-          srcSet={tabletImage.srcSet}
+          srcSet={tabletImage.srcSet ?? tabletImage.src}
         />
       )}
       <img
