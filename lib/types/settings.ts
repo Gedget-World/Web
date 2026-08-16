@@ -1,6 +1,12 @@
 // Store Settings Types
 
-export type SettingType = "string" | "number" | "boolean" | "json" | "image";
+export type SettingType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "json"
+  | "image"
+  | "email_list";
 
 export type SettingCategory =
   | "general"
@@ -9,7 +15,8 @@ export type SettingCategory =
   | "shipping"
   | "social"
   | "business"
-  | "orders";
+  | "orders"
+  | "notifications";
 
 export interface StoreSetting {
   id: string;
@@ -78,5 +85,11 @@ export const CATEGORY_INFO: CategoryInfo[] = [
     label: "Order Settings",
     description: "Order processing configuration",
     icon: "ShoppingBag",
+  },
+  {
+    id: "notifications",
+    label: "Notifications",
+    description: "Email and notification settings",
+    icon: "AlertCircle",
   },
 ];

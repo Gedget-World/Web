@@ -6,6 +6,10 @@ const EMAIL_APP_PASSWORD = Deno.env.get("email_app_password")!;
 const DEFAULT_FROM =
   '"Gadget Kabila Monitoring" <gadgetskabilamonitoring@gmail.com>';
 
+// Single visible "to" address used whenever recipients are sent via BCC —
+// keeps the actual admin recipient list hidden from each other.
+export const MONITORING_EMAIL = "gadgetskabilamonitoring@gmail.com";
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -16,6 +20,7 @@ const transporter = nodemailer.createTransport({
 
 export interface MailOptions {
   to: string | string[];
+  bcc?: string | string[];
   subject: string;
   text?: string;
   html?: string;
@@ -26,6 +31,7 @@ export function sendMail(options: MailOptions) {
   return transporter.sendMail({
     from: options.from ?? DEFAULT_FROM,
     to: options.to,
+    bcc: options.bcc,
     subject: options.subject,
     text: options.text,
     html: options.html,

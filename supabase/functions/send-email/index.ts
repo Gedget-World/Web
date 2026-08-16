@@ -1,5 +1,9 @@
 import { corsHeaders } from "../_shared/cors.ts";
-import { getDefaultAdminRecipients, sendMail } from "../_shared/mailer.ts";
+import {
+  getDefaultAdminRecipients,
+  MONITORING_EMAIL,
+  sendMail,
+} from "../_shared/mailer.ts";
 import {
   type ContactMessageEmailData,
   type DailyReportData,
@@ -80,7 +84,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    const info = await sendMail({ to: recipients, subject, text, html, from });
+    // Send a single message with every recipient BCC'd, rather than one
+    // per address or a shared "to" list that exposes everyone's email.
+    const info = await sendMail({
+      to: MONITORING_EMAIL,
+      bcc: recipients,
+      subject,
+      text,
+      html,
+      from,
+    });
 
     console.log("[send-email] Message sent:", info.messageId);
 

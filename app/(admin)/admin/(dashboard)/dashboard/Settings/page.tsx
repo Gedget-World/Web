@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -29,6 +30,8 @@ import {
   X,
   AlertCircle,
   CheckCircle,
+  Plus,
+  Mail,
 } from "lucide-react";
 import Image from "next/image";
 import type {
@@ -76,12 +79,121 @@ const CATEGORY_INFO = [
     icon: Building,
   },
   {
+    id: "notifications" as SettingCategory,
+    label: "Notifications",
+    description: "Email and notification settings",
+    icon: AlertCircle,
+  },
+  {
     id: "orders" as SettingCategory,
     label: "Order Settings",
     description: "Order processing configuration",
     icon: ShoppingBag,
   },
 ];
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// List of recipient emails for admin alerts (new order / contact / daily report), stored as a JSON array string.
+function EmailListSettingInput({
+  setting,
+  onChange,
+}: {
+  setting: StoreSetting;
+  onChange: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  let emails: string[] = [];
+  try {
+    const parsed = JSON.parse(setting.setting_value || "[]");
+    if (Array.isArray(parsed)) emails = parsed;
+  } catch {
+    emails = [];
+  }
+
+  const addEmail = () => {
+    const value = draft.trim().toLowerCase();
+    if (!value) return;
+    if (!EMAIL_REGEX.test(value)) {
+      setError("Enter a valid email address");
+      return;
+    }
+    if (emails.includes(value)) {
+      setError("This email is already in the list");
+      return;
+    }
+    onChange(JSON.stringify([...emails, value]));
+    setDraft("");
+    setError(null);
+  };
+
+  const removeEmail = (email: string) => {
+    onChange(JSON.stringify(emails.filter((e) => e !== email)));
+  };
+
+  return (
+    <div className="space-y-2 py-3">
+      <Label htmlFor={setting.setting_key}>
+        {setting.label}
+        {setting.is_required && <span className="text-red-500 ml-1">*</span>}
+      </Label>
+      {setting.description && (
+        <p className="text-sm text-muted-foreground">{setting.description}</p>
+      )}
+      <div className="flex gap-2 max-w-md">
+        <Input
+          id={setting.setting_key}
+          type="email"
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addEmail();
+            }
+          }}
+          placeholder="admin@example.com"
+        />
+        <Button type="button" variant="outline" onClick={addEmail}>
+          <Plus className="w-4 h-4 mr-1" />
+          Add
+        </Button>
+      </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {emails.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No recipients added yet.
+          </p>
+        ) : (
+          emails.map((email) => (
+            <Badge
+              key={email}
+              variant="secondary"
+              className="gap-1 py-1 pl-2 pr-1"
+            >
+              <Mail className="w-3 h-3" />
+              {email}
+              <button
+                type="button"
+                onClick={() => removeEmail(email)}
+                className="ml-1 hover:text-red-500"
+                aria-label={`Remove ${email}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -304,6 +416,14 @@ export default function SettingsPage() {
     } = setting;
 
     switch (setting_type) {
+      case "email_list":
+        return (
+          <EmailListSettingInput
+            setting={setting}
+            onChange={(value) => updateSetting(setting_key, value)}
+          />
+        );
+
       case "boolean":
         return (
           <div className="flex items-center justify-between space-x-4 py-3">

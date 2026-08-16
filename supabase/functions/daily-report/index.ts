@@ -1,6 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getDefaultAdminRecipients, sendMail } from "../_shared/mailer.ts";
+import {
+  getDefaultAdminRecipients,
+  MONITORING_EMAIL,
+  sendMail,
+} from "../_shared/mailer.ts";
 import { renderDailyReportEmail } from "../_shared/email-templates.ts";
 
 // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are auto-injected into every Edge Function.
@@ -77,6 +81,30 @@ Deno.serve(async (req) => {
 
     if (todaysOrdersError) throw todaysOrdersError;
 
+    // Recipients are managed by admins via Settings > Notifications; fall back
+    // to the ADMIN_NOTIFICATION_EMAILS secret only if that setting is empty.
+    const { data: recipientsSetting } = await supabase
+      .from("store_settings")
+      .select("setting_value")
+      .eq("setting_key", "admin_notification_emails")
+      .maybeSingle();
+
+    let recipients: string[] = [];
+    try {
+      const parsed = JSON.parse(recipientsSetting?.setting_value ?? "[]");
+      if (Array.isArray(parsed)) recipients = parsed.filter(Boolean);
+    } catch {
+      recipients = [];
+    }
+    if (recipients.length === 0) {
+      recipients = getDefaultAdminRecipients();
+    }
+    if (recipients.length === 0) {
+      throw new Error(
+        "No admin recipients configured (Settings > Notifications or ADMIN_NOTIFICATION_EMAILS)",
+      );
+    }
+
     const newOrders = todaysOrders?.length ?? 0;
     const totalRevenue = (todaysOrders ?? [])
       .filter((o) => !["cancelled", "payment_failed"].includes(o.status))
@@ -93,13 +121,14 @@ Deno.serve(async (req) => {
       newContactMessages: newContactMessages ?? 0,
     };
 
-    const recipients = getDefaultAdminRecipients();
-    if (recipients.length === 0) {
-      throw new Error("ADMIN_NOTIFICATION_EMAILS is not configured");
-    }
-
     const { subject, html, text } = renderDailyReportEmail(reportData);
-    const info = await sendMail({ to: recipients, subject, html, text });
+    const info = await sendMail({
+      to: MONITORING_EMAIL,
+      bcc: recipients,
+      subject,
+      html,
+      text,
+    });
 
     console.log("[daily-report] Report sent:", info.messageId, reportData);
 
