@@ -2,13 +2,14 @@
 
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ProductCard } from "./product-card";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 
 export function RecentlyViewedProducts() {
   const products = useRecentlyViewed((state) => state.products);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   // Wait for zustand hydration from localStorage
   useEffect(() => {
@@ -33,21 +34,53 @@ export function RecentlyViewedProducts() {
     is_out_of_stock: product.is_out_of_stock,
   }));
 
+  const scroll = (direction: "left" | "right") => {
+    const container = document.getElementById("recently-viewed-scroll");
+    if (container) {
+      const scrollAmount = 300;
+      const newPosition =
+        direction === "left"
+          ? scrollPosition - scrollAmount
+          : scrollPosition + scrollAmount;
+      container.scrollTo({ left: newPosition, behavior: "smooth" });
+      setScrollPosition(newPosition);
+    }
+  };
+
   return (
-    <section className="py-5 px-4 md:px-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h4 className="font-semibold text-2xl text-slate-900 mb-2">
+    <section className="mt-1 max-w-7xl pt-8">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="font-semibold text-2xl text-slate-900">
           Recently Viewed
-        </h4>
-        <Button variant="outline" className="cursor-pointer" size="sm" asChild>
-          <a href="/products">
-            Explore <ArrowRight />
-          </a>
-        </Button>
+        </h2>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => scroll("left")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => scroll("right")}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-4">
+      <div
+        id="recently-viewed-scroll"
+        className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {productCards.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <div key={product.id} className="w-[180px] shrink-0 snap-start">
+            <ProductCard product={product} />
+          </div>
         ))}
       </div>
     </section>

@@ -33,7 +33,7 @@ export default function AdminLayout({
       <NavigationProgressWrapper />
       <SidebarProvider>
         <AppSidebar />
-        <main className="w-full">
+        <main className="w-full min-w-0">
           <AdminHeader />
           <Suspense fallback={<DashboardLoading />}>{children}</Suspense>
         </main>

@@ -16,7 +16,8 @@ export type SettingCategory =
   | "social"
   | "business"
   | "orders"
-  | "notifications";
+  | "notifications"
+  | "homepage";
 
 export interface StoreSetting {
   id: string;

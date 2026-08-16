@@ -61,7 +61,7 @@ export function ProductCard({ product }: { product: Product }) {
     <Card className="group overflow-hidden p-0 transition-all duration-300 bg-white border-0 shadow-none">
       <Link href={`/products/${product.slug}`}>
         {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-white">
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-white">
           {/* Skeleton loader */}
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse" />

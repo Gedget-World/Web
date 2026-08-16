@@ -518,9 +518,7 @@ export default async function ProductDetailPage({
       />
 
       {/* Recently Viewed */}
-      <div className="mt-12 border-t">
-        <RecentlyViewedProducts />
-      </div>
+      <RecentlyViewedProducts />
 
       {/* Sticky Add to Cart for Mobile */}
       <StickyAddToCart

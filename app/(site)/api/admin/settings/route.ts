@@ -91,14 +91,36 @@ export async function PUT(request: NextRequest) {
         continue;
       }
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("store_settings")
         .update({ setting_value })
-        .eq("setting_key", setting_key);
+        .eq("setting_key", setting_key)
+        .select("id");
 
       if (error) {
         console.error(`Error updating ${setting_key}:`, error);
         errors.push(`Failed to update ${setting_key}`);
+        continue;
+      }
+
+      // No existing row matched (e.g. its seed migration was never run) — create it so the save isn't silently dropped.
+      if (!updated || updated.length === 0) {
+        const { error: insertError } = await supabase
+          .from("store_settings")
+          .insert({
+            setting_key,
+            setting_value,
+            setting_type: "json",
+            category: "general",
+            label: setting_key,
+            display_order: 0,
+            is_required: false,
+          });
+
+        if (insertError) {
+          console.error(`Error creating ${setting_key}:`, insertError);
+          errors.push(`Failed to create ${setting_key}`);
+        }
       }
     }
 

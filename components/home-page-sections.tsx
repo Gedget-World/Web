@@ -30,59 +30,57 @@ interface Product {
   is_out_of_stock: boolean;
 }
 
+interface CustomHomeSection {
+  id: string;
+  title: string;
+  products: Product[];
+}
+
 interface HomePageSectionsProps {
-  featuredProducts: Product[];
-  arrivalProducts: Product[];
+  customSections?: CustomHomeSection[];
 }
 
 export function HomePageSections({
-  featuredProducts,
-  arrivalProducts,
+  customSections = [],
 }: HomePageSectionsProps) {
   return (
     <>
-      {/* Featured Products */}
-      <LazySection fallback={<SectionSkeleton height="500px" />}>
-        <ProductsList
-          products={featuredProducts}
-          heading="Featured Products"
-          exploreLink="/products?featured=true"
-        />
-      </LazySection>
+      <div className="flex max-w-7xl flex-col mx-auto">
+        {/* Admin-managed custom sections (Manage Home Page dashboard) */}
+        {customSections.map((section) => (
+          <LazySection
+            key={section.id}
+            fallback={<SectionSkeleton height="500px" />}
+          >
+            <ProductsList products={section.products} heading={section.title} />
+          </LazySection>
+        ))}
 
-      {/* New Arrivals */}
-      <LazySection fallback={<SectionSkeleton height="500px" />}>
-        <ProductsList
-          products={arrivalProducts}
-          heading="New Arrivals"
-          exploreLink="/products?newArrival=true"
-        />
-      </LazySection>
+        {/* Recently Viewed */}
+        <LazySection fallback={<SectionSkeleton height="300px" />}>
+          <RecentlyViewedProducts />
+        </LazySection>
 
-      {/* Recently Viewed */}
-      <LazySection fallback={<SectionSkeleton height="300px" />}>
-        <RecentlyViewedProducts />
-      </LazySection>
+        {/* Testimonials */}
+        <LazySection fallback={<SectionSkeleton height="500px" />}>
+          <TestimonialsSection />
+        </LazySection>
 
-      {/* Testimonials */}
-      <LazySection fallback={<SectionSkeleton height="500px" />}>
-        <TestimonialsSection />
-      </LazySection>
-
-      {/* Featured Section */}
-      {/* <LazySection fallback={<SectionSkeleton height="400px" />}>
+        {/* Featured Section */}
+        {/* <LazySection fallback={<SectionSkeleton height="400px" />}>
         <FeaturedSection />
       </LazySection> */}
 
-      {/* Newsletter */}
-      {/* <LazySection fallback={<SectionSkeleton height="350px" />}>
+        {/* Newsletter */}
+        {/* <LazySection fallback={<SectionSkeleton height="350px" />}>
         <NewsletterSection />
       </LazySection> */}
 
-      {/* FAQ */}
-      <LazySection fallback={<SectionSkeleton height="400px" />}>
-        <FAQSections />
-      </LazySection>
+        {/* FAQ */}
+        <LazySection fallback={<SectionSkeleton height="400px" />}>
+          <FAQSections />
+        </LazySection>
+      </div>
     </>
   );
 }

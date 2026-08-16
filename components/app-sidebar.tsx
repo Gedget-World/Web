@@ -15,6 +15,7 @@ import {
   BarChart3,
   MessageSquare,
   Star,
+  LayoutTemplate,
 } from "lucide-react";
 
 import {
@@ -99,6 +100,11 @@ const items = [
     title: "Queries",
     url: `${baseURI}/Queries`,
     icon: MessageSquare,
+  },
+  {
+    title: "Manage Home Page",
+    url: `${baseURI}/ManageHomePage`,
+    icon: LayoutTemplate,
   },
   {
     title: "Settings",

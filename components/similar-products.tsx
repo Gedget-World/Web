@@ -124,10 +124,7 @@ export function SimilarProducts({
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {products.map((product) => (
-          <div
-            key={product.id}
-            className="min-w-[180px] max-w-[200px] snap-start"
-          >
+          <div key={product.id} className="w-[180px] shrink-0 snap-start">
             <ProductCard product={product} />
           </div>
         ))}

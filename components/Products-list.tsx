@@ -1,5 +1,8 @@
-import { ArrowRight } from "lucide-react";
+"use client";
+
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useId, useState } from "react";
 import { ProductCard } from "./product-card";
 import { Button } from "./ui/button";
 
@@ -21,7 +24,7 @@ type Product = {
 type ProductsListProps = {
   products: Product[];
   heading: string;
-  exploreLink: string;
+  exploreLink?: string;
 };
 
 export default function ProductsList({
@@ -29,27 +32,58 @@ export default function ProductsList({
   heading,
   exploreLink,
 }: ProductsListProps) {
+  const scrollId = useId().replace(/:/g, "");
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  const scroll = (direction: "left" | "right") => {
+    const container = document.getElementById(`products-scroll-${scrollId}`);
+    if (container) {
+      const scrollAmount = 300;
+      const newPosition =
+        direction === "left"
+          ? scrollPosition - scrollAmount
+          : scrollPosition + scrollAmount;
+      container.scrollTo({ left: newPosition, behavior: "smooth" });
+      setScrollPosition(newPosition);
+    }
+  };
+
+  if (products.length === 0) {
+    return null;
+  }
+
   return (
-    <section className="py-5 px-4 md:px-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h4 className="font-semibold text-2xl text-slate-900 mb-2">
-          {heading}
-        </h4>
-        <Button
-          variant="outline"
-          size="sm"
-          asChild
-          className="group border-primary/30 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all duration-300"
-        >
-          <Link href={exploreLink}>
-            Explore
-            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
-          </Link>
-        </Button>
+    <section className="py-5 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="font-semibold text-2xl text-slate-900">{heading}</h4>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => scroll("left")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => scroll("right")}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-4">
+      <div
+        id={`products-scroll-${scrollId}`}
+        className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <div key={product.id} className="w-[180px] shrink-0 snap-start">
+            <ProductCard product={product} />
+          </div>
         ))}
       </div>
     </section>
