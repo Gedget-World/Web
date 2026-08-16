@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { notifyAdminNewOrder } from "@/lib/notify-admin";
+import { NextResponse, after } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -192,6 +193,23 @@ export async function POST(request: Request) {
         }
       }
     }
+
+    // Notify admins after the response is sent — never blocks/fails order creation.
+    after(() =>
+      notifyAdminNewOrder({
+        orderId: order.id,
+        total: Number(total),
+        paymentMethod,
+        customerName: customer_name,
+        customerEmail: customer_email,
+        customerPhone: customer_phone,
+        shippingCity: shipping_city,
+        itemCount: orderItems.length,
+        adminOrderUrl: `${
+          process.env.NEXT_PUBLIC_APP_URL || "https://gadgetskabila.com"
+        }/admin/dashboard/Orders/${order.id}`,
+      }),
+    );
 
     return NextResponse.json({
       success: true,

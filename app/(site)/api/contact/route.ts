@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { notifyAdminNewContactMessage } from "@/lib/notify-admin";
+import { NextResponse, after } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -43,6 +44,20 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    // Notify admins after the response is sent — never blocks/fails submission.
+    after(() =>
+      notifyAdminNewContactMessage({
+        firstName,
+        lastName,
+        phone: phone || null,
+        email: user?.email ?? null,
+        message,
+        adminUrl: `${
+          process.env.NEXT_PUBLIC_APP_URL || "https://gadgetskabila.com"
+        }/admin/dashboard/Queries`,
+      }),
+    );
 
     return NextResponse.json(
       {

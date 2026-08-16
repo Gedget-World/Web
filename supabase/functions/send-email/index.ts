@@ -1,29 +1,29 @@
-import nodemailer from "npm:nodemailer@6";
+import { corsHeaders } from "../_shared/cors.ts";
+import { getDefaultAdminRecipients, sendMail } from "../_shared/mailer.ts";
+import {
+  type ContactMessageEmailData,
+  type DailyReportData,
+  type NewOrderEmailData,
+  renderContactMessageEmail,
+  renderDailyReportEmail,
+  renderNewOrderEmail,
+} from "../_shared/email-templates.ts";
 
-const EMAIL_USER = Deno.env.get("email_user")!;
-const EMAIL_APP_PASSWORD = Deno.env.get("email_app_password")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_APP_PASSWORD,
-  },
-});
-
-interface SendEmailRequest {
-  to: string | string[];
-  subject: string;
-  text?: string;
-  html?: string;
-  from?: string;
-}
+type RequestBody =
+  | { template: "new-order"; data: NewOrderEmailData; to?: string | string[] }
+  | {
+      template: "contact-message";
+      data: ContactMessageEmailData;
+      to?: string | string[];
+    }
+  | { template: "daily-report"; data: DailyReportData; to?: string | string[] }
+  | {
+      to?: string | string[];
+      subject: string;
+      text?: string;
+      html?: string;
+      from?: string;
+    };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -31,14 +31,47 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { to, subject, text, html, from } =
-      (await req.json()) as SendEmailRequest;
+    const body = (await req.json()) as RequestBody;
 
-    if (!to || !subject || (!text && !html)) {
+    let subject: string;
+    let html: string | undefined;
+    let text: string | undefined;
+    let from: string | undefined;
+
+    if ("template" in body) {
+      const rendered =
+        body.template === "new-order"
+          ? renderNewOrderEmail(body.data)
+          : body.template === "contact-message"
+            ? renderContactMessageEmail(body.data)
+            : renderDailyReportEmail(body.data);
+      subject = rendered.subject;
+      html = rendered.html;
+      text = rendered.text;
+    } else {
+      if (!body.subject || (!body.text && !body.html)) {
+        return new Response(
+          JSON.stringify({
+            error: "Missing required fields: 'subject' and 'text' or 'html'",
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      subject = body.subject;
+      html = body.html;
+      text = body.text;
+      from = body.from;
+    }
+
+    const recipients = body.to ?? getDefaultAdminRecipients();
+    if (!recipients || (Array.isArray(recipients) && recipients.length === 0)) {
       return new Response(
         JSON.stringify({
           error:
-            "Missing required fields: 'to', 'subject', and 'text' or 'html'",
+            "No recipient specified and ADMIN_NOTIFICATION_EMAILS is not configured",
         }),
         {
           status: 400,
@@ -47,15 +80,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const info = await transporter.sendMail({
-      from:
-        from ??
-        '"Gadget Kabila Monitoring" <gadgetskabilamonitoring@gmail.com>',
-      to,
-      subject,
-      text,
-      html,
-    });
+    const info = await sendMail({ to: recipients, subject, text, html, from });
 
     console.log("[send-email] Message sent:", info.messageId);
 
