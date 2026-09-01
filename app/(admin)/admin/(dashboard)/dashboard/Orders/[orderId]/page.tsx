@@ -6,6 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ShippingPartner, SHIPPING_PARTNER_LABELS } from "@/lib/couriers/types";
 import {
   ArrowLeft,
   Package,
@@ -35,6 +44,9 @@ import {
   Landmark,
   Wallet,
   Banknote,
+  Truck,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 interface OrderItem {
@@ -65,6 +77,9 @@ interface Order {
   shipping_country: string | null;
   delivery_notes: string | null;
   tracking_number: string | null;
+  shipping_partner: string | null;
+  shipment_status: string | null;
+  tracking_locked: boolean | null;
   coupon_code: string | null;
   discount_amount: number | null;
   payment_method: string | null;
@@ -113,6 +128,22 @@ const statusColors: Record<string, string> = {
   rto: "bg-rose-100 text-rose-800",
   rto_received: "bg-rose-100 text-rose-800",
   refunded: "bg-teal-100 text-teal-800",
+};
+
+// orders.shipment_status (courier tracking) badge colors.
+const shipmentStatusColors: Record<string, string> = {
+  label_created: "bg-slate-100 text-slate-800",
+  pickup_scheduled: "bg-indigo-100 text-indigo-800",
+  picked_up: "bg-blue-100 text-blue-800",
+  in_transit: "bg-purple-100 text-purple-800",
+  out_for_delivery: "bg-cyan-100 text-cyan-800",
+  delivered: "bg-green-100 text-green-800",
+  delivery_failed: "bg-orange-100 text-orange-800",
+  rto_initiated: "bg-rose-100 text-rose-800",
+  rto_delivered: "bg-rose-100 text-rose-800",
+  lost: "bg-red-100 text-red-800",
+  damaged: "bg-red-100 text-red-800",
+  cancelled: "bg-gray-200 text-gray-800",
 };
 
 const formatStatusLabel = (status: string) =>
@@ -207,6 +238,13 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [trackingPartner, setTrackingPartner] = useState<ShippingPartner | "">(
+    "",
+  );
+  const [trackingId, setTrackingId] = useState("");
+  const [trackingSubmitting, setTrackingSubmitting] = useState(false);
+  const [trackingRefreshing, setTrackingRefreshing] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
   const supabase = createClient();
 
   const copyToClipboard = (text: string, field: string) => {
@@ -259,6 +297,74 @@ export default function OrderDetailPage() {
       setOrder({ ...order, status: newStatus });
     }
     setUpdating(false);
+  };
+
+  const handleSubmitTracking = async () => {
+    if (!trackingPartner || !trackingId.trim()) {
+      setTrackingError("Please select a courier and enter the AWB/order ID.");
+      return;
+    }
+    setTrackingSubmitting(true);
+    setTrackingError(null);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/tracking`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shippingPartner: trackingPartner,
+          trackingNumber: trackingId.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setTrackingError(data.error || "Failed to link tracking.");
+        return;
+      }
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              shipping_partner: data.shipping_partner,
+              tracking_number: data.tracking_number,
+              shipment_status: data.shipment_status,
+              tracking_locked: true,
+              status: data.status,
+            }
+          : prev,
+      );
+    } catch {
+      setTrackingError("Something went wrong. Please try again.");
+    } finally {
+      setTrackingSubmitting(false);
+    }
+  };
+
+  const handleRefreshTracking = async () => {
+    setTrackingRefreshing(true);
+    setTrackingError(null);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/tracking/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setTrackingError(data.error || "Failed to refresh tracking status.");
+        return;
+      }
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              shipment_status: data.shipment_status,
+              status: data.status,
+            }
+          : prev,
+      );
+    } catch {
+      setTrackingError("Something went wrong. Please try again.");
+    } finally {
+      setTrackingRefreshing(false);
+    }
   };
 
   const handleCancelOrder = () => {
@@ -323,227 +429,232 @@ export default function OrderDetailPage() {
         </Badge>
       </div>
 
-      {/* Row 1: Shipping Address, Customer, Order Status */}
+      {/* Row 1: Shipping Address + Customer, Order Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Shipping Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" /> Shipping Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {order.shipping_address ? (
-              <>
-                <p className="flex items-center justify-between">
+        {/* Shipping Address + Customer (merged into one column) */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" /> Shipping Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              {order.shipping_address ? (
+                <>
+                  <p className="flex items-center justify-between">
+                    <span>
+                      <strong>Address:</strong> {order.shipping_address}
+                    </span>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(order.shipping_address!, "address")
+                      }
+                      className="p-1 hover:bg-gray-100 rounded transition-all"
+                      title="Copy address"
+                    >
+                      {copied === "address" ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                      )}
+                    </button>
+                  </p>
+                  {order.shipping_city && (
+                    <p className="flex items-center justify-between">
+                      <span>
+                        <strong>City:</strong> {order.shipping_city}
+                      </span>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(order.shipping_city!, "city")
+                        }
+                        className="p-1 hover:bg-gray-100 rounded transition-all"
+                        title="Copy city"
+                      >
+                        {copied === "city" ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                        )}
+                      </button>
+                    </p>
+                  )}
+                  {order.shipping_postal_code && (
+                    <p className="flex items-center justify-between">
+                      <span>
+                        <strong>Postal Code:</strong>{" "}
+                        {order.shipping_postal_code}
+                      </span>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(order.shipping_postal_code!, "postal")
+                        }
+                        className="p-1 hover:bg-gray-100 rounded transition-all"
+                        title="Copy postal code"
+                      >
+                        {copied === "postal" ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                        )}
+                      </button>
+                    </p>
+                  )}
+                  {order.shipping_country && (
+                    <p className="flex items-center justify-between">
+                      <span>
+                        <strong>Country:</strong> {order.shipping_country}
+                      </span>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(order.shipping_country!, "country")
+                        }
+                        className="p-1 hover:bg-gray-100 rounded transition-all"
+                        title="Copy country"
+                      >
+                        {copied === "country" ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                        )}
+                      </button>
+                    </p>
+                  )}
+                  {/* Copy Full Address Button */}
+                  <div className="pt-2 mt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        const fullAddress = [
+                          order.shipping_address,
+                          order.shipping_city,
+                          order.shipping_postal_code,
+                          order.shipping_country,
+                        ]
+                          .filter(Boolean)
+                          .join(", ");
+                        copyToClipboard(fullAddress, "fullAddress");
+                      }}
+                    >
+                      {copied === "fullAddress" ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5 mr-1" />
+                          Copy Full Address
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground">No address provided</p>
+              )}
+              {order.delivery_notes && (
+                <div className="mt-2 pt-2 border-t">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-amber-700">
+                      Delivery Notes
+                    </p>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(order.delivery_notes!, "deliveryNotes")
+                      }
+                      className="p-1 hover:bg-amber-100 rounded transition-all"
+                      title="Copy delivery notes"
+                    >
+                      {copied === "deliveryNotes" ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5 text-amber-600 hover:text-amber-800" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap bg-amber-50 border border-amber-200 rounded-md p-2 text-amber-900">
+                    {order.delivery_notes}
+                  </p>
+                </div>
+              )}
+              {order.tracking_number && (
+                <p className="flex items-center justify-between mt-2 pt-2 border-t">
                   <span>
-                    <strong>Address:</strong> {order.shipping_address}
+                    <strong>Tracking:</strong> {order.tracking_number}
                   </span>
                   <button
                     onClick={() =>
-                      copyToClipboard(order.shipping_address!, "address")
+                      copyToClipboard(order.tracking_number!, "tracking")
                     }
                     className="p-1 hover:bg-gray-100 rounded transition-all"
-                    title="Copy address"
+                    title="Copy tracking number"
                   >
-                    {copied === "address" ? (
+                    {copied === "tracking" ? (
                       <Check className="h-3.5 w-3.5 text-green-500" />
                     ) : (
                       <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
                     )}
                   </button>
                 </p>
-                {order.shipping_city && (
-                  <p className="flex items-center justify-between">
-                    <span>
-                      <strong>City:</strong> {order.shipping_city}
-                    </span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(order.shipping_city!, "city")
-                      }
-                      className="p-1 hover:bg-gray-100 rounded transition-all"
-                      title="Copy city"
-                    >
-                      {copied === "city" ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                      )}
-                    </button>
-                  </p>
-                )}
-                {order.shipping_postal_code && (
-                  <p className="flex items-center justify-between">
-                    <span>
-                      <strong>Postal Code:</strong> {order.shipping_postal_code}
-                    </span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(order.shipping_postal_code!, "postal")
-                      }
-                      className="p-1 hover:bg-gray-100 rounded transition-all"
-                      title="Copy postal code"
-                    >
-                      {copied === "postal" ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                      )}
-                    </button>
-                  </p>
-                )}
-                {order.shipping_country && (
-                  <p className="flex items-center justify-between">
-                    <span>
-                      <strong>Country:</strong> {order.shipping_country}
-                    </span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(order.shipping_country!, "country")
-                      }
-                      className="p-1 hover:bg-gray-100 rounded transition-all"
-                      title="Copy country"
-                    >
-                      {copied === "country" ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                      )}
-                    </button>
-                  </p>
-                )}
-                {/* Copy Full Address Button */}
-                <div className="pt-2 mt-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => {
-                      const fullAddress = [
-                        order.shipping_address,
-                        order.shipping_city,
-                        order.shipping_postal_code,
-                        order.shipping_country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ");
-                      copyToClipboard(fullAddress, "fullAddress");
-                    }}
-                  >
-                    {copied === "fullAddress" ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5 mr-1" />
-                        Copy Full Address
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <p className="text-muted-foreground">No address provided</p>
-            )}
-            {order.delivery_notes && (
-              <div className="mt-2 pt-2 border-t">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-medium text-amber-700">
-                    Delivery Notes
-                  </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Customer Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" /> Customer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p className="flex items-center justify-between">
+                <span>
+                  <strong>Name:</strong> {order.customer_name || "N/A"}
+                </span>
+                {order.customer_name && (
                   <button
                     onClick={() =>
-                      copyToClipboard(order.delivery_notes!, "deliveryNotes")
+                      copyToClipboard(order.customer_name!, "name")
                     }
-                    className="p-1 hover:bg-amber-100 rounded transition-all"
-                    title="Copy delivery notes"
+                    className="p-1 hover:bg-gray-100 rounded transition-all"
+                    title="Copy name"
                   >
-                    {copied === "deliveryNotes" ? (
+                    {copied === "name" ? (
                       <Check className="h-3.5 w-3.5 text-green-500" />
                     ) : (
-                      <Copy className="h-3.5 w-3.5 text-amber-600 hover:text-amber-800" />
+                      <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
                     )}
                   </button>
-                </div>
-                <p className="text-sm whitespace-pre-wrap bg-amber-50 border border-amber-200 rounded-md p-2 text-amber-900">
-                  {order.delivery_notes}
-                </p>
-              </div>
-            )}
-            {order.tracking_number && (
-              <p className="flex items-center justify-between mt-2 pt-2 border-t">
-                <span>
-                  <strong>Tracking:</strong> {order.tracking_number}
-                </span>
-                <button
-                  onClick={() =>
-                    copyToClipboard(order.tracking_number!, "tracking")
-                  }
-                  className="p-1 hover:bg-gray-100 rounded transition-all"
-                  title="Copy tracking number"
-                >
-                  {copied === "tracking" ? (
-                    <Check className="h-3.5 w-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                  )}
-                </button>
+                )}
               </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Customer Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" /> Customer
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p className="flex items-center justify-between">
-              <span>
-                <strong>Name:</strong> {order.customer_name || "N/A"}
-              </span>
-              {order.customer_name && (
-                <button
-                  onClick={() => copyToClipboard(order.customer_name!, "name")}
-                  className="p-1 hover:bg-gray-100 rounded transition-all"
-                  title="Copy name"
-                >
-                  {copied === "name" ? (
-                    <Check className="h-3.5 w-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                  )}
-                </button>
-              )}
-            </p>
-            <p className="flex items-center justify-between">
-              <span>
-                <strong>Phone:</strong> {order.customer_phone || "N/A"}
-              </span>
-              {order.customer_phone && (
-                <button
-                  onClick={() =>
-                    copyToClipboard(order.customer_phone!, "phone")
-                  }
-                  className="p-1 hover:bg-gray-100 rounded transition-all"
-                  title="Copy phone"
-                >
-                  {copied === "phone" ? (
-                    <Check className="h-3.5 w-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-                  )}
-                </button>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+              <p className="flex items-center justify-between">
+                <span>
+                  <strong>Phone:</strong> {order.customer_phone || "N/A"}
+                </span>
+                {order.customer_phone && (
+                  <button
+                    onClick={() =>
+                      copyToClipboard(order.customer_phone!, "phone")
+                    }
+                    className="p-1 hover:bg-gray-100 rounded transition-all"
+                    title="Copy phone"
+                  >
+                    {copied === "phone" ? (
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                    )}
+                  </button>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Order Status */}
         <Card>
@@ -677,6 +788,143 @@ export default function OrderDetailPage() {
                   {formatStatusLabel(order.status)}
                 </p>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Order Tracking (courier AWB/order ID linking) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" /> Order Tracking
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {order.tracking_locked ? (
+              <>
+                <p>
+                  <strong>Courier:</strong>{" "}
+                  {SHIPPING_PARTNER_LABELS[
+                    order.shipping_partner as ShippingPartner
+                  ] || order.shipping_partner}
+                </p>
+                <p className="flex items-center justify-between">
+                  <span>
+                    <strong>AWB / Order ID:</strong> {order.tracking_number}
+                  </span>
+                  <button
+                    onClick={() =>
+                      copyToClipboard(order.tracking_number!, "awb")
+                    }
+                    className="p-1 hover:bg-gray-100 rounded transition-all"
+                    title="Copy AWB/order ID"
+                  >
+                    {copied === "awb" ? (
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                    )}
+                  </button>
+                </p>
+                {order.shipment_status && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">
+                      Shipment Status:
+                    </span>
+                    <Badge
+                      className={
+                        shipmentStatusColors[order.shipment_status] ||
+                        "bg-gray-100"
+                      }
+                    >
+                      {formatStatusLabel(order.shipment_status)}
+                    </Badge>
+                  </div>
+                )}
+                {trackingError && (
+                  <p className="text-xs text-red-600">{trackingError}</p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleRefreshTracking}
+                  disabled={trackingRefreshing}
+                >
+                  {trackingRefreshing ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                      Refresh Live Status
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  Locked — courier and AWB/order ID can no longer be changed.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Courier Partner
+                  </label>
+                  <Select
+                    value={trackingPartner}
+                    onValueChange={(v) =>
+                      setTrackingPartner(v as ShippingPartner)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select courier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(SHIPPING_PARTNER_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    AWB / Order ID
+                  </label>
+                  <Input
+                    value={trackingId}
+                    onChange={(e) => setTrackingId(e.target.value)}
+                    placeholder="Enter AWB or courier order ID"
+                  />
+                </div>
+                {trackingError && (
+                  <p className="text-xs text-red-600">{trackingError}</p>
+                )}
+                <Button
+                  className="w-full"
+                  onClick={handleSubmitTracking}
+                  disabled={trackingSubmitting}
+                >
+                  {trackingSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Submit & Lock"
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  We&apos;ll verify this with the courier before saving. Once
+                  linked, it cannot be edited.
+                </p>
+              </>
             )}
           </CardContent>
         </Card>

@@ -55,6 +55,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://gadgetskabila.com",
   },
+  verification: {
+    google: "a3FSHo-Q01yG89fP9A8uaNRtocNVBVIzwLkmVQ26Nfc",
+  },
 };
 
 export default async function RootLayout({
