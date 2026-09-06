@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { notifyAdminNewOrder } from "@/lib/notify-admin";
+import {
+  attributeReferralCommissions,
+  REFERRAL_ATTRIBUTION_COOKIE,
+} from "@/lib/referrals";
 import { NextResponse, after } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
@@ -158,14 +163,27 @@ export async function POST(request: Request) {
 
     console.log("[DEBUG] Creating order items:", orderItems);
 
-    const { error: itemsError } = await supabase
+    const { data: insertedItems, error: itemsError } = await supabase
       .from("order_items")
-      .insert(orderItems);
+      .insert(orderItems)
+      .select("id, product_id, quantity, price");
 
     if (itemsError) {
       console.error("[DEBUG] Order items creation error:", itemsError);
       throw itemsError;
     }
+
+    // Credit any affiliate whose referral link led to this purchase —
+    // never blocks/fails order creation if attribution fails.
+    const attributionCookieValue = (await cookies()).get(
+      REFERRAL_ATTRIBUTION_COOKIE,
+    )?.value;
+    await attributeReferralCommissions({
+      orderId: order.id,
+      buyerCustomerId: customer.id,
+      orderItems: insertedItems || [],
+      attributionCookieValue,
+    });
 
     // Increment coupon used_count if a coupon was applied
     if (coupon_code) {

@@ -31,5 +31,22 @@ export function ProductViewTracker({ product }: ProductViewTrackerProps) {
     });
   }, [product, addProduct]);
 
+  useEffect(() => {
+    // Read directly from window.location instead of useSearchParams() so this
+    // stays a plain client effect (no Suspense boundary requirement) — only
+    // needs to run once per mount, best-effort, never blocks the page.
+    const linkCode = new URLSearchParams(window.location.search).get("ref");
+    if (!linkCode) return;
+
+    fetch("/api/referrals/track-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linkCode, pageUrl: window.location.href }),
+      keepalive: true,
+    }).catch(() => {
+      // Referral click tracking must never break the product page.
+    });
+  }, [product.id]);
+
   return null;
 }

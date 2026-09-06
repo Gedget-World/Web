@@ -1062,42 +1062,26 @@ export function ProfileClient({
               </Card>
             )}
 
-            {/* Referral Banner */}
-            {/* <Card className="hover:shadow-md transition-all border-slate-200 overflow-hidden">
+            {/* Affiliate Program Banner */}
+            <Card className="hover:shadow-md transition-all border-slate-200 overflow-hidden">
               <div className="bg-linear-to-r from-indigo-500 to-purple-600 p-4 text-white">
                 <div className="flex items-center gap-2 mb-2">
                   <Gift className="h-5 w-5" />
-                  <span className="font-semibold">Refer & Earn</span>
+                  <span className="font-semibold">Affiliate Program</span>
                 </div>
                 <p className="text-sm text-white/90">
-                  Invite friends and get ₹100 per referral!
+                  Share product links and earn a commission on every sale!
                 </p>
               </div>
               <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-2">
-                  Your referral code
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-slate-100 rounded-lg px-3 py-2 font-mono text-sm font-semibold">
-                    {referralCode}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyReferralCode}
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button className="w-full" asChild>
+                  <Link href="/affiliate">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Go to Affiliate Dashboard
+                  </Link>
+                </Button>
               </CardContent>
-            </Card> */}
+            </Card>
 
             {/* Account Benefits */}
             <Card className="hover:shadow-md transition-all border-slate-200">

@@ -17,7 +17,8 @@ export type SettingCategory =
   | "business"
   | "orders"
   | "notifications"
-  | "homepage";
+  | "homepage"
+  | "referral";
 
 export interface StoreSetting {
   id: string;
@@ -92,5 +93,11 @@ export const CATEGORY_INFO: CategoryInfo[] = [
     label: "Notifications",
     description: "Email and notification settings",
     icon: "AlertCircle",
+  },
+  {
+    id: "referral",
+    label: "Referral Program",
+    description: "Affiliate commission rate and program settings",
+    icon: "Handshake",
   },
 ];

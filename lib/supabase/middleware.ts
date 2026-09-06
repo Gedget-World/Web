@@ -138,7 +138,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // User protected routes
-  const protectedRoutes = ["/checkout", "/profile", "/orders"];
+  const protectedRoutes = ["/checkout", "/profile", "/orders", "/affiliate"];
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route),
   );

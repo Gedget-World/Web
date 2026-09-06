@@ -32,6 +32,7 @@ import {
   CheckCircle,
   Plus,
   Mail,
+  Handshake,
 } from "lucide-react";
 import Image from "next/image";
 import type {
@@ -89,6 +90,12 @@ const CATEGORY_INFO = [
     label: "Order Settings",
     description: "Order processing configuration",
     icon: ShoppingBag,
+  },
+  {
+    id: "referral" as SettingCategory,
+    label: "Referral Program",
+    description: "Affiliate commission rate and program settings",
+    icon: Handshake,
   },
 ];
 
@@ -551,7 +558,8 @@ export default function SettingsPage() {
         // String type - check if it's a longer field
         const isLongField =
           setting_key.includes("description") ||
-          setting_key.includes("address");
+          setting_key.includes("address") ||
+          setting_key.includes("terms");
         return (
           <div className="space-y-2 py-3">
             <Label htmlFor={setting_key}>

@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Star,
   LayoutTemplate,
+  Handshake,
 } from "lucide-react";
 
 import {
@@ -90,6 +91,11 @@ const items = [
     title: "Coupons",
     url: `${baseURI}/Coupons`,
     icon: Gift,
+  },
+  {
+    title: "Affiliates",
+    url: `${baseURI}/Affiliates`,
+    icon: Handshake,
   },
   {
     title: "Reviews",
