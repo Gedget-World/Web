@@ -405,6 +405,22 @@ function ApplicationForm({ onSubmitted }: { onSubmitted: () => void }) {
   const [payoutDetails, setPayoutDetails] = useState<PayoutDetails>({});
 
   async function handleSubmit() {
+    if (payoutMethod === "upi" && !payoutDetails.upi_id?.trim()) {
+      toast({ title: "UPI ID is required", variant: "destructive" });
+      return;
+    }
+    if (
+      payoutMethod === "bank_transfer" &&
+      (!payoutDetails.account_holder_name?.trim() ||
+        !payoutDetails.account_number?.trim() ||
+        !payoutDetails.ifsc_code?.trim())
+    ) {
+      toast({
+        title: "Account holder name, account number and IFSC are required",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/referrals/apply", {

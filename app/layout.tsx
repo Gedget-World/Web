@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import { headers } from "next/headers";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -137,7 +138,10 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
