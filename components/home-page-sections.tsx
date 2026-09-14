@@ -45,7 +45,7 @@ export function HomePageSections({
 }: HomePageSectionsProps) {
   return (
     <>
-      <div className="flex max-w-7xl flex-col mx-auto">
+      <div className="flex max-w-7xl flex-col mx-auto px-2">
         {/* Admin-managed custom sections (Manage Home Page dashboard) */}
         {customSections.map((section) => (
           <LazySection

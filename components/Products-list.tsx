@@ -53,7 +53,7 @@ export default function ProductsList({
   }
 
   return (
-    <section className="py-5 max-w-7xl mx-auto">
+    <section className="py-5 max-w-7xl mx-auto px-2">
       <div className="flex justify-between items-center mb-4">
         <h4 className="font-semibold text-2xl text-slate-900">{heading}</h4>
         <div className="flex items-center gap-2">
