@@ -212,6 +212,25 @@ export async function POST(request: Request) {
       }
     }
 
+    for (const item of orderItems) {
+      const { data: product } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", item.product_id)
+        .single();
+
+      if (product) {
+        const newStock = Math.max(0, (product.stock || 0) - item.quantity);
+        await supabase
+          .from("products")
+          .update({
+            stock: newStock,
+            is_out_of_stock: newStock <= 0,
+          })
+          .eq("id", item.product_id);
+      }
+    }
+
     // Notify admins after the response is sent — never blocks/fails order creation.
     after(() =>
       notifyAdminNewOrder({
