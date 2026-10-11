@@ -19,7 +19,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-/scripts
+/scripts/*
+!/scripts/037_create_tiffin_requests.sql
 /docs
 
 # env files
