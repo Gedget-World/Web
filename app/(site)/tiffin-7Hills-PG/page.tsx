@@ -1,7 +1,20 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { TiffinDaySelector } from "@/components/tiffin-day-selector";
+
+export const metadata: Metadata = {
+  title: "Private Tiffin Schedule",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default async function Tiffin7HillsPgPage() {
   const supabase = await createClient();

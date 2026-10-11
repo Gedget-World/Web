@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
           "/checkout/",
           "/profile/",
           "/orders/",
+          "/tiffin-7Hills-PG/",
         ],
       },
     ],
