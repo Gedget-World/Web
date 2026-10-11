@@ -87,13 +87,20 @@ export function mergeAttributionClick(
   return merged.slice(-MAX_TRACKED_CLICKS);
 }
 
-export function findAttributedClick(
+export function findMostRecentAttributedClick(
   clicks: ReferralAttributionClick[],
-  productId: string,
   windowDays: number,
-): ReferralAttributionClick | undefined {
+): ReferralAttributionClick[] {
   const cutoff = Date.now() - windowDays * 24 * 60 * 60 * 1000;
-  return clicks.find((c) => c.productId === productId && c.clickedAt >= cutoff);
+  return clicks
+    .filter(
+      (click) =>
+        typeof click.linkCode === "string" &&
+        click.linkCode.length > 0 &&
+        Number.isFinite(click.clickedAt) &&
+        click.clickedAt >= cutoff,
+    )
+    .sort((a, b) => b.clickedAt - a.clickedAt);
 }
 
 interface OrderItemForAttribution {
@@ -104,10 +111,10 @@ interface OrderItemForAttribution {
 }
 
 // Called from app/(site)/api/orders/route.ts right after order_items are
-// inserted. Reads the signed attribution cookie, matches each purchased
-// line item against a recent referral click for that same product, and
-// records a pending commission — skipping (but still logging, as
-// "ineligible_self_referral") purchases the affiliate made on their own link.
+// inserted. Reads the signed attribution cookie, selects the most recent
+// usable referral link for the order, and records one commission per line.
+// This lets a referral credit every product in the cart, not only the product
+// that was originally linked.
 // Never throws — a broken referral attribution must never fail checkout.
 export async function attributeReferralCommissions({
   orderId,
@@ -145,23 +152,39 @@ export async function attributeReferralCommissions({
       Number(settingsMap.referral_attribution_window_days) || 30;
     if (commissionRate <= 0) return;
 
-    for (const item of orderItems) {
-      const click = findAttributedClick(clicks, item.product_id, windowDays);
-      if (!click) continue;
+    const candidateClicks = findMostRecentAttributedClick(clicks, windowDays);
+    let link: {
+      id: string;
+      affiliate_id: string;
+      affiliates: unknown;
+    } | null = null;
 
-      const { data: link } = await service
+    for (const click of candidateClicks) {
+      const { data } = await service
         .from("referral_links")
         .select("id, affiliate_id, affiliates!inner(status, customer_id)")
         .eq("link_code", click.linkCode)
-        .single();
+        .maybeSingle();
 
-      if (!link) continue;
-      const affiliate = link.affiliates as unknown as {
+      if (!data) continue;
+      const candidateAffiliate = data.affiliates as unknown as {
         status: string;
         customer_id: string;
       };
-      if (affiliate.status !== "approved") continue;
+      if (candidateAffiliate.status === "approved") {
+        link = data;
+        break;
+      }
+    }
 
+    if (!link) return;
+
+    const affiliate = link.affiliates as unknown as {
+      status: string;
+      customer_id: string;
+    };
+
+    for (const item of orderItems) {
       const isSelfReferral = affiliate.customer_id === buyerCustomerId;
       const lineItemAmount = Math.round(item.price * item.quantity * 100) / 100;
       const commissionAmount = isSelfReferral
