@@ -44,11 +44,6 @@ const items = [
     icon: Home,
   },
   {
-    title: "Analytics",
-    url: `${baseURI}/Analytics`,
-    icon: BarChart3,
-  },
-  {
     title: "Products",
     url: `${baseURI}/Products`,
     icon: ShoppingBasket,

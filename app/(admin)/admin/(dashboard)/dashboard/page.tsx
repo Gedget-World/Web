@@ -27,7 +27,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import AnalyticsDetails from "@/components/admin/analytics-details";
 
 interface DashboardData {
   summary: {
@@ -95,6 +98,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("Hello");
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -138,12 +142,20 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/dashboard/Analytics">
-            <Button variant="outline">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              View Analytics
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            onClick={() => setShowAnalytics((visible) => !visible)}
+            aria-expanded={showAnalytics}
+            aria-controls="dashboard-analytics-details"
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            {showAnalytics ? "Hide details" : "Fetch all details"}
+            {showAnalytics ? (
+              <ChevronUp className="ml-2 h-4 w-4" />
+            ) : (
+              <ChevronDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
           <Link href="/admin/dashboard/Settings">
             <Button variant="outline" size="icon">
               <Settings className="h-4 w-4" />
@@ -456,6 +468,16 @@ export default function AdminDashboard() {
           </Card>
         </Link>
       </div>
+
+      {showAnalytics && (
+        <section
+          id="dashboard-analytics-details"
+          aria-label="Analytics and reports"
+          className="scroll-mt-6 border-t pt-6"
+        >
+          <AnalyticsDetails />
+        </section>
+      )}
     </div>
   );
 }

@@ -191,7 +191,7 @@ function StatCard({
   );
 }
 
-export default function AnalyticsPage() {
+export default function AnalyticsDetails() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,7 +248,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="mx-4 my-2 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <header className="flex items-center justify-between">
         <div>
