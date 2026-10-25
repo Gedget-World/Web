@@ -10,18 +10,31 @@ import {
   type NewOrderEmailData,
   renderContactMessageEmail,
   renderDailyReportEmail,
+  renderGenericEmail,
   renderNewOrderEmail,
 } from "../_shared/email-templates.ts";
 
+type EmailRouting = {
+  to?: string | string[];
+  from?: string;
+};
+
 type RequestBody =
-  | { template: "new-order"; data: NewOrderEmailData; to?: string | string[] }
+  | ({ template: "new-order"; data: NewOrderEmailData } & EmailRouting)
   | {
       template: "contact-message";
       data: ContactMessageEmailData;
-      to?: string | string[];
-    }
-  | { template: "daily-report"; data: DailyReportData; to?: string | string[] }
+      recipients?: string | string[];
+    } & EmailRouting
+  | ({ template: "daily-report"; data: DailyReportData } & EmailRouting)
+  | ({
+      template: "generic";
+      subject: string;
+      body: string;
+      recipients?: string | string[];
+    } & EmailRouting)
   | {
+      recipients?: string | string[];
       to?: string | string[];
       subject: string;
       text?: string;
@@ -48,10 +61,33 @@ Deno.serve(async (req) => {
           ? renderNewOrderEmail(body.data)
           : body.template === "contact-message"
             ? renderContactMessageEmail(body.data)
-            : renderDailyReportEmail(body.data);
+            : body.template === "daily-report"
+              ? renderDailyReportEmail(body.data)
+              : body.template === "generic" &&
+                  typeof body.subject === "string" &&
+                  body.subject.trim() &&
+                  typeof body.body === "string"
+                ? renderGenericEmail(body.subject, body.body)
+                : undefined;
+
+      if (!rendered) {
+        return new Response(
+          JSON.stringify({
+            error: body.template === "generic"
+              ? "Generic template requires 'subject' and 'body' fields"
+              : "Unsupported email template",
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
       subject = rendered.subject;
       html = rendered.html;
       text = rendered.text;
+      from = body.from;
     } else {
       if (!body.subject || (!body.text && !body.html)) {
         return new Response(
@@ -70,7 +106,10 @@ Deno.serve(async (req) => {
       from = body.from;
     }
 
-    const recipients = body.to ?? getDefaultAdminRecipients();
+    const recipients =
+      ("recipients" in body ? body.recipients : undefined) ??
+      body.to ??
+      getDefaultAdminRecipients();
     if (!recipients || (Array.isArray(recipients) && recipients.length === 0)) {
       return new Response(
         JSON.stringify({

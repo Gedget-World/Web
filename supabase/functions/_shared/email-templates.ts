@@ -145,6 +145,17 @@ export interface RenderedEmail {
   text: string;
 }
 
+export function renderGenericEmail(subject: string, body: string): RenderedEmail {
+  const html = layout({
+    preheader: escapeHtml(subject),
+    badge: "Message",
+    heading: escapeHtml(subject),
+    bodyHtml: `<div style="font-size:14px; line-height:1.6; color:${BRAND.slate700}; white-space:pre-wrap;">${escapeHtml(body)}</div>`,
+  });
+
+  return { subject, html, text: body };
+}
+
 // ---------------------------------------------------------------------------
 // New order alert
 // ---------------------------------------------------------------------------
