@@ -164,12 +164,30 @@ export interface NewOrderEmailData {
   orderId: string;
   total: number;
   paymentMethod?: string | null;
+  paymentStatus?: string | null;
   customerName?: string | null;
   customerEmail?: string | null;
   customerPhone?: string | null;
   shippingCity?: string | null;
   itemCount: number;
   adminOrderUrl?: string;
+}
+
+function formatPaymentStatus(status?: string | null): string {
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    initiated: "Initiated",
+    paid: "Completed",
+    advance_pending: "Advance payment pending",
+    advance_paid: "Advance payment completed",
+    failed: "Failed",
+    user_dropped: "Payment not completed",
+    void: "Voided",
+    flagged: "Under review",
+    cancelled: "Cancelled",
+  };
+
+  return status ? labels[status.toLowerCase()] || status : "Not available";
 }
 
 export function renderNewOrderEmail(data: NewOrderEmailData): RenderedEmail {
@@ -182,6 +200,7 @@ export function renderNewOrderEmail(data: NewOrderEmailData): RenderedEmail {
       "Payment Method",
       escapeHtml((data.paymentMethod || "N/A").toUpperCase()),
     ),
+    row("Payment Status", escapeHtml(formatPaymentStatus(data.paymentStatus))),
     row("Customer", escapeHtml(data.customerName || "Guest")),
     data.customerEmail ? row("Email", escapeHtml(data.customerEmail)) : "",
     data.customerPhone ? row("Phone", escapeHtml(data.customerPhone)) : "",
@@ -209,6 +228,7 @@ export function renderNewOrderEmail(data: NewOrderEmailData): RenderedEmail {
     `Total: ${formatCurrency(data.total)}`,
     `Items: ${data.itemCount}`,
     `Payment: ${(data.paymentMethod || "N/A").toUpperCase()}`,
+    `Payment status: ${formatPaymentStatus(data.paymentStatus)}`,
     `Customer: ${data.customerName || "Guest"}`,
     data.adminOrderUrl ? `View: ${data.adminOrderUrl}` : "",
   ]

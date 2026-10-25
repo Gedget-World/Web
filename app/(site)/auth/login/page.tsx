@@ -40,12 +40,6 @@ import Image from "next/image";
 const RESEND_SECONDS = 60;
 const LOG_SOURCE = "auth/login";
 
-// Never log a full phone number (PII) — only the last 2 digits.
-function maskPhone(rawPhone: string) {
-  if (rawPhone.length < 2) return "+91**********";
-  return `+91${"*".repeat(Math.max(rawPhone.length - 2, 0))}${rawPhone.slice(-2)}`;
-}
-
 export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -111,7 +105,7 @@ export default function LoginPage() {
     setIsSendingOtp(true);
     clientLogger.info(isResend ? "Resending OTP" : "Sending OTP", {
       source: LOG_SOURCE,
-      context: { phone: maskPhone(phone), isResend },
+      context: { phone: phone, isResend },
     });
     try {
       const supabase = createClient();
@@ -124,7 +118,7 @@ export default function LoginPage() {
       setResendTimer(RESEND_SECONDS);
       clientLogger.info("OTP sent successfully", {
         source: LOG_SOURCE,
-        context: { phone: maskPhone(phone), isResend },
+        context: { phone: phone, isResend },
       });
     } catch (error: unknown) {
       const message =
@@ -132,7 +126,7 @@ export default function LoginPage() {
       setError(message);
       clientLogger.error("Failed to send OTP", {
         source: LOG_SOURCE,
-        context: { phone: maskPhone(phone), isResend, error: message },
+        context: { phone: phone, isResend, error: message },
       });
     } finally {
       setIsSendingOtp(false);
@@ -162,7 +156,7 @@ export default function LoginPage() {
     setIsVerifying(true);
     clientLogger.info("Verifying OTP", {
       source: LOG_SOURCE,
-      context: { phone: maskPhone(phone) },
+      context: { phone: phone },
     });
     try {
       const supabase = createClient();
@@ -174,7 +168,7 @@ export default function LoginPage() {
       if (error) throw error;
       clientLogger.info("Login successful", {
         source: LOG_SOURCE,
-        context: { phone: maskPhone(phone), redirect },
+        context: { phone: phone, redirect },
       });
       router.push(redirect);
       router.refresh();
@@ -183,7 +177,7 @@ export default function LoginPage() {
       setError(message);
       clientLogger.error("OTP verification failed", {
         source: LOG_SOURCE,
-        context: { phone: maskPhone(phone), error: message },
+        context: { phone: phone, error: message },
       });
     } finally {
       setIsVerifying(false);

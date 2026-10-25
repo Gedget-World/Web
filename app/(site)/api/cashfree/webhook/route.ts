@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { notifyAdminPaymentCompleted } from "@/lib/notify-admin";
 import {
   getCashfreePaymentStatus,
   verifyCashfreeWebhookSignature,
@@ -146,7 +147,9 @@ export async function POST(request: Request) {
     // (paid).
     const { data: existingOrder } = await supabase
       .from("orders")
-      .select("id, status, payment_status, payment_method, metadata, paid_at")
+      .select(
+        "id, status, payment_status, payment_method, metadata, paid_at, total, customer_name",
+      )
       .eq("id", order_id)
       .single();
 
@@ -201,6 +204,24 @@ export async function POST(request: Request) {
     if (updateError) {
       console.error("[CASHFREE WEBHOOK] Error updating order:", updateError);
       throw updateError;
+    }
+
+    if (
+      ["paid", "advance_paid"].includes(mappedPaymentStatus) &&
+      !["paid", "advance_paid"].includes(existingOrder.payment_status || "")
+    ) {
+      after(() =>
+        notifyAdminPaymentCompleted({
+          orderId: order_id,
+          total: Number(existingOrder.total),
+          paymentStatus: mappedPaymentStatus,
+          paymentMethod: payment_channel || existingOrder.payment_method,
+          customerName: existingOrder.customer_name,
+          adminOrderUrl: `${
+            process.env.NEXT_PUBLIC_APP_URL || "https://gadgetskabila.com"
+          }/admin/dashboard/Orders/${order_id}`,
+        }),
+      );
     }
 
     // Acknowledge receipt of webhook

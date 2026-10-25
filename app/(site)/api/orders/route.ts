@@ -237,6 +237,7 @@ export async function POST(request: Request) {
         orderId: order.id,
         total: Number(total),
         paymentMethod,
+        paymentStatus: order.payment_status,
         customerName: customer_name,
         customerEmail: customer_email,
         customerPhone: customer_phone,
