@@ -17,6 +17,7 @@ import {
   Star,
   LayoutTemplate,
   Handshake,
+  ReceiptText,
 } from "lucide-react";
 
 import {
@@ -61,6 +62,11 @@ const items = [
     title: "Orders",
     url: `${baseURI}/Orders`,
     icon: ClockArrowUp,
+  },
+  {
+    title: "Invoice Template",
+    url: `${baseURI}/InvoiceTemplate`,
+    icon: ReceiptText,
   },
   {
     title: "CMS",

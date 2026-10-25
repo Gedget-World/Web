@@ -496,6 +496,8 @@ export default async function ProductDetailPage({
         <LazyProductReviews
           productId={product.id}
           userEmail={user?.email || null}
+          averageRating={averageRating}
+          reviewCount={reviewCount}
         />
       </div>
 

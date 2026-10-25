@@ -63,6 +63,7 @@ import {
   Loader2,
   Save,
   Gift,
+  ReceiptText,
 } from "lucide-react";
 import { CancelOrderButton } from "@/components/cancel-order-button";
 import { OrderItemReview } from "@/components/order-item-review";
@@ -91,6 +92,7 @@ export function OrderDetailClient({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiItems, setConfettiItems] = useState<
     Array<{
@@ -222,6 +224,111 @@ export function OrderDetailClient({
       title: "Copied!",
       description: `${type === "id" ? "Order ID" : type === "address" ? "Address" : "Tracking number"} copied to clipboard`,
     });
+  };
+
+  const downloadInvoice = async () => {
+    setIsDownloadingInvoice(true);
+    let invoiceFrame: HTMLIFrameElement | null = null;
+
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(order.id)}/invoice`,
+      );
+      const result = await response.json();
+      if (!response.ok || typeof result.html !== "string") {
+        throw new Error(result.error || "Failed to generate invoice");
+      }
+
+      const { buildInvoiceDocument } = await import("@/lib/invoice-template");
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      invoiceFrame = document.createElement("iframe");
+      invoiceFrame.setAttribute("sandbox", "allow-same-origin");
+      invoiceFrame.referrerPolicy = "no-referrer";
+      invoiceFrame.title = "Generated invoice";
+      Object.assign(invoiceFrame.style, {
+        position: "fixed",
+        left: "-10000px",
+        top: "0",
+        width: "794px",
+        height: "1123px",
+        border: "0",
+      });
+      document.body.append(invoiceFrame);
+
+      const frameLoaded = new Promise<void>((resolve, reject) => {
+        invoiceFrame!.onload = () => resolve();
+        invoiceFrame!.onerror = () =>
+          reject(new Error("Failed to render invoice"));
+      });
+      invoiceFrame.srcdoc = buildInvoiceDocument(result.html);
+      await frameLoaded;
+
+      const invoiceDocument = invoiceFrame.contentDocument;
+      if (!invoiceDocument?.body) {
+        throw new Error("Invoice preview could not be rendered");
+      }
+
+      const canvas = await html2canvas(invoiceDocument.body, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        windowWidth: 794,
+        windowHeight: Math.max(invoiceDocument.body.scrollHeight, 1123),
+        useCORS: false,
+      });
+      if (canvas.width === 0 || canvas.height === 0) {
+        throw new Error("Invoice template rendered no printable content");
+      }
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const imageHeight = (canvas.height * pageWidth) / canvas.width;
+      const pageCount = Math.ceil(imageHeight / pageHeight);
+      const image = canvas.toDataURL("image/png");
+
+      for (let page = 0; page < pageCount; page += 1) {
+        if (page > 0) pdf.addPage();
+        pdf.addImage(
+          image,
+          "PNG",
+          0,
+          -page * pageHeight,
+          pageWidth,
+          imageHeight,
+        );
+      }
+
+      const filename =
+        typeof result.filename === "string"
+          ? result.filename.replace(/[^a-z0-9_-]/gi, "-")
+          : "invoice";
+      pdf.save(`${filename || "invoice"}.pdf`);
+    } catch (error) {
+      clientLogger.warn("Failed to download invoice", {
+        source: LOG_SOURCE,
+        context: {
+          orderId: order.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+      toast({
+        title: "Couldn't download invoice",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      invoiceFrame?.remove();
+      setIsDownloadingInvoice(false);
+    }
   };
 
   const handleSaveDeliveryNotes = async () => {
@@ -615,6 +722,23 @@ export function OrderDetailClient({
                     </div>
                   )}
                 </div>
+                {order.status === "delivered" && (
+                  <Button
+                    variant="outline"
+                    className="shrink-0 cursor-pointer border-white bg-white text-emerald-700 hover:bg-white/90"
+                    onClick={downloadInvoice}
+                    disabled={isDownloadingInvoice}
+                  >
+                    {isDownloadingInvoice ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ReceiptText className="mr-2 h-4 w-4" />
+                    )}
+                    {isDownloadingInvoice
+                      ? "Preparing Invoice..."
+                      : "Download Invoice"}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Star,
   Pencil,
@@ -42,6 +42,8 @@ type Review = {
 type LazyProductReviewsProps = {
   productId: string;
   userEmail: string | null;
+  averageRating: number;
+  reviewCount: number;
 };
 
 const REVIEWS_PER_PAGE = 5;
@@ -49,10 +51,14 @@ const REVIEWS_PER_PAGE = 5;
 export function LazyProductReviews({
   productId,
   userEmail,
+  averageRating,
+  reviewCount,
 }: LazyProductReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [displayCount, setDisplayCount] = useState(REVIEWS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalReviewCount, setTotalReviewCount] = useState(reviewCount);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
@@ -62,25 +68,47 @@ export function LazyProductReviews({
   const [editTitle, setEditTitle] = useState("");
   const [editComment, setEditComment] = useState("");
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const supabase = useMemo(() => createBrowserClient(), []);
 
-  // Fetch reviews on mount
   useEffect(() => {
+    setTotalReviewCount(reviewCount);
+  }, [reviewCount]);
+
+  // Fetch the first page of active reviews on mount.
+  useEffect(() => {
+    let isMounted = true;
+
     const fetchReviews = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("*")
-        .eq("product_id", productId)
-        .order("created_at", { ascending: false });
+      setLoadError(null);
+      setReviews([]);
 
-      if (!error && data) {
-        setReviews(data);
+      const { data, count, error } = await supabase
+        .from("reviews")
+        .select("*", { count: "exact" })
+        .eq("product_id", productId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(0, REVIEWS_PER_PAGE - 1);
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error("Error loading product reviews:", error);
+        setLoadError("Could not load reviews. Please try again.");
+      } else {
+        setReviews(data || []);
+        setTotalReviewCount(count || 0);
       }
       setIsLoading(false);
     };
 
     fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
   }, [productId, supabase]);
 
   // Get current user
@@ -96,18 +124,36 @@ export function LazyProductReviews({
     getCurrentUser();
   }, [supabase]);
 
-  const activeReviews = reviews.filter((review) => review.is_active);
-  const displayedReviews = activeReviews.slice(0, displayCount);
-  const hasMoreReviews = activeReviews.length > displayCount;
-  const reviewCount = activeReviews.length;
-  const averageRating =
-    reviewCount > 0
-      ? activeReviews.reduce((sum, review) => sum + review.rating, 0) /
-        reviewCount
-      : 0;
+  const hasMoreReviews = reviews.length < totalReviewCount;
 
-  const handleLoadMore = () => {
-    setDisplayCount((prev) => prev + REVIEWS_PER_PAGE);
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true);
+    setLoadError(null);
+
+    const { data, count, error } = await supabase
+      .from("reviews")
+      .select("*", { count: "exact" })
+      .eq("product_id", productId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(reviews.length, reviews.length + REVIEWS_PER_PAGE - 1);
+
+    if (error) {
+      console.error("Error loading more product reviews:", error);
+      setLoadError("Could not load more reviews. Please try again.");
+    } else {
+      setReviews((currentReviews) => {
+        const existingIds = new Set(currentReviews.map((review) => review.id));
+        return [
+          ...currentReviews,
+          ...(data || []).filter((review) => !existingIds.has(review.id)),
+        ];
+      });
+      setTotalReviewCount(count || 0);
+    }
+
+    setIsLoadingMore(false);
   };
 
   const handleEditReview = (review: Review) => {
@@ -135,13 +181,19 @@ export function LazyProductReviews({
       alert("Failed to update review. Please try again.");
     } else {
       setEditingReviewId(null);
-      // Refresh reviews
-      const { data } = await supabase
-        .from("reviews")
-        .select("*")
-        .eq("product_id", productId)
-        .order("created_at", { ascending: false });
-      if (data) setReviews(data);
+      setReviews((currentReviews) =>
+        currentReviews.map((review) =>
+          review.id === reviewId
+            ? {
+                ...review,
+                rating: editRating,
+                title: editTitle,
+                comment: editComment,
+              }
+            : review,
+        ),
+      );
+      router.refresh();
     }
 
     setIsSubmitting(false);
@@ -159,6 +211,7 @@ export function LazyProductReviews({
     } else {
       setDeleteReviewId(null);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      setTotalReviewCount((currentCount) => Math.max(0, currentCount - 1));
     }
   };
 
@@ -224,12 +277,17 @@ export function LazyProductReviews({
         </div>
 
         <div className="space-y-3">
-          {displayedReviews.length === 0 ? (
+          {loadError && (
+            <p role="alert" className="text-center py-3 text-sm text-red-600">
+              {loadError}
+            </p>
+          )}
+          {!loadError && reviews.length === 0 ? (
             <p className="text-slate-600 text-center py-6 text-sm">
               No reviews yet. Be the first to review this product!
             </p>
           ) : (
-            displayedReviews.map((review) => (
+            reviews.map((review) => (
               <Card key={review.id} className="py-2 shadow-none">
                 <CardContent className="px-3 sm:px-4">
                   {editingReviewId === review.id ? (
@@ -382,10 +440,16 @@ export function LazyProductReviews({
               variant="outline"
               size="sm"
               onClick={handleLoadMore}
+              disabled={isLoadingMore}
               className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
-              <ChevronDown className="h-3 w-3 mr-1" />
-              Load More Reviews ({activeReviews.length - displayCount}{" "}
+              {isLoadingMore ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <ChevronDown className="h-3 w-3 mr-1" />
+              )}
+              {isLoadingMore ? "Loading..." : "Load More Reviews"} (
+              {Math.max(0, totalReviewCount - reviews.length)}{" "}
               remaining)
             </Button>
           </div>
